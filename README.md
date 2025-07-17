@@ -51,13 +51,20 @@ to provide several
 
 Setup involves the following steps:
 
+1.  Clone the repo.
 1.  Configure Python and install dependencies.
 1.  Configure credentials for Google Analytics.
 1.  Configure Gemini.
 
+### Clone the repo
+
+```
+git clone https://github.com/googleanalytics/google-analytics-mcp.git
+```
+
 ### Configure Python :snake:
 
-Navigate to the `analytics-mcp` directory, then complete the following steps.
+Navigate to the `google-analytics-mcp` directory, then complete the following steps.
 
 1.  Create a Python virtual environment in the `env` directory.
 

@@ -4,6 +4,49 @@ This repo contains the source code for running a local
 [MCP](https://modelcontextprotocol.io) server that interacts with APIs for
 [Google Analytics](https://support.google.com/analytics).
 
+## Tools :hammer_and_wrench:
+
+The server uses the
+[Google Analytics Admin API](https://developers.google.com/analytics/devguides/config/admin/v1)
+and
+[Google Analytics Data API](https://developers.google.com/analytics/devguides/reporting/data/v1)
+to provide several
+[Tools](https://modelcontextprotocol.io/docs/concepts/tools) for use with LLMs.
+
+### Retrieve account and property information :orange_circle:
+
+*   `get_account_summaries`: Retrieves information about the user's Google
+    Analytics accounts and properties.
+*   `get_property_details`: Returns details about a property.
+*   `list_google_ads_links`: Returns a list of links to Google Ads accounts for
+    a property.
+
+### Run core reports :orange_book:
+
+*   `run_report`: Run a Google Analytics report using the Data API.
+*   `get_dimensions`: Retrieves Core Reporting Dimensions for a specific
+    property, including its custom dimensions.
+*   `get_metrics`: Retrieves Core Reporting Metrics for a specific property,
+    including its custom dimensions.
+*   `get_standard_dimensions`: Returns a list of standard dimensions.
+*   `get_standard_metrics`: Returns a list of standard metrics.
+*   `run_report_date_ranges_hints`: Provides hints about the expected values
+    for the `date_ranges` argument for the `run_report` tool.
+*   `run_report_metric_filter_hints`: Provides hints about the expected values
+    for the metric_filter argument for the `run_report` and
+    `run_realtime_report` tools.
+*   `run_report_dimension_filter_hints`: Provides hints about the expected
+    values for the dimension_filter argument for the `run_report` and
+    `run_realtime_report` tools.
+
+### Run realtime reports :hourglass_flowing_sand:
+
+*   `run_realtime_report`: Run a Google Analytics realtime report using the
+    Data API.
+*   `get_realtime_dimensions`: Retrieves the list of realtime reporting
+    dimensions.
+*   `get_realtime_metrics`: Retrieves the list of realtime metrics.
+
 ## Setup instructions
 
 Setup involves the following steps:
@@ -12,7 +55,7 @@ Setup involves the following steps:
 1.  Configure credentials for Google Analytics.
 1.  Configure Gemini.
 
-### Configure Python
+### Configure Python :snake:
 
 Navigate to the `analytics-mcp` directory, then complete the following steps.
 
@@ -35,15 +78,14 @@ Navigate to the `analytics-mcp` directory, then complete the following steps.
     ```
 
 
-### Configure credentials
+### Configure credentials :key:
 
 Configure your [Application Default Credentials
 (ADC)](https://cloud.google.com/docs/authentication/provide-credentials-adc).
 Make sure the credentials are for a user with access to your Google Analytics
 accounts or properties.
 
-Credentials must include a Google Analytics scope. We recommend using the
-read-only scope:
+Credentials must include the Google Analytics read-only scope:
 
 ```
 https://www.googleapis.com/auth/analytics.readonly
@@ -138,7 +180,7 @@ Here are some sample `gcloud` commands you might find useful:
     }
     ```
 
-## Try it out
+## Try it out :lab_coat:
 
 Launch Gemini Code Assist or Gemini CLI and type `/mcp`. You should see
 `analytics-mcp` listed in the results.
@@ -174,3 +216,7 @@ Here are some sample prompts to get you started:
   ```
   what are the custom dimensions and custom metrics in my property?
   ```
+
+## Contributing
+
+Contributions welcome! See the [Contributing Guide](CONTRIBUTING.md).

@@ -1,4 +1,4 @@
-# Google Analytics MCP Server
+# Google Analytics MCP Server (Experimental)
 
 This repo contains the source code for running a local
 [MCP](https://modelcontextprotocol.io) server that interacts with APIs for
@@ -15,37 +15,37 @@ to provide several
 
 ### Retrieve account and property information :orange_circle:
 
-*   `get_account_summaries`: Retrieves information about the user's Google
-    Analytics accounts and properties.
-*   `get_property_details`: Returns details about a property.
-*   `list_google_ads_links`: Returns a list of links to Google Ads accounts for
-    a property.
+- `get_account_summaries`: Retrieves information about the user's Google
+  Analytics accounts and properties.
+- `get_property_details`: Returns details about a property.
+- `list_google_ads_links`: Returns a list of links to Google Ads accounts for
+  a property.
 
 ### Run core reports :orange_book:
 
-*   `run_report`: Run a Google Analytics report using the Data API.
-*   `get_dimensions`: Retrieves Core Reporting Dimensions for a specific
-    property, including its custom dimensions.
-*   `get_metrics`: Retrieves Core Reporting Metrics for a specific property,
-    including its custom dimensions.
-*   `get_standard_dimensions`: Returns a list of standard dimensions.
-*   `get_standard_metrics`: Returns a list of standard metrics.
-*   `run_report_date_ranges_hints`: Provides hints about the expected values
-    for the `date_ranges` argument for the `run_report` tool.
-*   `run_report_metric_filter_hints`: Provides hints about the expected values
-    for the metric_filter argument for the `run_report` and
-    `run_realtime_report` tools.
-*   `run_report_dimension_filter_hints`: Provides hints about the expected
-    values for the dimension_filter argument for the `run_report` and
-    `run_realtime_report` tools.
+- `run_report`: Run a Google Analytics report using the Data API.
+- `get_dimensions`: Retrieves Core Reporting Dimensions for a specific
+  property, including its custom dimensions.
+- `get_metrics`: Retrieves Core Reporting Metrics for a specific property,
+  including its custom dimensions.
+- `get_standard_dimensions`: Returns a list of standard dimensions.
+- `get_standard_metrics`: Returns a list of standard metrics.
+- `run_report_date_ranges_hints`: Provides hints about the expected values
+  for the `date_ranges` argument for the `run_report` tool.
+- `run_report_metric_filter_hints`: Provides hints about the expected values
+  for the metric_filter argument for the `run_report` and
+  `run_realtime_report` tools.
+- `run_report_dimension_filter_hints`: Provides hints about the expected
+  values for the dimension_filter argument for the `run_report` and
+  `run_realtime_report` tools.
 
 ### Run realtime reports :hourglass_flowing_sand:
 
-*   `run_realtime_report`: Run a Google Analytics realtime report using the
-    Data API.
-*   `get_realtime_dimensions`: Retrieves the list of realtime reporting
-    dimensions.
-*   `get_realtime_metrics`: Retrieves the list of realtime metrics.
+- `run_realtime_report`: Run a Google Analytics realtime report using the
+  Data API.
+- `get_realtime_dimensions`: Retrieves the list of realtime reporting
+  dimensions.
+- `get_realtime_metrics`: Retrieves the list of realtime metrics.
 
 ## Setup instructions
 
@@ -77,7 +77,6 @@ Navigate to the `analytics-mcp` directory, then complete the following steps.
     pip install .
     ```
 
-
 ### Configure credentials :key:
 
 Configure your [Application Default Credentials
@@ -93,7 +92,7 @@ https://www.googleapis.com/auth/analytics.readonly
 
 Here are some sample `gcloud` commands you might find useful:
 
-* Set up ADC using user credentials and an OAuth web client after
+- Set up ADC using user credentials and an OAuth web client after
   downloading the client JSON to `YOUR_WEB_CLIENT_JSON_FILE`.
 
   ```shell
@@ -102,7 +101,7 @@ Here are some sample `gcloud` commands you might find useful:
     --client-id-file=YOUR_WEB_CLIENT_JSON_FILE
   ```
 
-* Set up ADC using service account impersonation.
+- Set up ADC using service account impersonation.
 
   ```shell
   gcloud auth application-default login \
@@ -187,31 +186,31 @@ Launch Gemini Code Assist or Gemini CLI and type `/mcp`. You should see
 
 Here are some sample prompts to get you started:
 
-* Ask what the server can do:
+- Ask what the server can do:
 
   ```
   what can the analytics-mcp server do?
   ```
 
-* Ask about a Google Analytics property
+- Ask about a Google Analytics property
 
   ```
   Give me details about my Google Analytics property with 'xyz' in the name
   ```
 
-* Prompt for analysis:
+- Prompt for analysis:
 
   ```
   what are the most popular events in my Google Analytics property in the last 180 days?
   ```
 
-* Ask about signed-in users:
+- Ask about signed-in users:
 
   ```
   were most of my users in the last 6 months logged in?
   ```
 
-* Ask about property configuration:
+- Ask about property configuration:
 
   ```
   what are the custom dimensions and custom metrics in my property?

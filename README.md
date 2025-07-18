@@ -114,7 +114,13 @@ Here are some sample `gcloud` commands you might find useful:
     {
       "mcpServers": {
         "analytics-mcp": {
-          "command": "pipx run git+https://github.com/googleanalytics/google-analytics-mcp.git runmcp",
+          "command": "pipx",
+          "args": [
+            "run",
+            "--spec",
+            "git+https://github.com/googleanalytics/google-analytics-mcp.git",
+            "runmcp"
+          ]
         }
       },
       "selectedAuthType": "gemini-api-key",
@@ -138,7 +144,13 @@ Here are some sample `gcloud` commands you might find useful:
     {
       "mcpServers": {
         "analytics-mcp": {
-          "command": "pipx run git+https://github.com/googleanalytics/google-analytics-mcp.git runmcp",
+          "command": "pipx",
+          "args": [
+            "run",
+            "--spec",
+            "git+https://github.com/googleanalytics/google-analytics-mcp.git",
+            "runmcp"
+          ],
           "env": {
             "MCP_DEBUG": "true",
             "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_ADC_JSON"

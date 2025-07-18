@@ -11,6 +11,9 @@ dependencies = [
     "httpx>=0.28.1"
 ]
 
+[project.scripts]
+runmcp = "analytics_mcp.server:run_server"
+
 [project.optional-dependencies]
 dev = [
     "black",

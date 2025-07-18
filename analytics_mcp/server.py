@@ -26,5 +26,14 @@ from analytics_mcp.tools.admin import info  # noqa: F401
 from analytics_mcp.tools.reporting import realtime  # noqa: F401
 from analytics_mcp.tools.reporting import core  # noqa: F401
 
-if __name__ == "__main__":
+
+def run_server() -> None:
+    """Runs the server.
+
+    Serves as the entrypoint for the 'runmcp' command.
+    """
     mcp.run()
+
+
+if __name__ == "__main__":
+    run_server()

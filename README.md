@@ -51,38 +51,13 @@ to provide several
 
 Setup involves the following steps:
 
-1.  Clone the repo.
-1.  Configure Python and install dependencies.
+1.  Configure Python.
 1.  Configure credentials for Google Analytics.
 1.  Configure Gemini.
 
-### Clone the repo
-
-```
-git clone https://github.com/googleanalytics/google-analytics-mcp.git
-```
-
 ### Configure Python :snake:
 
-Navigate to the `google-analytics-mcp` directory, then complete the following steps.
-
-1.  Create a Python virtual environment in the `env` directory.
-
-    ```shell
-    python3 -m venv .venv
-    ```
-
-1.  Activate the virtual environment.
-
-    ```shell
-    source .venv/bin/activate
-    ```
-
-1.  Setup the project and its dependencies.
-
-    ```shell
-    pip install .
-    ```
+[Install pipx](https://pipx.pypa.io/stable/#install-pipx).
 
 ### Configure credentials :key:
 
@@ -139,13 +114,7 @@ Here are some sample `gcloud` commands you might find useful:
     {
       "mcpServers": {
         "analytics-mcp": {
-          "command": "PATH_TO_SERVER/.venv/bin/python",
-          "args": [
-            "PATH_TO_SERVER/server.py"
-          ],
-          "env": {
-            "MCP_DEBUG": "true"
-          }
+          "command": "pipx run git+https://github.com/googleanalytics/google-analytics-mcp.git runmcp",
         }
       },
       "selectedAuthType": "gemini-api-key",
@@ -169,10 +138,7 @@ Here are some sample `gcloud` commands you might find useful:
     {
       "mcpServers": {
         "analytics-mcp": {
-          "command": "PATH_TO_SERVER/.venv/bin/python",
-          "args": [
-            "PATH_TO_SERVER/server.py"
-          ],
+          "command": "pipx run git+https://github.com/googleanalytics/google-analytics-mcp.git runmcp",
           "env": {
             "MCP_DEBUG": "true",
             "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_ADC_JSON"

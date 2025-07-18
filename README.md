@@ -118,8 +118,7 @@ Here are some sample `gcloud` commands you might find useful:
           "args": [
             "run",
             "--spec",
-            "git+https://github.com/googleanalytics/google-analytics-mcp.git",
-            "runmcp"
+            "git+https://github.com/googleanalytics/google-analytics-mcp.git"
           ]
         }
       },
@@ -148,8 +147,7 @@ Here are some sample `gcloud` commands you might find useful:
           "args": [
             "run",
             "--spec",
-            "git+https://github.com/googleanalytics/google-analytics-mcp.git",
-            "runmcp"
+            "git+https://github.com/googleanalytics/google-analytics-mcp.git"
           ],
           "env": {
             "MCP_DEBUG": "true",

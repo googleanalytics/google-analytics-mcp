@@ -1,5 +1,5 @@
 [project]
-name = "analytics-mcp"
+name = "google-analytics-mcp"
 version = "0.1.0"
 requires-python = ">=3.9, <3.14"
 license = "Apache-2.0"
@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-runmcp = "analytics_mcp.server:run_server"
+google-analytics-mcp = "analytics_mcp.server:run_server"
 
 [project.optional-dependencies]
 dev = [

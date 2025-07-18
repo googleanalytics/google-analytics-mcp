@@ -43,3 +43,14 @@ Then run the formatter on all Python files:
 ```
 nox -s format
 ```
+
+## Test changes
+
+To test changes, modify the `command` for the `analytics-mcp` entry in your
+`~/.gemini/settings.json` file so Gemini runs the server using your local
+source files:
+
+```
+      "command": "PATH_TO_REPO/.venv/bin/google-analytics-mcp",
+```
+

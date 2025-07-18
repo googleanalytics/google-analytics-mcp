@@ -107,9 +107,6 @@ Here are some sample `gcloud` commands you might find useful:
 1.  Create or edit the file at `~/.gemini/settings.json`, adding your server
     to the `mcpServers` list.
 
-    Replace `PATH_TO_SERVER` with the complete path to the directory where you
-    cloned this repo.
-
     ```
     {
       "mcpServers": {
@@ -118,7 +115,8 @@ Here are some sample `gcloud` commands you might find useful:
           "args": [
             "run",
             "--spec",
-            "git+https://github.com/googleanalytics/google-analytics-mcp.git"
+            "git+https://github.com/googleanalytics/google-analytics-mcp.git",
+            "google-analytics-mcp"
           ]
         }
       },
@@ -147,7 +145,8 @@ Here are some sample `gcloud` commands you might find useful:
           "args": [
             "run",
             "--spec",
-            "git+https://github.com/googleanalytics/google-analytics-mcp.git"
+            "git+https://github.com/googleanalytics/google-analytics-mcp.git",
+            "google-analytics-mcp"
           ],
           "env": {
             "MCP_DEBUG": "true",

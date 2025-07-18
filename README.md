@@ -139,7 +139,7 @@ Here are some sample `gcloud` commands you might find useful:
     {
       "mcpServers": {
         "analytics-mcp": {
-          "command": "PATH_TO_SERVER/env/bin/python",
+          "command": "PATH_TO_SERVER/.venv/bin/python",
           "args": [
             "PATH_TO_SERVER/server.py"
           ],

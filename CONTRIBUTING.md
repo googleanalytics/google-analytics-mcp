@@ -48,7 +48,10 @@ nox -s format
 
 To test changes, modify the `command` for the `analytics-mcp` entry in your
 `~/.gemini/settings.json` file so Gemini runs the server using your local
-source files:
+source files.
+
+Replace `PATH_TO_REPO` in the following snippet with the path where you cloned
+the repo:
 
 ```
       "command": "PATH_TO_REPO/.venv/bin/google-analytics-mcp",

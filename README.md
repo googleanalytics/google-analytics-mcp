@@ -98,16 +98,10 @@ Here are some sample `gcloud` commands you might find useful:
     or [Gemini Code
     Assist](https://marketplace.visualstudio.com/items?itemName=Google.geminicodeassist)
 
-1.  Get a Gemini API key and set the `GEMINI_API_KEY` environment variable.
-
-    ```shell
-    export GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-    ```
-
 1.  Create or edit the file at `~/.gemini/settings.json`, adding your server
     to the `mcpServers` list.
 
-    ```
+    ```json
     {
       "mcpServers": {
         "analytics-mcp": {
@@ -119,10 +113,6 @@ Here are some sample `gcloud` commands you might find useful:
             "google-analytics-mcp"
           ]
         }
-      },
-      "selectedAuthType": "gemini-api-key",
-      "fileFiltering": {
-        "enableRecursiveFileSearch": false
       }
     }
     ```
@@ -137,7 +127,7 @@ Here are some sample `gcloud` commands you might find useful:
     example with the full path to the ADC JSON file you always want to use for
     your MCP server.
 
-    ```
+    ```json
     {
       "mcpServers": {
         "analytics-mcp": {
@@ -149,14 +139,9 @@ Here are some sample `gcloud` commands you might find useful:
             "google-analytics-mcp"
           ],
           "env": {
-            "MCP_DEBUG": "true",
             "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_ADC_JSON"
           }
         }
-      },
-      "selectedAuthType": "gemini-api-key",
-      "fileFiltering": {
-        "enableRecursiveFileSearch": false
       }
     }
     ```

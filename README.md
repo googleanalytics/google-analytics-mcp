@@ -59,6 +59,14 @@ Setup involves the following steps:
 
 [Install pipx](https://pipx.pypa.io/stable/#install-pipx).
 
+### Enable APIs in your project :white_check_mark:
+
+[Follow the instructions](https://support.google.com/googleapi/answer/6158841)
+to enable the following APIs in your Google Cloud project:
+
+* [Google Analytics Admin API](https://console.cloud.google.com/apis/library/analyticsadmin.googleapis.com)
+* [Google Analytics Data API](https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com)
+
 ### Configure credentials :key:
 
 Configure your [Application Default Credentials
@@ -72,15 +80,19 @@ Credentials must include the Google Analytics read-only scope:
 https://www.googleapis.com/auth/analytics.readonly
 ```
 
+Check out
+[Manage OAuth Clients](https://support.google.com/cloud/answer/15549257)
+for how to create an OAuth client.
+
 Here are some sample `gcloud` commands you might find useful:
 
-- Set up ADC using user credentials and an OAuth web client after
-  downloading the client JSON to `YOUR_WEB_CLIENT_JSON_FILE`.
+- Set up ADC using user credentials and an OAuth desktop or web client after
+  downloading the client JSON to `YOUR_CLIENT_JSON_FILE`.
 
   ```shell
   gcloud auth application-default login \
     --scopes https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform \
-    --client-id-file=YOUR_WEB_CLIENT_JSON_FILE
+    --client-id-file=YOUR_CLIENT_JSON_FILE
   ```
 
 - Set up ADC using service account impersonation.

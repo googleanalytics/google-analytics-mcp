@@ -313,6 +313,82 @@ def run_report_dimension_filter_hints():
     )
 
 
+@mcp.tool(
+    title=(
+        "Provide hints about the expected values for the order_bys argument for the run_report and run_realtime_report tools"
+    )
+)
+def run_report_order_bys_hints():
+    """Returns examples of valid order_bys arguments for the run_report and run_realtime_report tools."""
+    dimension_alphanumeric_ascending = data_v1beta.OrderBy(
+        dimension=data_v1beta.OrderBy.DimensionOrderBy(
+            dimension_name="eventName",
+            order_type=data_v1beta.OrderBy.DimensionOrderBy.OrderType.ALPHANUMERIC,
+        ),
+        desc=False,
+    )
+    dimension_alphanumeric_no_case_descending = data_v1beta.OrderBy(
+        dimension=data_v1beta.OrderBy.DimensionOrderBy(
+            dimension_name="campaignName",
+            order_type=data_v1beta.OrderBy.DimensionOrderBy.OrderType.CASE_INSENSITIVE_ALPHANUMERIC,
+        ),
+        desc=True,
+    )
+    dimension_numeric_ascending = data_v1beta.OrderBy(
+        dimension=data_v1beta.OrderBy.DimensionOrderBy(
+            dimension_name="audienceId",
+            order_type=data_v1beta.OrderBy.DimensionOrderBy.OrderType.NUMERIC,
+        ),
+        desc=False,
+    )
+    metric_ascending = data_v1beta.OrderBy(
+        metric=data_v1beta.OrderBy.MetricOrderBy(
+            metric_name="eventCount",
+        ),
+        desc=False,
+    )
+    metric_descending = data_v1beta.OrderBy(
+        metric=data_v1beta.OrderBy.MetricOrderBy(
+            metric_name="eventValue",
+        ),
+        desc=True,
+    )
+
+    return f"""Example order_bys arguments:
+
+    1.  Order by ascending 'eventName':
+        [ {proto_to_json(dimension_alphanumeric_ascending)} ]
+
+    2.  Order by descending 'eventName', ignoring case:
+        [ {proto_to_json(dimension_alphanumeric_no_case_descending)} ]
+
+    3.  Order by ascending 'audienceId':
+        [ {proto_to_json(dimension_numeric_ascending)} ]
+
+    4.  Order by descending 'eventCount':
+        [ {proto_to_json(metric_descending)} ]
+
+    5.  Order by ascending 'eventCount':
+        [ {proto_to_json(metric_ascending)} ]
+
+    6.  Combination of dimension and metric order bys:
+        [
+          {proto_to_json(dimension_alphanumeric_ascending)},
+          {proto_to_json(metric_descending)},
+        ]
+
+    7.  Order by multiple dimensions and metrics:
+        [
+          {proto_to_json(dimension_alphanumeric_ascending)},
+          {proto_to_json(dimension_numeric_ascending)},
+          {proto_to_json(metric_descending)},
+        ]
+
+    The dimensions and metrics in order_bys must also be present in the report
+    request's "dimensions" and "metrics" arguments, respectively.
+    """
+
+
 @mcp.tool(title="Run a Google Analytics report using the Data API")
 async def run_report(
     property_id: str,
@@ -321,6 +397,7 @@ async def run_report(
     metrics: List[str],
     dimension_filter: Dict[str, Any] = None,
     metric_filter: Dict[str, Any] = None,
+    order_bys: List[Dict[str, Any]] = None,
     limit: int = None,
     offset: int = None,
     currency_code: str = None,
@@ -360,6 +437,11 @@ async def run_report(
           `get_metrics` tools.
           For more information about the expected format of this argument, see
           the `run_report_metric_filter_hints` tool.
+        order_bys: A list of Data API OrderBy
+          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/OrderBy)
+          objects to apply to the dimensions and metrics.
+          For more information about the expected format of this argument, see
+          the `run_report_order_bys_hints` tool.
         limit: The maximum number of rows to return in each response. Value must
           be a positive integer <= 250,000. Used to paginate through large
           reports, following the guide at
@@ -390,6 +472,11 @@ async def run_report(
 
     if metric_filter:
         request.metric_filter = data_v1beta.FilterExpression(metric_filter)
+
+    if order_bys:
+        request.order_bys = [
+            data_v1beta.OrderBy(order_by) for order_by in order_bys
+        ]
 
     if limit:
         request.limit = limit

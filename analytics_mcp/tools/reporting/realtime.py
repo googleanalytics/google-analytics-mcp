@@ -47,6 +47,7 @@ async def run_realtime_report(
     metrics: List[str],
     dimension_filter: Dict[str, Any] = None,
     metric_filter: Dict[str, Any] = None,
+    order_bys: List[Dict[str, Any]] = None,
     limit: int = None,
     offset: int = None,
     return_property_quota: bool = False,
@@ -77,6 +78,11 @@ async def run_realtime_report(
           `get_metrics` tools.
           For more information about the expected format of this argument, see
           the `run_report_metric_filter_hints` tool.
+        order_bys: A list of Data API OrderBy
+          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/OrderBy)
+          objects to apply to the dimensions and metrics.
+          For more information about the expected format of this argument, see
+          the `run_report_order_bys_hints` tool.
         limit: The maximum number of rows to return in each response. Value must
           be a positive integer <= 250,000. Used to paginate through large
           reports, following the guide at
@@ -106,6 +112,11 @@ async def run_realtime_report(
 
     if metric_filter:
         request.metric_filter = data_v1beta.FilterExpression(metric_filter)
+
+    if order_bys:
+        request.order_bys = [
+            data_v1beta.OrderBy(order_by) for order_by in order_bys
+        ]
 
     if limit:
         request.limit = limit

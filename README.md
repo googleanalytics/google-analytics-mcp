@@ -23,29 +23,14 @@ to provide several
 
 ### Run core reports :orange_book:
 
-- `run_report`: Run a Google Analytics report using the Data API.
-- `get_dimensions`: Retrieves Core Reporting Dimensions for a specific
-  property, including its custom dimensions.
-- `get_metrics`: Retrieves Core Reporting Metrics for a specific property,
-  including its custom dimensions.
-- `get_standard_dimensions`: Returns a list of standard dimensions.
-- `get_standard_metrics`: Returns a list of standard metrics.
-- `run_report_date_ranges_hints`: Provides hints about the expected values
-  for the `date_ranges` argument for the `run_report` tool.
-- `run_report_metric_filter_hints`: Provides hints about the expected values
-  for the metric_filter argument for the `run_report` and
-  `run_realtime_report` tools.
-- `run_report_dimension_filter_hints`: Provides hints about the expected
-  values for the dimension_filter argument for the `run_report` and
-  `run_realtime_report` tools.
+- `run_report`: Runs a Google Analytics report using the Data API.
+- `get_custom_dimensions_and_metrics`: Retrieves the custom dimensions and
+  metrics for a specific property.
 
 ### Run realtime reports :hourglass_flowing_sand:
 
-- `run_realtime_report`: Run a Google Analytics realtime report using the
+- `run_realtime_report`: Runs a Google Analytics realtime report using the
   Data API.
-- `get_realtime_dimensions`: Retrieves the list of realtime reporting
-  dimensions.
-- `get_realtime_metrics`: Retrieves the list of realtime metrics.
 
 ## Setup instructions
 

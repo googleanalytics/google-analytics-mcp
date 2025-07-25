@@ -18,11 +18,14 @@ from typing import Any, Dict
 
 from google.analytics import admin_v1beta, data_v1beta
 from google.api_core.gapic_v1.client_info import ClientInfo
+from importlib import metadata
 import google.auth
 import proto
 
 # Client information that adds a custom user agent to all API requests.
-_CLIENT_INFO = ClientInfo(user_agent="analytics-mcp/0.0.1")
+_CLIENT_INFO = ClientInfo(
+    user_agent=f"analytics-mcp/{metadata.version('analytics-mcp')}"
+)
 
 # Read-only scope for Analytics Admin API and Analytics Data API.
 _READ_ONLY_ANALYTICS_SCOPE = (
@@ -54,6 +57,31 @@ def create_data_api_client() -> data_v1beta.BetaAnalyticsDataAsyncClient:
     return data_v1beta.BetaAnalyticsDataAsyncClient(
         client_info=_CLIENT_INFO, credentials=_create_credentials()
     )
+
+
+def construct_property_rn(property_value: int | str) -> str:
+    """Returns a property resource name in the format required by APIs."""
+    property_num = None
+    if isinstance(property_value, int):
+        property_num = property_value
+    elif isinstance(property_value, str):
+        property_value = property_value.strip()
+        if property_value.isdigit():
+            property_num = int(property_value)
+        elif property_value.startswith("properties/"):
+            numeric_part = property_value.split("/")[-1]
+            if numeric_part.isdigit():
+                property_num = int(numeric_part)
+    if property_num is None:
+        raise ValueError(
+            (
+                f"Invalid property ID: {property_value}. "
+                "A valid property value is either a number or a string starting "
+                "with 'properties/' and followed by a number."
+            )
+        )
+
+    return f"properties/{property_num}"
 
 
 def proto_to_dict(obj: proto.Message) -> Dict[str, Any]:

@@ -18,31 +18,67 @@ from typing import Any, Dict, List
 
 from analytics_mcp.coordinator import mcp
 from analytics_mcp.tools.utils import (
+    construct_property_rn,
     create_data_api_client,
     proto_to_dict,
+)
+from analytics_mcp.tools.reporting.metadata import (
+    get_date_ranges_hints,
+    get_dimension_filter_hints,
+    get_metric_filter_hints,
+    get_order_bys_hints,
 )
 from google.analytics import data_v1beta
 
 
-@mcp.tool(title="Retrieves the list of realtime reporting dimensions")
-def get_realtime_dimensions() -> str:
-    """Returns a list of realtime dimensions."""
-    return f"""Realtime dimensions defined in the HTML table at
-    https://developers.google.com/analytics/devguides/reporting/data/v1/realtime-api-schema#dimensions
-    These dimensions are available to *every* property"""
+def _run_realtime_report_description() -> str:
+    """Returns the description for the `run_realtime_report` tool."""
+    return f"""
+          {run_realtime_report.__doc__}
+
+          ## Hints for arguments
+
+          Here are some hints that outline the expected format and requirements
+          for arguments.
+
+          ### Hints for `dimensions`
+
+          The `dimensions` list must consist solely of either of the following:
+
+          1.  Realtime standard dimensions defined in the HTML table at
+              https://developers.google.com/analytics/devguides/reporting/data/v1/realtime-api-schema#dimensions.
+              These dimensions are available to *every* property.
+          2.  User-scoped custom dimensions for the `property_id`. Use the
+              `get_custom_dimensions_and_metrics` tool to retrieve the list of
+              custom dimensions for a property, and look for the custom
+              dimensions with an `apiName` that begins with "customUser:".
+
+          ### Hints for `metrics`
+
+          The `metrics` list must consist solely of the Realtime standard
+          metrics defined in the HTML table at
+          https://developers.google.com/analytics/devguides/reporting/data/v1/realtime-api-schema#metrics.
+          These metrics are available to *every* property.
+
+          Realtime reports can't use custom metrics.
+
+          ### Hints for `date_ranges`:
+          {get_date_ranges_hints()}
+
+          ### Hints for `dimension_filter`:
+          {get_dimension_filter_hints()}
+
+          ### Hints for `metric_filter`:
+          {get_metric_filter_hints()}
+
+          ### Hints for `order_bys`:
+          {get_order_bys_hints()}
+
+"""
 
 
-@mcp.tool(title="Retrieves the list of realtime metrics")
-def get_realtime_metrics() -> str:
-    """Returns a list of realtime metrics."""
-    return f"""realtime metrics defined in the HTML table at
-      https://developers.google.com/analytics/devguides/reporting/data/v1/realtime-api-schema#metrics
-      These metrics are available to *every* property"""
-
-
-@mcp.tool(title="Run a Google Analytics realtime report using the Data API")
 async def run_realtime_report(
-    property_id: str,
+    property_id: int | str,
     dimensions: List[str],
     metrics: List[str],
     dimension_filter: Dict[str, Any] = None,
@@ -59,7 +95,9 @@ async def run_realtime_report(
     for more information.
 
     Args:
-        property_id: The Google Analytics property ID.
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
         dimensions: A list of dimensions to include in the report. Dimensions must be realtime dimensions.
         metrics: A list of metrics to include in the report. Metrics must be realtime metrics.
         dimension_filter: A Data API FilterExpression
@@ -93,11 +131,8 @@ async def run_realtime_report(
           https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
         return_property_quota: Whether to return realtime property quota in the response.
     """
-    if property_id.startswith("properties/"):
-        property_id = property_id.split("/")[-1]
-
     request = data_v1beta.RunRealtimeReportRequest(
-        property=f"properties/{property_id}",
+        property=construct_property_rn(property_id),
         dimensions=[
             data_v1beta.Dimension(name=dimension) for dimension in dimensions
         ],
@@ -125,3 +160,14 @@ async def run_realtime_report(
 
     response = await create_data_api_client().run_realtime_report(request)
     return proto_to_dict(response)
+
+
+# The `run_realtime_report` tool requires a more complex description that's generated at
+# runtime. Uses the `add_tool` method instead of an annnotation since `add_tool`
+# provides the flexibility needed to generate the description while also
+# including the `run_realtime_report` method's docstring.
+mcp.add_tool(
+    run_realtime_report,
+    title="Run a Google Analytics realtime report using the Data API",
+    description=_run_realtime_report_description(),
+)

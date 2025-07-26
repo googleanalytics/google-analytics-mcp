@@ -144,6 +144,7 @@ def get_standard_metrics() -> str:
     title="Provides hints about the expected values for the date_ranges argument for the run_report tool"
 )
 def run_report_date_ranges_hints():
+    """Provides hints about the expected values for the date_ranges argument for the run_report tool."""
     range_jan = data_v1beta.DateRange(
         start_date="2025-01-01", end_date="2025-01-31", name="Jan2025"
     )

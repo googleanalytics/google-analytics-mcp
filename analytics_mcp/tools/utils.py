@@ -14,6 +14,7 @@
 
 """Common utilities used by the MCP server."""
 
+import os
 from typing import Any, Dict
 
 from google.analytics import admin_v1beta, data_v1beta
@@ -31,7 +32,15 @@ _READ_ONLY_ANALYTICS_SCOPE = (
 
 
 def _create_credentials() -> google.auth.credentials.Credentials:
-    """Returns Application Default Credentials with read-only scope."""
+    """Returns credentials with read-only scope.
+    
+    Uses GOOGLE_IMPERSONATED_CREDENTIAL environment variable if available,
+    otherwise falls back to Application Default Credentials.
+    """
+    impersonated_credential = os.getenv("GOOGLE_IMPERSONATED_CREDENTIAL")
+    if impersonated_credential:
+        return impersonated_credential
+    
     (credentials, _) = google.auth.default(scopes=[_READ_ONLY_ANALYTICS_SCOPE])
     return credentials
 

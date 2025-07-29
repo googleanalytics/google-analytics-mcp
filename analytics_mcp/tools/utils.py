@@ -22,10 +22,20 @@ from importlib import metadata
 import google.auth
 import proto
 
+
+def _get_package_version_with_fallback():
+    """Returns the version of the package.
+
+    Falls back to 'unknown' if the version can't be resolved.
+    """
+    try:
+        return metadata.version("google-analytics-mcp")
+    except:
+        return "unknown"
+
+
 # Client information that adds a custom user agent to all API requests.
-_CLIENT_INFO = ClientInfo(
-    user_agent=f"analytics-mcp/{metadata.version('analytics-mcp')}"
-)
+_CLIENT_INFO = ClientInfo(user_agent=f"analytics-mcp/{_get_package_version_with_fallback()}")
 
 # Read-only scope for Analytics Admin API and Analytics Data API.
 _READ_ONLY_ANALYTICS_SCOPE = (

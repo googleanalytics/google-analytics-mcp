@@ -17,6 +17,6 @@ google-analytics-mcp = "analytics_mcp.server:run_server"
 [project.optional-dependencies]
 dev = [
     "black",
-    "nox >= 2020.12.31, < 2022.6"
+    "nox >=2025.5.1, <2026"
 ]
 

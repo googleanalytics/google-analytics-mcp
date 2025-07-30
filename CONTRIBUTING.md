@@ -46,9 +46,20 @@ nox -s format
 
 ## Test changes
 
-To test changes, modify the `command` for the `analytics-mcp` entry in your
-`~/.gemini/settings.json` file so Gemini runs the server using your local
-source files.
+1.  Add or update unit tests in the `tests` directory.
+
+1.  Run the unit tests for the supported Python versions that are available in
+    your environment:
+
+    ```
+    nox -s tests*
+    ```
+
+### Test using Gemini
+
+To test changes by issuing prompts in Gemini, modify the `command` for the
+`analytics-mcp` entry in your `~/.gemini/settings.json` file so Gemini runs the
+server using your local source files.
 
 Replace `PATH_TO_REPO` in the following snippet with the path where you cloned
 the repo:
@@ -57,3 +68,31 @@ the repo:
       "command": "PATH_TO_REPO/.venv/bin/google-analytics-mcp",
 ```
 
+When running the `gemini` command from a terminal, add the `--debug` option so
+Gemini outputs debug information as it processes prompts.
+
+### Test from GitHub
+
+After you push changes to GitHub, use `pipx` to run the server for a specific
+branch, and use the `--no-cache` option so `pipx` gets the
+latest changes.
+
+Here's an example that runs the latest code from a branch named
+`awesome-feature-42` in this repo:
+
+    ```json
+    {
+      "mcpServers": {
+        "analytics-mcp": {
+          "command": "pipx",
+          "args": [
+            "run",
+            "--no-cache",
+            "--spec",
+            "git+https://github.com/googleanalytics/google-analytics-mcp.git@awesome-feature-42",
+            "google-analytics-mcp"
+          ]
+        }
+      }
+    }
+    ```

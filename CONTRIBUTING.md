@@ -77,22 +77,22 @@ After you push changes to GitHub, use `pipx` to run the server for a specific
 branch, and use the `--no-cache` option so `pipx` gets the
 latest changes.
 
-Here's an example that runs the latest code from a branch named
-`awesome-feature-42` in this repo:
+Here's an example of an `mcpServers` entry that runs the latest code from a
+branch named `awesome-feature-42` in this repo:
 
-    ```json
-    {
-      "mcpServers": {
-        "analytics-mcp": {
-          "command": "pipx",
-          "args": [
-            "run",
-            "--no-cache",
-            "--spec",
-            "git+https://github.com/googleanalytics/google-analytics-mcp.git@awesome-feature-42",
-            "google-analytics-mcp"
-          ]
-        }
-      }
+```json
+{
+  "mcpServers": {
+    "analytics-mcp": {
+      "command": "pipx",
+      "args": [
+        "run",
+        "--no-cache",
+        "--spec",
+        "git+https://github.com/googleanalytics/google-analytics-mcp.git@awesome-feature-42",
+        "google-analytics-mcp"
+      ]
     }
-    ```
+  }
+}
+```

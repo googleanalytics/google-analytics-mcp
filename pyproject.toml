@@ -1,7 +1,9 @@
 [project]
 name = "google-analytics-mcp"
 version = "0.1.0"
-requires-python = ">=3.9, <3.14"
+# Lower bound of 3.10 due to the 'mcp' dependency:
+# https://github.com/modelcontextprotocol/python-sdk/blob/main/pyproject.toml
+requires-python = ">=3.10, <3.14"
 license = "Apache-2.0"
 dependencies = [
     "google-analytics-data==0.18.19",
@@ -17,6 +19,6 @@ google-analytics-mcp = "analytics_mcp.server:run_server"
 [project.optional-dependencies]
 dev = [
     "black",
-    "nox >= 2020.12.31, < 2022.6"
+    "nox >=2025.5.1, <2026"
 ]
 

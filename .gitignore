@@ -52,6 +52,9 @@ env/
 venv/
 .venv/
 
+# pyenv
+.python-version
+
 # Test logs
 coverage.xml
 *sponge_log.xml

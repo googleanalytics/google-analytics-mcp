@@ -35,7 +35,9 @@ def _get_package_version_with_fallback():
 
 
 # Client information that adds a custom user agent to all API requests.
-_CLIENT_INFO = ClientInfo(user_agent=f"analytics-mcp/{_get_package_version_with_fallback()}")
+_CLIENT_INFO = ClientInfo(
+    user_agent=f"analytics-mcp/{_get_package_version_with_fallback()}"
+)
 
 # Read-only scope for Analytics Admin API and Analytics Data API.
 _READ_ONLY_ANALYTICS_SCOPE = (

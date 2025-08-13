@@ -60,16 +60,16 @@ async def list_google_ads_links(property_id: int | str) -> List[Dict[str, Any]]:
 
 
 @mcp.tool(title="Gets details about a property")
-def get_property_details(property_id: int | str) -> Dict[str, Any]:
+async def get_property_details(property_id: int | str) -> Dict[str, Any]:
     """Returns details about a property.
     Args:
         property_id: The Google Analytics property ID. Accepted formats are:
           - A number
           - A string consisting of 'properties/' followed by a number
     """
-    client = admin_v1beta.AnalyticsAdminServiceClient()
+    client = create_admin_api_client()
     request = admin_v1beta.GetPropertyRequest(
         name=construct_property_rn(property_id)
     )
-    response = client.get_property(request=request)
+    response = await client.get_property(request=request)
     return proto_to_dict(response)

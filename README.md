@@ -124,6 +124,11 @@ Here are some sample `gcloud` commands you might find useful:
     example with the full path to the ADC JSON file you always want to use for
     your MCP server.
 
+    We also recommend that you add a `GOOGLE_CLOUD_PROJECT` attribute to the
+    `env` object. Replace `YOUR_PROJECT_ID` in the following example with the
+    [project ID](https://support.google.com/googleapi/answer/7014113) of your
+    Google Cloud project.
+
     ```json
     {
       "mcpServers": {
@@ -136,7 +141,8 @@ Here are some sample `gcloud` commands you might find useful:
             "google-analytics-mcp"
           ],
           "env": {
-            "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_ADC_JSON"
+            "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_ADC_JSON",
+            "GOOGLE_CLOUD_PROJECT": "YOUR_PROJECT_ID"
           }
         }
       }

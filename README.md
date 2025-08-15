@@ -5,7 +5,7 @@ This repo contains the source code for running a local
 [Google Analytics](https://support.google.com/analytics).
 
 Join the discussion and ask questions in the
-[🤖-analytics-mcp channel](https://discord.com/channels/971845904002871346/1398002598665257060)
+[:robot:-analytics-mcp channel](https://discord.com/channels/971845904002871346/1398002598665257060)
 on Discord.
 
 ## Tools :hammer_and_wrench:

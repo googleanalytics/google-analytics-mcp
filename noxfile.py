@@ -38,17 +38,42 @@ TEST_DEPENDENCIES = [
 ]
 
 
+def _format(session, check=False):
+    """Helper function to run formatters.
+
+    Args:
+      session: The nox session object.
+      check: If True, checks formatting and fails if any file requires
+        formatting, but doesn't apply any changes. If False, applies formatting
+        fixes.
+    """
+    black_command = ["black"]
+    if check:
+        black_command.append("--check")
+
+    black_command.extend(
+        [
+            "-l",
+            "80",
+            "--exclude",
+            r"/(v[0-9]+|\.eggs|\.git|_cache|\.nox|\.tox|\.venv|env|venv|\.svn|_build|buck-out|build|dist)/",
+            ".",
+        ]
+    )
+
+    session.run(*black_command)
+
+
+@nox.session(venv_backend="none")
+def lint(session):
+    """Fails if the code is not formatted correctly."""
+    _format(session, check=True)
+
+
 @nox.session(venv_backend="none")
 def format(session):
     """Runs the black formatter and applies formatting fixes."""
-    session.run(
-        "black",
-        "-l",
-        "80",
-        "--exclude",
-        r"/(v[0-9]+|\.eggs|\.git|_cache|\.nox|\.tox|\.venv|env|venv|\.svn|_build|buck-out|build|dist)/",
-        ".",
-    )
+    _format(session)
 
 
 @nox.session(python=PYTHON_VERSIONS)

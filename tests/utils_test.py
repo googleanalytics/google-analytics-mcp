@@ -31,7 +31,7 @@ class TestUtils(unittest.TestCase):
         )
         self.assertEqual(
             utils.construct_property_rn("12345"),
-            "properties/12345",
+            "properties/12345xxx",
             "Numeric property ID as string should be considered valid",
         )
         self.assertEqual(

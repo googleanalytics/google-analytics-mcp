@@ -125,8 +125,6 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
           "command": "pipx",
           "args": [
             "run",
-            "--spec",
-            "git+https://github.com/googleanalytics/google-analytics-mcp.git",
             "analytics-mcp"
           ],
           "env": {

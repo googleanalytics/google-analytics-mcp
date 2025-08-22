@@ -1,9 +1,10 @@
 [project]
 name = "analytics-mcp"
-version = "0.1.0"
+description = "MCP server for Google Analytics"
+version = "0.1.1"
 # Lower bound of 3.10 due to the 'mcp' dependency:
 # https://github.com/modelcontextprotocol/python-sdk/blob/main/pyproject.toml
-requires-python = ">=3.10, <3.14"
+requires-python = ">=3.10"
 license = "Apache-2.0"
 readme = "README.md"
 dependencies = [
@@ -13,6 +14,35 @@ dependencies = [
     "mcp[cli]>=1.2.0",
     "httpx>=0.28.1"
 ]
+keywords = [
+    "google analytics",
+    "analytics",
+    "mcp",
+    "ga4"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Topic :: Internet",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis"
+]
+authors = [
+    { name = "Josh Radcliff", email = "jradcliff@users.noreply.github.com" },
+    { name = "Matt Landers", email = "matt-landers@users.noreply.github.com" }
+]
+
+[project.urls]
+homepage = "https://github.com/googleanalytics/google-analytics-mcp"
+repository = "https://github.com/googleanalytics/google-analytics-mcp.git"
+issues = "https://github.com/googleanalytics/google-analytics-mcp/issues"
 
 [project.scripts]
 analytics-mcp = "analytics_mcp.server:run_server"
@@ -25,3 +55,6 @@ dev = [
     "nox >=2025.5.1, <2026"
 ]
 
+[build-system]
+requires = ["setuptools>=69.0.0", "wheel"]
+build-backend = "setuptools.build_meta"

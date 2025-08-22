@@ -127,7 +127,7 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
             "run",
             "--spec",
             "git+https://github.com/googleanalytics/google-analytics-mcp.git",
-            "google-analytics-mcp"
+            "analytics-mcp"
           ],
           "env": {
             "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_CREDENTIALS_JSON",

@@ -29,7 +29,7 @@ def _get_package_version_with_fallback():
     Falls back to 'unknown' if the version can't be resolved.
     """
     try:
-        return metadata.version("google-analytics-mcp")
+        return metadata.version("analytics-mcp")
     except:
         return "unknown"
 

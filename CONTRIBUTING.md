@@ -65,7 +65,7 @@ Replace `PATH_TO_REPO` in the following snippet with the path where you cloned
 the repo:
 
 ```
-      "command": "PATH_TO_REPO/.venv/bin/google-analytics-mcp",
+      "command": "PATH_TO_REPO/.venv/bin/analytics-mcp",
 ```
 
 When running the `gemini` command from a terminal, add the `--debug` option so
@@ -90,7 +90,7 @@ branch named `awesome-feature-42` in this repo:
         "--no-cache",
         "--spec",
         "git+https://github.com/googleanalytics/google-analytics-mcp.git@awesome-feature-42",
-        "google-analytics-mcp"
+        "analytics-mcp"
       ],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_CREDENTIALS_JSON",

@@ -92,6 +92,14 @@ Here are some sample `gcloud` commands you might find useful:
     --scopes=https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform
   ```
 
+When the `gcloud auth application-default` command completes, copy the
+`PATH_TO_CREDENTIALS_JSON` file location printed to the console in the
+following message. You'll need this for the next step!
+
+```
+Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
+```
+
 ### Configure Gemini
 
 1.  Install [Gemini
@@ -102,31 +110,8 @@ Here are some sample `gcloud` commands you might find useful:
 1.  Create or edit the file at `~/.gemini/settings.json`, adding your server
     to the `mcpServers` list.
 
-    ```json
-    {
-      "mcpServers": {
-        "analytics-mcp": {
-          "command": "pipx",
-          "args": [
-            "run",
-            "--spec",
-            "git+https://github.com/googleanalytics/google-analytics-mcp.git",
-            "google-analytics-mcp"
-          ]
-        }
-      }
-    }
-    ```
-
-1.  **Optional:** Configure the `GOOGLE_APPLICATION_CREDENTIALS` environment
-    variable in Gemini settings. You may want to do this if you always want to
-    use a specific set of credentials, regardless of which Application Default
-    Credentials are selected in your current environment.
-
-    In `~/.gemini/settings.json`, add a `GOOGLE_APPLICATION_CREDENTIALS`
-    attribute to the `env` object. Replace `PATH_TO_ADC_JSON` in the following
-    example with the full path to the ADC JSON file you always want to use for
-    your MCP server.
+    Replace `PATH_TO_CREDENTIALS_JSON` with the path you copied in the previous
+    step.
 
     We also recommend that you add a `GOOGLE_CLOUD_PROJECT` attribute to the
     `env` object. Replace `YOUR_PROJECT_ID` in the following example with the
@@ -145,8 +130,8 @@ Here are some sample `gcloud` commands you might find useful:
             "google-analytics-mcp"
           ],
           "env": {
-            "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_ADC_JSON",
-            "GOOGLE_CLOUD_PROJECT": "YOUR_PROJECT_ID"
+            "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_CREDENTIALS_JSON",
+            "GOOGLE_PROJECT_ID": "YOUR_PROJECT_ID"
           }
         }
       }

@@ -91,7 +91,11 @@ branch named `awesome-feature-42` in this repo:
         "--spec",
         "git+https://github.com/googleanalytics/google-analytics-mcp.git@awesome-feature-42",
         "google-analytics-mcp"
-      ]
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_CREDENTIALS_JSON",
+        "GOOGLE_PROJECT_ID": "YOUR_PROJECT_ID"
+      }
     }
   }
 }

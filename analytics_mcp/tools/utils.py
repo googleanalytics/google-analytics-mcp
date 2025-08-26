@@ -16,10 +16,12 @@
 
 from typing import Any, Dict
 
-from google.analytics import admin_v1beta, data_v1beta
+from google.analytics import admin_v1beta, data_v1beta, data_v1alpha
 from google.api_core.gapic_v1.client_info import ClientInfo
 from importlib import metadata
 import google.auth
+from google.oauth2.credentials import Credentials as OAuth2Credentials
+from google.auth.credentials import Credentials
 import proto
 
 
@@ -43,7 +45,6 @@ _CLIENT_INFO = ClientInfo(
 _READ_ONLY_ANALYTICS_SCOPE = (
     "https://www.googleapis.com/auth/analytics.readonly"
 )
-
 
 def _create_credentials() -> google.auth.credentials.Credentials:
     """Returns Application Default Credentials with read-only scope."""
@@ -69,6 +70,16 @@ def create_data_api_client() -> data_v1beta.BetaAnalyticsDataAsyncClient:
     return data_v1beta.BetaAnalyticsDataAsyncClient(
         client_info=_CLIENT_INFO, credentials=_create_credentials()
     )
+
+
+def create_data_api_alpha_client() -> data_v1alpha.AlphaAnalyticsDataAsyncClient:
+    """Returns a properly configured Google Analytics Data API (Alpha) async client.
+
+    Uses Application Default Credentials with read-only scope.
+    """ 
+    return data_v1alpha.AlphaAnalyticsDataAsyncClient(
+        client_info=_CLIENT_INFO, credentials=_create_credentials()
+    )   
 
 
 def construct_property_rn(property_value: int | str) -> str:

@@ -174,15 +174,6 @@ def _run_funnel_report_description() -> str:
           Common next action dimensions include:
           - `eventName` - Next events users trigger
           - `pagePath` - Next pages users visit
-
-          ### Important Notes
-
-          - The runFunnelReport method is currently in **alpha** status and may change
-          - Funnel reports require at least 2 steps to be meaningful
-          - Use `return_property_quota: true` to monitor your API usage
-          - For complex filtering, prefer `filter_expression` over simple `event` filters
-          - Date ranges support relative dates like "7daysAgo", "today", "yesterday"
-
           """
 
 
@@ -288,11 +279,8 @@ async def run_funnel_report(
     segments: List[Dict[str, Any]] = None,
     return_property_quota: bool = False,
 ) -> Dict[str, Any]:
-    """Run a Google Analytics Data API funnel report using the v1alpha API.
-    
-    The runFunnelReport method is currently in alpha and allows you to create
-    funnel reports showing how users progress through a sequence of steps.
-    
+    """Run a Google Analytics Data API funnel report.
+
     Args:
         property_id: The Google Analytics property ID. Accepted formats are:
           - A number
@@ -323,9 +311,9 @@ async def run_funnel_report(
                   "event": "sign_up"
               }
           ]
-        date_ranges: A list of date ranges. If not provided, defaults to last 30 days.
-          Each date range should have 'start_date' and 'end_date' keys.
-          Example: [{"start_date": "2024-01-01", "end_date": "2024-01-31"}]
+        date_ranges: A list of date ranges
+          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/DateRange)
+          to include in the report.
         funnel_breakdown: Optional breakdown dimension to segment the funnel.
           This creates separate funnel results for each value of the dimension.
           Example: {"breakdown_dimension": "deviceCategory"}

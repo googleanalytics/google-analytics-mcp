@@ -12,15 +12,17 @@ try:
     # Import and run the server with explicit config path
     from analytics_mcp.server import run_server
     
-    # Default config path
-    default_config = os.path.join(project_root, 'google-analytics-config (4).json')
+    # Config path is required as command line argument
+    if len(sys.argv) < 2:
+        print(f"Error: Config file path is required", file=sys.stderr)
+        print(f"Usage: {sys.argv[0]} <config_path>", file=sys.stderr)
+        sys.exit(1)
     
-    # Use command line arg if provided, otherwise use default
-    config_path = sys.argv[1] if len(sys.argv) > 1 else default_config
+    config_path = sys.argv[1]
     
     if not os.path.exists(config_path):
         print(f"Error: Config file not found: {config_path}", file=sys.stderr)
-        print(f"Usage: {sys.argv[0]} [config_path]", file=sys.stderr)
+        print(f"Usage: {sys.argv[0]} <config_path>", file=sys.stderr)
         sys.exit(1)
     
     print(f"Starting MCP server with config: {config_path}", file=sys.stderr)

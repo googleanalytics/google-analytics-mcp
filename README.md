@@ -1,5 +1,7 @@
 # Google Analytics MCP Server (Experimental)
 
+> **Note**: This is a fork modified to work with OAuth2 Access Tokens + Refresh Tokens instead of Application Default Credentials for easier integration and token management.
+
 [![PyPI version](https://img.shields.io/pypi/v/analytics-mcp.svg)](https://pypi.org/project/analytics-mcp/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![GitHub branch check runs](https://img.shields.io/github/check-runs/googleanalytics/google-analytics-mcp/main)](https://github.com/googleanalytics/google-analytics-mcp/actions?query=branch%3Amain++)
@@ -66,65 +68,93 @@ to enable the following APIs in your Google Cloud project:
 
 ### Configure credentials 🔑
 
-Configure your [Application Default Credentials
-(ADC)](https://cloud.google.com/docs/authentication/provide-credentials-adc).
-Make sure the credentials are for a user with access to your Google Analytics
-accounts or properties.
+This server uses OAuth2 credentials with access and refresh tokens instead of Application Default Credentials (ADC). You'll need to create a configuration file with your OAuth credentials and tokens.
 
-Credentials must include the Google Analytics read-only scope:
+#### Option 1: Using OAuth2 Config File (Recommended)
 
-```
-https://www.googleapis.com/auth/analytics.readonly
-```
+Create a JSON configuration file with your OAuth credentials and tokens:
 
-Check out
-[Manage OAuth Clients](https://support.google.com/cloud/answer/15549257)
-for how to create an OAuth client.
-
-Here are some sample `gcloud` commands you might find useful:
-
-- Set up ADC using user credentials and an OAuth desktop or web client after
-  downloading the client JSON to `YOUR_CLIENT_JSON_FILE`.
-
-  ```shell
-  gcloud auth application-default login \
-    --scopes https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform \
-    --client-id-file=YOUR_CLIENT_JSON_FILE
-  ```
-
-- Set up ADC using service account impersonation.
-
-  ```shell
-  gcloud auth application-default login \
-    --impersonate-service-account=SERVICE_ACCOUNT_EMAIL \
-    --scopes=https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform
-  ```
-
-When the `gcloud auth application-default` command completes, copy the
-`PATH_TO_CREDENTIALS_JSON` file location printed to the console in the
-following message. You'll need this for the next step!
-
-```
-Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
+```json
+{
+  "googleOAuthCredentials": {
+    "clientId": "YOUR_CLIENT_ID.apps.googleusercontent.com",
+    "clientSecret": "YOUR_CLIENT_SECRET",
+    "redirectUri": "http://localhost:3000/api/integration/google/callback"
+  },
+  "googleAnalyticsTokens": {
+    "accessToken": "YOUR_ACCESS_TOKEN",
+    "refreshToken": "YOUR_REFRESH_TOKEN",
+    "expiresAt": 1756420934
+  }
+}
 ```
 
-### Configure Gemini
+To obtain OAuth credentials:
 
-1.  Install [Gemini
-    CLI](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/index.md)
-    or [Gemini Code
-    Assist](https://marketplace.visualstudio.com/items?itemName=Google.geminicodeassist).
+1. [Create OAuth credentials](https://support.google.com/cloud/answer/15549257) in the Google Cloud Console
+2. Download the client configuration JSON file
+3. Use the OAuth flow to obtain access and refresh tokens with the Google Analytics read-only scope:
+   ```
+   https://www.googleapis.com/auth/analytics.readonly
+   ```
 
-1.  Create or edit the file at `~/.gemini/settings.json`, adding your server
-    to the `mcpServers` list.
+#### Option 2: Fallback to Application Default Credentials
 
-    Replace `PATH_TO_CREDENTIALS_JSON` with the path you copied in the previous
-    step.
+If no config file is provided, the server will fallback to [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/provide-credentials-adc).
 
-    We also recommend that you add a `GOOGLE_CLOUD_PROJECT` attribute to the
-    `env` object. Replace `YOUR_PROJECT_ID` in the following example with the
-    [project ID](https://support.google.com/googleapi/answer/7014113) of your
-    Google Cloud project.
+```shell
+gcloud auth application-default login \
+  --scopes https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform \
+  --client-id-file=YOUR_CLIENT_JSON_FILE
+```
+
+### Configure Claude Desktop
+
+1.  Install Claude Desktop or use Claude Code.
+
+2.  Create or edit the Claude Desktop configuration file at `~/.config/claude/claude_desktop_config.json` (Linux/Mac) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows).
+
+3.  Add the analytics-mcp server to the `mcpServers` list:
+
+    **For OAuth2 Config File (Recommended):**
+    ```json
+    {
+      "mcpServers": {
+        "analytics-mcp": {
+          "command": "python",
+          "args": [
+            "-m", "analytics_mcp.server",
+            "/path/to/your/google-analytics-config.json"
+          ]
+        }
+      }
+    }
+    ```
+
+    **For Direct Python Execution:**
+    ```json
+    {
+      "mcpServers": {
+        "analytics-mcp": {
+          "command": "/path/to/python",
+          "args": [
+            "/path/to/analytics-mcp/run_mcp_server.py",
+            "/path/to/your/google-analytics-config.json"
+          ]
+        }
+      }
+    }
+    ```
+
+    Replace `/path/to/your/google-analytics-config.json` with the full path to your OAuth configuration file.
+
+### Configure Gemini (Alternative)
+
+For Gemini CLI users:
+
+1.  Install [Gemini CLI](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/index.md) or [Gemini Code Assist](https://marketplace.visualstudio.com/items?itemName=Google.geminicodeassist).
+
+2.  Create or edit the file at `~/.gemini/settings.json`:
 
     ```json
     {
@@ -133,21 +163,34 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
           "command": "pipx",
           "args": [
             "run",
-            "analytics-mcp"
-          ],
-          "env": {
-            "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_CREDENTIALS_JSON",
-            "GOOGLE_PROJECT_ID": "YOUR_PROJECT_ID"
-          }
+            "analytics-mcp",
+            "/path/to/your/google-analytics-config.json"
+          ]
         }
       }
     }
     ```
 
+## Installation 📦
+
+### Install from PyPI (Recommended)
+
+```bash
+pip install analytics-mcp
+```
+
+### Install from source
+
+```bash
+git clone https://github.com/googleanalytics/google-analytics-mcp.git
+cd google-analytics-mcp
+pip install -r requirements.txt
+pip install -e .
+```
+
 ## Try it out 🥼
 
-Launch Gemini Code Assist or Gemini CLI and type `/mcp`. You should see
-`analytics-mcp` listed in the results.
+Launch Claude Desktop or Gemini and the server should automatically connect. For Claude Desktop, you can verify the connection in the MCP settings.
 
 Here are some sample prompts to get you started:
 

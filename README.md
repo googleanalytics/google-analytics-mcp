@@ -121,6 +121,13 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
     Replace `PATH_TO_CREDENTIALS_JSON` with the path you copied in the previous
     step.
 
+    It's also possible to use an
+    [OAuth 2.0 access token](https://developers.google.com/identity/protocols/oauth2)
+    to authorize the MCP server, by replacing the `GOOGLE_APPLICATION_CREDENTIALS`
+    attribute with the `GOOGLE_ACCESS_TOKEN` attribute in the `env` object.
+    For it's value, use a valid OAuth 2.0 access token with the
+    `https://www.googleapis.com/auth/analytics.readonly` scope.
+
     We also recommend that you add a `GOOGLE_CLOUD_PROJECT` attribute to the
     `env` object. Replace `YOUR_PROJECT_ID` in the following example with the
     [project ID](https://support.google.com/googleapi/answer/7014113) of your

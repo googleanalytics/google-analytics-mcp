@@ -14,11 +14,13 @@
 
 """Common utilities used by the MCP server."""
 
+import os
 from typing import Any, Dict
 
 from google.analytics import admin_v1beta, data_v1beta
 from google.api_core.gapic_v1.client_info import ClientInfo
 from importlib import metadata
+import google.oauth2.credentials
 import google.auth
 import proto
 
@@ -44,9 +46,16 @@ _READ_ONLY_ANALYTICS_SCOPE = (
     "https://www.googleapis.com/auth/analytics.readonly"
 )
 
+# Pre-obtained access token to use instead of ADC, if set.
+_ACCESS_TOKEN = os.environ.get("GOOGLE_ACCESS_TOKEN")
 
-def _create_credentials() -> google.auth.credentials.Credentials:
-    """Returns Application Default Credentials with read-only scope."""
+
+def _create_credentials() -> (
+    google.oauth2.credentials.Credentials | google.auth.credentials.Credentials
+):
+    """Returns credentials from access token, if set, otherwise Application Default Credentials with read-only scope."""
+    if _ACCESS_TOKEN:
+        return google.oauth2.credentials.Credentials(_ACCESS_TOKEN)
     (credentials, _) = google.auth.default(scopes=[_READ_ONLY_ANALYTICS_SCOPE])
     return credentials
 

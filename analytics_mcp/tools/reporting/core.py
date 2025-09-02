@@ -14,7 +14,7 @@
 
 """Tools for running core reports using the Data API."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from analytics_mcp.coordinator import mcp
 from analytics_mcp.tools.reporting.metadata import (

@@ -20,8 +20,6 @@ from google.analytics import admin_v1beta, data_v1beta, data_v1alpha
 from google.api_core.gapic_v1.client_info import ClientInfo
 from importlib import metadata
 import google.auth
-from google.oauth2.credentials import Credentials as OAuth2Credentials
-from google.auth.credentials import Credentials
 import proto
 
 

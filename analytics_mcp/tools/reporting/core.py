@@ -270,6 +270,7 @@ async def run_report(
 
     return proto_to_dict(response)
 
+
 async def run_funnel_report(
     property_id: int | str,
     funnel_steps: List[Dict[str, Any]],
@@ -290,7 +291,7 @@ async def run_funnel_report(
           - 'name': (str) Display name for the step
           - 'filter_expression': (Dict) Complete filter expression for the step
           OR for simple event-based steps:
-          - 'name': (str) Display name for the step  
+          - 'name': (str) Display name for the step
           - 'event': (str) Event name to filter on
           Example:
           [
@@ -322,17 +323,17 @@ async def run_funnel_report(
           Example: {"next_action_dimension": "eventName", "limit": 5}
         segments: Optional list of segments to apply to the funnel.
         return_property_quota: Whether to return current property quota information.
-        
+
     Returns:
         Dict containing the funnel report response with funnel results including:
         - funnel_table: Table showing progression through funnel steps
         - funnel_visualization: Data for visualizing the funnel
         - property_quota: (if requested) Current quota usage information
-        
+
     Raises:
         ValueError: If funnel_steps is empty or contains invalid configurations
         Exception: If the API request fails
-        
+
     Example:
         # Simple event-based funnel
         result = await run_funnel_report(
@@ -343,7 +344,7 @@ async def run_funnel_report(
                 {"name": "Purchase", "event": "purchase"}
             ]
         )
-        
+
         # Advanced funnel with page path filtering
         result = await run_funnel_report(
             property_id="123456789",
@@ -375,109 +376,65 @@ async def run_funnel_report(
             date_ranges=[{"start_date": "7daysAgo", "end_date": "today"}]
         )
     """
-    # Validate inputs
-    if not funnel_steps:
-        raise ValueError("funnel_steps cannot be empty")
-    
-    if len(funnel_steps) < 2:
-        raise ValueError("funnel_steps must contain at least 2 steps")
-    
-    # Set default date range if not provided
-    if not date_ranges:
-        date_ranges = [{"start_date": "30daysAgo", "end_date": "today"}]
-    
-    # Validate and create funnel steps
+
     steps = []
     for i, step in enumerate(funnel_steps):
         if not isinstance(step, dict):
             raise ValueError(f"Step {i+1} must be a dictionary")
-        
-        step_name = step.get('name', f'Step {i+1}')
-        
-        # Build filter expression
-        if 'filter_expression' in step:
-            # Use provided filter expression
-            filter_expr = data_v1alpha.FunnelFilterExpression(step['filter_expression'])
-        elif 'event' in step:
-            # Simple event-based filter
+
+        step_name = step.get("name", f"Step {i+1}")
+
+        if "filter_expression" in step:
+            filter_expr = data_v1alpha.FunnelFilterExpression(
+                step["filter_expression"]
+            )
+        elif "event" in step:
             filter_expr = data_v1alpha.FunnelFilterExpression(
                 funnel_event_filter=data_v1alpha.FunnelEventFilter(
-                    event_name=step['event']
+                    event_name=step["event"]
                 )
             )
         else:
             raise ValueError(
                 f"Step {i+1} must contain either 'filter_expression' or 'event' key"
             )
-        
+
         funnel_step = data_v1alpha.FunnelStep(
-            name=step_name,
-            filter_expression=filter_expr
+            name=step_name, filter_expression=filter_expr
         )
         steps.append(funnel_step)
-    
-    # Create the funnel configuration
-    funnel_config = data_v1alpha.Funnel(steps=steps)
 
-    # Create date ranges
-    date_range_objects = []
-    for dr in date_ranges:
-        if not isinstance(dr, dict) or 'start_date' not in dr or 'end_date' not in dr:
-            raise ValueError(
-                "Each date range must be a dictionary with 'start_date' and 'end_date' keys"
-            )
-        date_range_objects.append(
-            data_v1alpha.DateRange(start_date=dr['start_date'], end_date=dr['end_date'])
-        )
-
-    # Create the request
     request = data_v1alpha.RunFunnelReportRequest(
         property=construct_property_rn(property_id),
-        funnel=funnel_config,
-        date_ranges=date_range_objects,
-        return_property_quota=return_property_quota
+        funnel=data_v1alpha.Funnel(steps=steps),
+        date_ranges=[data_v1alpha.DateRange(dr) for dr in date_ranges],
+        return_property_quota=return_property_quota,
     )
-    
-    # Add breakdown if specified (this goes on the request, not the funnel)
-    if funnel_breakdown and 'breakdown_dimension' in funnel_breakdown:
+
+    if funnel_breakdown and "breakdown_dimension" in funnel_breakdown:
         request.funnel_breakdown = data_v1alpha.FunnelBreakdown(
             breakdown_dimension=data_v1alpha.Dimension(
-                name=funnel_breakdown['breakdown_dimension']
+                name=funnel_breakdown["breakdown_dimension"]
             )
         )
-    
-    # Add next action if specified (this also goes on the request, not the funnel)
-    if funnel_next_action and 'next_action_dimension' in funnel_next_action:
+
+    if funnel_next_action and "next_action_dimension" in funnel_next_action:
         next_action_config = data_v1alpha.FunnelNextAction(
             next_action_dimension=data_v1alpha.Dimension(
-                name=funnel_next_action['next_action_dimension']
+                name=funnel_next_action["next_action_dimension"]
             )
         )
-        if 'limit' in funnel_next_action:
-            next_action_config.limit = funnel_next_action['limit']
+        if "limit" in funnel_next_action:
+            next_action_config.limit = funnel_next_action["limit"]
         request.funnel_next_action = next_action_config
-    
-    # Add segments if provided
+
     if segments:
-        request.segments = [data_v1alpha.Segment(segment) for segment in segments]
-    
-    # Execute the request with enhanced error handling
-    try:
-        client = create_data_api_alpha_client()
-        response = await client.run_funnel_report(request=request)
-        return proto_to_dict(response)
-    except Exception as e:
-        error_msg = str(e)
-        if "INVALID_ARGUMENT" in error_msg:
-            raise ValueError(f"Invalid funnel configuration: {error_msg}")
-        elif "PERMISSION_DENIED" in error_msg:
-            raise PermissionError(f"Permission denied accessing property: {error_msg}")
-        elif "NOT_FOUND" in error_msg:
-            raise ValueError(f"Property not found: {error_msg}")
-        elif "QUOTA_EXCEEDED" in error_msg:
-            raise RuntimeError(f"API quota exceeded: {error_msg}")
-        else:
-            raise Exception(f"Failed to run funnel report: {error_msg}")
+        request.segments = [
+            data_v1alpha.Segment(segment) for segment in segments
+        ]
+
+    response = await create_data_api_alpha_client().run_funnel_report(request)
+    return proto_to_dict(response)
 
 
 # The `run_report` tool requires a more complex description that's generated at

@@ -46,6 +46,7 @@ _READ_ONLY_ANALYTICS_SCOPE = (
     "https://www.googleapis.com/auth/analytics.readonly"
 )
 
+
 def _create_credentials() -> google.auth.credentials.Credentials:
     """Returns Application Default Credentials with read-only scope."""
     (credentials, _) = google.auth.default(scopes=[_READ_ONLY_ANALYTICS_SCOPE])
@@ -72,14 +73,16 @@ def create_data_api_client() -> data_v1beta.BetaAnalyticsDataAsyncClient:
     )
 
 
-def create_data_api_alpha_client() -> data_v1alpha.AlphaAnalyticsDataAsyncClient:
+def create_data_api_alpha_client() -> (
+    data_v1alpha.AlphaAnalyticsDataAsyncClient
+):
     """Returns a properly configured Google Analytics Data API (Alpha) async client.
 
     Uses Application Default Credentials with read-only scope.
-    """ 
+    """
     return data_v1alpha.AlphaAnalyticsDataAsyncClient(
         client_info=_CLIENT_INFO, credentials=_create_credentials()
-    )   
+    )
 
 
 def construct_property_rn(property_value: int | str) -> str:

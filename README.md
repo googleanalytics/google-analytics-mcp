@@ -50,6 +50,8 @@ to provide several
 Tutorial](https://youtu.be/nS8HLdwmVlY) on YouTube for a step-by-step
 walkthrough of these instructions.
 
+[![Watch the video](https://img.youtube.com/vi/nS8HLdwmVlY/mqdefault.jpg)](https://www.youtube.com/watch?v=nS8HLdwmVlY)
+
 Setup involves the following steps:
 
 1.  Configure Python.

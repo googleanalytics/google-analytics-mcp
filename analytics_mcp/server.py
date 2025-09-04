@@ -38,7 +38,8 @@ def run_server(config_path: str = None) -> None:
     """Runs the server.
 
     Args:
-        config_path: Path to the Google Analytics configuration file.
+        config_path: Optional path to the Google Analytics OAuth configuration file.
+                    If not provided, will use Application Default Credentials.
     
     Serves as the entrypoint for the 'runmcp' command.
     """
@@ -52,15 +53,17 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config", 
         type=str, 
-        help="Path to Google Analytics configuration file",
+        help="Path to Google Analytics OAuth configuration file (optional, uses ADC if not provided)",
         default=os.environ.get('GOOGLE_ANALYTICS_CONFIG_PATH')
     )
     
     args = parser.parse_args()
     
-    if not args.config:
-        print("Error: Config file path required. Use --config or set GOOGLE_ANALYTICS_CONFIG_PATH", file=sys.stderr)
-        sys.exit(1)
+    # Config is optional - if not provided, will use Application Default Credentials
+    if args.config:
+        print(f"Using OAuth config file: {args.config}", file=sys.stderr)
+    else:
+        print("No config file provided, will use Application Default Credentials", file=sys.stderr)
     
     try:
         run_server(args.config)

@@ -1,6 +1,5 @@
 # Google Analytics MCP Server (Experimental)
 
-> **Note**: This is a fork modified to work with OAuth2 Access Tokens + Refresh Tokens instead of Application Default Credentials for easier integration and token management.
 
 [![PyPI version](https://img.shields.io/pypi/v/analytics-mcp.svg)](https://pypi.org/project/analytics-mcp/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -68,9 +67,11 @@ to enable the following APIs in your Google Cloud project:
 
 ### Configure credentials 🔑
 
-This server uses OAuth2 credentials with access and refresh tokens instead of Application Default Credentials (ADC). You'll need to create a configuration file with your OAuth credentials and tokens.
+This server supports two authentication methods:
 
-#### Option 1: Using OAuth2 Config File (Recommended)
+#### Option 1: OAuth2 with Access/Refresh Tokens (Recommended for integrations)
+
+This method is ideal for applications that need programmatic access without user interaction. You'll need to create a configuration file with your OAuth credentials and tokens.
 
 Create a JSON configuration file with your OAuth credentials and tokens:
 
@@ -98,9 +99,11 @@ To obtain OAuth credentials:
    https://www.googleapis.com/auth/analytics.readonly
    ```
 
-#### Option 2: Fallback to Application Default Credentials
+#### Option 2: Application Default Credentials (ADC)
 
-If no config file is provided, the server will fallback to [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/provide-credentials-adc).
+This is the standard Google Cloud authentication method. If no OAuth config file is provided, the server will automatically use [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/provide-credentials-adc).
+
+To set up ADC:
 
 ```shell
 gcloud auth application-default login \
@@ -116,7 +119,7 @@ gcloud auth application-default login \
 
 3.  Add the analytics-mcp server to the `mcpServers` list:
 
-    **For OAuth2 Config File (Recommended):**
+    **With OAuth2 Config File:**
     ```json
     {
       "mcpServers": {
@@ -124,29 +127,24 @@ gcloud auth application-default login \
           "command": "python",
           "args": [
             "-m", "analytics_mcp.server",
-            "/path/to/your/google-analytics-config.json"
+            "--config", "/path/to/your/google-analytics-config.json"
           ]
         }
       }
     }
     ```
 
-    **For Direct Python Execution:**
+    **With Application Default Credentials:**
     ```json
     {
       "mcpServers": {
         "analytics-mcp": {
-          "command": "/path/to/python",
-          "args": [
-            "/path/to/analytics-mcp/run_mcp_server.py",
-            "/path/to/your/google-analytics-config.json"
-          ]
+          "command": "python",
+          "args": ["-m", "analytics_mcp.server"]
         }
       }
     }
     ```
-
-    Replace `/path/to/your/google-analytics-config.json` with the full path to your OAuth configuration file.
 
 ### Configure Gemini (Alternative)
 
@@ -156,6 +154,7 @@ For Gemini CLI users:
 
 2.  Create or edit the file at `~/.gemini/settings.json`:
 
+    **With OAuth2 Config File:**
     ```json
     {
       "mcpServers": {
@@ -164,8 +163,20 @@ For Gemini CLI users:
           "args": [
             "run",
             "analytics-mcp",
-            "/path/to/your/google-analytics-config.json"
+            "--config", "/path/to/your/google-analytics-config.json"
           ]
+        }
+      }
+    }
+    ```
+
+    **With Application Default Credentials:**
+    ```json
+    {
+      "mcpServers": {
+        "analytics-mcp": {
+          "command": "pipx",
+          "args": ["run", "analytics-mcp"]
         }
       }
     }

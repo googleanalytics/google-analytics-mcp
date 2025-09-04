@@ -1,0 +1,12 @@
+{
+  "googleOAuthCredentials": {
+    "clientId": "YOUR_CLIENT_ID.apps.googleusercontent.com",
+    "clientSecret": "YOUR_CLIENT_SECRET",
+    "redirectUri": "http://localhost:3000/api/integration/google/callback"
+  },
+  "googleAnalyticsTokens": {
+    "accessToken": "YOUR_ACCESS_TOKEN",
+    "refreshToken": "YOUR_REFRESH_TOKEN",
+    "expiresAt": 1756420934
+  }
+}

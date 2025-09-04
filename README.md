@@ -46,7 +46,7 @@ to provide several
 
 ## Setup instructions 🔧
 
-**Tip:** Watch the [Google Analytics MCP Setup
+✨ Watch the [Google Analytics MCP Setup
 Tutorial](https://youtu.be/nS8HLdwmVlY) on YouTube for a step-by-step
 walkthrough of these instructions.
 

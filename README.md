@@ -46,6 +46,10 @@ to provide several
 
 ## Setup instructions 🔧
 
+**Tip:** Watch the [Google Analytics MCP Setup
+Tutorial](https://youtu.be/nS8HLdwmVlY) on YouTube for a step-by-step
+walkthrough of these instructions.
+
 Setup involves the following steps:
 
 1.  Configure Python.

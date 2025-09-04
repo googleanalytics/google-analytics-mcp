@@ -181,6 +181,34 @@ Here are some sample prompts to get you started:
   what are the custom dimensions and custom metrics in my property?
   ```
 
+## Running with Docker 🐳
+
+This project includes a `Dockerfile` that can be used to run the server in a
+container.
+
+### Build the image
+
+From the root of the repository, run the following command to build the Docker
+image:
+
+```shell
+docker build -t analytics-mcp .
+```
+
+### Run the container
+
+To run the server in a Docker container, you will need to provide your
+Application Default Credentials (ADC) to the container. You can do this by
+mounting the directory containing your `gcloud` configuration to the container.
+
+```shell
+docker run -p 8080:8080 \
+  -v ~/.config/gcloud:/root/.config/gcloud \
+  analytics-mcp
+```
+
+The server will be available at `http://localhost:8080`.
+
 ## Contributing ✨
 
 Contributions welcome! See the [Contributing Guide](CONTRIBUTING.md).

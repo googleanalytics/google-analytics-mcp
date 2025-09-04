@@ -16,6 +16,7 @@
 
 """Entry point for the Google Analytics MCP server."""
 
+import os
 from analytics_mcp.coordinator import mcp
 
 # The following imports are necessary to register the tools with the `mcp`
@@ -32,7 +33,11 @@ def run_server() -> None:
 
     Serves as the entrypoint for the 'runmcp' command.
     """
-    mcp.run()
+    # For Cloud Run, the server must listen on 0.0.0.0 and a port specified by
+    # the PORT environment variable.
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "8000"))
+    mcp.run(transport="streamable-http", host=host, port=port)
 
 
 if __name__ == "__main__":

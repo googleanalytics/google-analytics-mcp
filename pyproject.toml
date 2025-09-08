@@ -9,7 +9,7 @@ license = "Apache-2.0"
 readme = "README.md"
 dependencies = [
     "google-analytics-data==0.18.19",
-    "google-analytics-admin==0.24.1",
+    "google-analytics-admin==0.25.0",
     "google-auth~=2.40",
     "mcp[cli]>=1.2.0",
     "httpx>=0.28.1"

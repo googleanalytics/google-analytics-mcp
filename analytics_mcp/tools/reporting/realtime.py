@@ -78,14 +78,13 @@ def _run_realtime_report_description() -> str:
 
 
 async def run_realtime_report(
-    property_id: int | str,
+    property_id: str,
     dimensions: List[str],
     metrics: List[str],
     dimension_filter: Dict[str, Any] = None,
     metric_filter: Dict[str, Any] = None,
     order_bys: List[Dict[str, Any]] = None,
-    limit: int = None,
-    offset: int = None,
+    limit: int = 100,
     return_property_quota: bool = False,
 ) -> Dict[str, Any]:
     """Runs a Google Analytics Data API realtime report.
@@ -95,9 +94,8 @@ async def run_realtime_report(
     for more information.
 
     Args:
-        property_id: The Google Analytics property ID. Accepted formats are:
-          - A number
-          - A string consisting of 'properties/' followed by a number
+        property_id: The Google Analytics property ID as a string (e.g., "213025502").
+          Get property IDs from get_account_summaries().
         dimensions: A list of dimensions to include in the report. Dimensions must be realtime dimensions.
         metrics: A list of metrics to include in the report. Metrics must be realtime metrics.
         dimension_filter: A Data API FilterExpression
@@ -121,23 +119,19 @@ async def run_realtime_report(
           objects to apply to the dimensions and metrics.
           For more information about the expected format of this argument, see
           the `run_report_order_bys_hints` tool.
-        limit: The maximum number of rows to return in each response. Value must
-          be a positive integer <= 250,000. Used to paginate through large
-          reports, following the guide at
-          https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
-        offset: The row count of the start row. The first row is counted as row
-          0. Used to paginate through large
-          reports, following the guide at
-          https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
+        limit: The maximum number of rows to return. Value must be a positive
+          integer <= 100,000. Default is 100. If unspecified by the API, it returns
+          up to 10,000 rows.
         return_property_quota: Whether to return realtime property quota in the response.
     """
+    # Always request quota to check if we're approaching limits
     request = data_v1beta.RunRealtimeReportRequest(
         property=construct_property_rn(property_id),
         dimensions=[
             data_v1beta.Dimension(name=dimension) for dimension in dimensions
         ],
         metrics=[data_v1beta.Metric(name=metric) for metric in metrics],
-        return_property_quota=return_property_quota,
+        return_property_quota=True,
     )
 
     if dimension_filter:
@@ -155,11 +149,56 @@ async def run_realtime_report(
 
     if limit:
         request.limit = limit
-    if offset:
-        request.offset = offset
 
     response = await create_data_api_client().run_realtime_report(request)
-    return proto_to_dict(response)
+    
+    # Compact format - eliminate repetition
+    result = {
+        "row_count": response.row_count,
+        "dimension_headers": [h.name for h in response.dimension_headers],
+        "metric_headers": [h.name for h in response.metric_headers],
+        "rows": [
+            {
+                "dimensions": [dv.value for dv in row.dimension_values],
+                "metrics": [mv.value for mv in row.metric_values]
+            }
+            for row in response.rows
+        ] if response.rows else []
+    }
+    
+    # Include totals/maximums/minimums only if they have data
+    if response.totals:
+        result["totals"] = [proto_to_dict(total) for total in response.totals]
+    if response.maximums:
+        result["maximums"] = [proto_to_dict(maximum) for maximum in response.maximums]
+    if response.minimums:
+        result["minimums"] = [proto_to_dict(minimum) for minimum in response.minimums]
+    
+    # Check quota usage and include if >90% used or explicitly requested
+    if response.property_quota:
+        quota_dict = proto_to_dict(response.property_quota)
+        quota_warning = None
+        
+        # Check if any quota metric is >90% used
+        for quota_name, quota_info in quota_dict.items():
+            if isinstance(quota_info, dict) and "consumed" in quota_info and "remaining" in quota_info:
+                consumed = quota_info.get("consumed", 0)
+                remaining = quota_info.get("remaining", 0)
+                total = consumed + remaining
+                if total > 0 and (consumed / total) > 0.9:
+                    quota_warning = (
+                        f"WARNING: {quota_name} is at {(consumed / total * 100):.1f}% "
+                        f"({consumed}/{total}). Approaching quota limit."
+                    )
+                    break
+        
+        # Include quota if explicitly requested or if usage >90%
+        if return_property_quota or quota_warning:
+            result["quota"] = quota_dict
+            if quota_warning:
+                result["quota_warning"] = quota_warning
+    
+    return result
 
 
 # The `run_realtime_report` tool requires a more complex description that's generated at

@@ -319,30 +319,47 @@ def get_order_bys_hints():
     title="Retrieves the custom Core Reporting dimensions and metrics for a specific property"
 )
 async def get_custom_dimensions_and_metrics(
-    property_id: int | str,
+    property_id: str,
+    include_descriptions: bool = False,
 ) -> Dict[str, List[Dict[str, Any]]]:
     """Returns the property's custom dimensions and metrics.
 
     Args:
-        property_id: The Google Analytics property ID. Accepted formats are:
-          - A number
-          - A string consisting of 'properties/' followed by a number
+        property_id: The Google Analytics property ID as a string (e.g., "213025502").
+          Get property IDs from get_account_summaries().
+        include_descriptions: Whether to include user-written descriptions (default: False).
+          Descriptions can be helpful for understanding custom dimensions/metrics but
+          increase token usage.
 
     """
     metadata = await create_data_api_client().get_metadata(
         name=f"{construct_property_rn(property_id)}/metadata"
     )
+    
     custom_metrics = [
-        proto_to_dict(metric)
+        {
+            "api_name": metric.api_name,
+            "display_name": metric.ui_name,
+            "scope": metric.category,
+            "type": metric.type_.name if metric.type_ else "STANDARD",
+            **({"description": metric.description} if include_descriptions and metric.description else {})
+        }
         for metric in metadata.metrics
         if metric.custom_definition
     ]
+    
     custom_dimensions = [
-        proto_to_dict(dimension)
+        {
+            "api_name": dimension.api_name,
+            "display_name": dimension.ui_name,
+            "scope": dimension.category,
+            **({"description": dimension.description} if include_descriptions and dimension.description else {})
+        }
         for dimension in metadata.dimensions
         if dimension.custom_definition
     ]
+    
     return {
-        "custom_dimensions": custom_dimensions,
-        "custom_metrics": custom_metrics,
+        "dimensions": custom_dimensions,
+        "metrics": custom_metrics,
     }

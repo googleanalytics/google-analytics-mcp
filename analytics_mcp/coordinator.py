@@ -18,59 +18,43 @@ The singleton allows other modules to register their tools with the same MCP
 server using `@mcp.tool` annotations, thereby 'coordinating' the bootstrapping
 of the server.
 """
-import os
-import sys
+import logging
+from typing import Optional
 from mcp.server.fastmcp import FastMCP
 
+logger = logging.getLogger(__name__)
+
 # Global variable to store config path
-_config_path = None
+_config_path: Optional[str] = None
+
 
 def set_config_path(config_path: str):
-    """Set the global config path for the MCP server."""
+    """Set the global config path for the MCP server.
+
+    Args:
+        config_path: Path to OAuth config file
+
+    Raises:
+        FileNotFoundError: If config file doesn't exist
+    """
     global _config_path
-    try:
-        # Test if we can actually read the file (not just check if it exists)
-        with open(config_path, 'r') as f:
-            f.read(1)  # Try to read at least 1 byte
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Config file not found: {config_path}")
-    except PermissionError as e:
-        print(f"Permission denied accessing config file: {config_path}", file=sys.stderr)
-        print(f"Error: {e}", file=sys.stderr)
-        print("", file=sys.stderr)
-        print("SOLUTION: Move your config file to an accessible location:", file=sys.stderr)
-        print(f"  cp '{config_path}' '/Users/{os.environ.get('USER', 'your-username')}/projects/google-analytics-mcp/'", file=sys.stderr)
-        print("Then run the MCP server with the new path:", file=sys.stderr)
-        print(f"  python run_mcp_server.py '/Users/{os.environ.get('USER', 'your-username')}/projects/google-analytics-mcp/{os.path.basename(config_path)}'", file=sys.stderr)
-        print("", file=sys.stderr)
-        print("Alternatively, grant your Terminal app access to the Desktop folder:", file=sys.stderr)
-        print("  System Settings → Privacy & Security → Files and Folders → Terminal → Enable Desktop", file=sys.stderr)
-        raise PermissionError(f"Cannot access config file: {config_path}")
-    except Exception as e:
-        error_msg = str(e).lower()
-        if "operation not permitted" in error_msg or "permission denied" in error_msg:
-            print(f"Permission error accessing config file: {config_path}", file=sys.stderr)
-            print(f"Error: {e}", file=sys.stderr)
-            print("", file=sys.stderr)
-            print("SOLUTION: Move your config file to an accessible location:", file=sys.stderr)
-            print(f"  cp '{config_path}' '/Users/{os.environ.get('USER', 'your-username')}/projects/google-analytics-mcp/'", file=sys.stderr)
-            print("Then run the MCP server with the new path:", file=sys.stderr)
-            print(f"  python run_mcp_server.py '/Users/{os.environ.get('USER', 'your-username')}/projects/google-analytics-mcp/{os.path.basename(config_path)}'", file=sys.stderr)
-            print("", file=sys.stderr)
-            print("Alternatively, grant your Terminal app access to the Desktop folder:", file=sys.stderr)
-            print("  System Settings → Privacy & Security → Files and Folders → Terminal → Enable Desktop", file=sys.stderr)
-            raise PermissionError(f"Cannot access config file: {config_path}")
-        else:
-            raise e
+
+    # Validate file exists and is readable
+    with open(config_path, 'r') as f:
+        f.read(1)  # Try to read at least 1 byte
 
     _config_path = config_path
-    print(f"MCP server using config: {config_path}", file=sys.stderr)
+    logger.info(f"MCP server using config: {config_path}")
 
-def get_config_path() -> str:
-    """Get the global config path for the MCP server."""
-    if _config_path is None:
-        raise RuntimeError("Config path not set. Call set_config_path() first.")
+
+def get_config_path() -> Optional[str]:
+    """Get the global config path for the MCP server.
+
+    Returns:
+        Config file path or None if not set
+    """
     return _config_path
+
 
 # Creates the singleton.
 mcp = FastMCP("Google Analytics Server")

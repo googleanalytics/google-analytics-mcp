@@ -14,13 +14,22 @@
 
 """Common utilities used by the MCP server."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Callable, TypeVar, Awaitable
+import logging
+import sys
 
 from google.analytics import admin_v1beta, data_v1beta
 from google.api_core.gapic_v1.client_info import ClientInfo
+from google.api_core.exceptions import Unauthenticated, Forbidden
 from importlib import metadata
-import google.auth
 import proto
+
+from ..auth import create_credentials, invalidate_cache as invalidate_auth_cache
+
+T = TypeVar('T')
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 def _get_package_version_with_fallback():
@@ -39,36 +48,145 @@ _CLIENT_INFO = ClientInfo(
     user_agent=f"analytics-mcp/{_get_package_version_with_fallback()}"
 )
 
-# Read-only scope for Analytics Admin API and Analytics Data API.
-_READ_ONLY_ANALYTICS_SCOPE = (
-    "https://www.googleapis.com/auth/analytics.readonly"
-)
+# Global client cache
+_cached_admin_client = None
+_cached_data_client = None
 
 
-def _create_credentials() -> google.auth.credentials.Credentials:
-    """Returns Application Default Credentials with read-only scope."""
-    (credentials, _) = google.auth.default(scopes=[_READ_ONLY_ANALYTICS_SCOPE])
-    return credentials
+def invalidate_cached_credentials():
+    """Invalidate cached credentials and clients to force refresh on next request."""
+    global _cached_admin_client, _cached_data_client
+    logger.info("Invalidating cached API clients and credentials")
+    invalidate_auth_cache()
+    _cached_admin_client = None
+    _cached_data_client = None
+
+
+async def retry_on_auth_error(func: Callable[[], Awaitable[T]], max_retries: int = 1) -> T:
+    """Retry a function call if it fails with authentication errors.
+
+    This handles cases where the cached credentials are expired by invalidating
+    the cache and retrying once with fresh credentials.
+
+    Args:
+        func: Async function to call
+        max_retries: Maximum number of retries (default: 1)
+
+    Returns:
+        The result of the function call
+
+    Raises:
+        The original exception if all retries are exhausted
+    """
+    last_exception = None
+
+    for attempt in range(max_retries + 1):
+        try:
+            return await func()
+        except (Unauthenticated, Forbidden) as e:
+            last_exception = e
+            error_msg = str(e).lower()
+            logger.warning(f"Auth error caught: {error_msg[:200]}")
+
+            # Check if it's an authentication/authorization error
+            if any(keyword in error_msg for keyword in [
+                '401', 'unauthorized', 'unauthenticated',
+                'invalid authentication', 'authentication credential',
+                'access token', 'expired', 'refresh'
+            ]):
+                if attempt < max_retries:
+                    logger.info(f"Authentication error detected, refreshing credentials and retrying (attempt {attempt + 1}/{max_retries + 1})")
+                    invalidate_cached_credentials()
+                    continue
+                else:
+                    logger.error(f"Authentication failed after {max_retries + 1} attempts: {e}")
+                    print("💡 Try running: python refresh_and_update_config.py <config_path>", file=sys.stderr)
+
+            # Re-raise if it's not an auth error or we've exhausted retries
+            raise
+        except Exception as e:
+            # For non-auth errors, don't retry
+            logger.debug(f"Non-auth error (not retrying): {type(e).__name__}: {str(e)[:100]}")
+            raise
+
+    # This shouldn't be reached, but just in case
+    if last_exception:
+        raise last_exception
+
+
+def _get_config_path() -> str:
+    """Get the config file path from coordinator."""
+    # Import here to avoid circular imports
+    from ..coordinator import get_config_path
+
+    try:
+        return get_config_path()
+    except RuntimeError:
+        return None
 
 
 def create_admin_api_client() -> admin_v1beta.AnalyticsAdminServiceAsyncClient:
     """Returns a properly configured Google Analytics Admin API async client.
 
-    Uses Application Default Credentials with read-only scope.
+    Automatically handles credential refresh and caching.
     """
-    return admin_v1beta.AnalyticsAdminServiceAsyncClient(
-        client_info=_CLIENT_INFO, credentials=_create_credentials()
-    )
+    global _cached_admin_client
+
+    # Get config path from coordinator
+    config_path = _get_config_path()
+
+    # If cache was invalidated, recreate client with fresh credentials
+    if _cached_admin_client is None:
+        logger.debug("Creating new Admin API client (cache was cleared)")
+        creds = create_credentials(config_path)
+        _cached_admin_client = admin_v1beta.AnalyticsAdminServiceAsyncClient(
+            client_info=_CLIENT_INFO, credentials=creds
+        )
+        return _cached_admin_client
+
+    # Check if cached client's credentials are still valid
+    creds = create_credentials(config_path)
+    if creds.expired:
+        logger.debug("Recreating Admin API client (credentials expired)")
+        _cached_admin_client = admin_v1beta.AnalyticsAdminServiceAsyncClient(
+            client_info=_CLIENT_INFO, credentials=creds
+        )
+    else:
+        logger.debug("Reusing cached Admin API client")
+
+    return _cached_admin_client
 
 
 def create_data_api_client() -> data_v1beta.BetaAnalyticsDataAsyncClient:
     """Returns a properly configured Google Analytics Data API async client.
 
-    Uses Application Default Credentials with read-only scope.
+    Automatically handles credential refresh and caching.
     """
-    return data_v1beta.BetaAnalyticsDataAsyncClient(
-        client_info=_CLIENT_INFO, credentials=_create_credentials()
-    )
+    global _cached_data_client
+
+    # Get config path from coordinator
+    config_path = _get_config_path()
+
+    # If cache was invalidated, recreate client with fresh credentials
+    if _cached_data_client is None:
+        logger.debug("Creating new Data API client (cache was cleared)")
+        creds = create_credentials(config_path)
+        _cached_data_client = data_v1beta.BetaAnalyticsDataAsyncClient(
+            client_info=_CLIENT_INFO, credentials=creds
+        )
+        return _cached_data_client
+
+    # Check if cached client's credentials are still valid
+    creds = create_credentials(config_path)
+    if creds.expired:
+        logger.debug("Recreating Data API client (credentials expired)")
+        _cached_data_client = data_v1beta.BetaAnalyticsDataAsyncClient(
+            client_info=_CLIENT_INFO, credentials=creds
+        )
+    else:
+        logger.debug("Reusing cached Data API client")
+
+    return _cached_data_client
 
 
 def construct_property_rn(property_value: int | str) -> str:

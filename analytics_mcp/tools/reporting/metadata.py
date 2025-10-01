@@ -22,6 +22,7 @@ from analytics_mcp.tools.utils import (
     create_data_api_client,
     proto_to_dict,
     proto_to_json,
+    retry_on_auth_error,
 )
 from google.analytics import data_v1beta
 
@@ -329,9 +330,12 @@ async def get_custom_dimensions_and_metrics(
           - A string consisting of 'properties/' followed by a number
 
     """
-    metadata = await create_data_api_client().get_metadata(
-        name=f"{construct_property_rn(property_id)}/metadata"
-    )
+    async def _get_metadata():
+        return await create_data_api_client().get_metadata(
+            name=f"{construct_property_rn(property_id)}/metadata"
+        )
+
+    metadata = await retry_on_auth_error(_get_metadata)
     custom_metrics = [
         proto_to_dict(metric)
         for metric in metadata.metrics

@@ -21,6 +21,7 @@ from analytics_mcp.tools.utils import (
     construct_property_rn,
     create_data_api_client,
     proto_to_dict,
+    retry_on_auth_error,
 )
 from analytics_mcp.tools.reporting.metadata import (
     get_date_ranges_hints,
@@ -158,7 +159,10 @@ async def run_realtime_report(
     if offset:
         request.offset = offset
 
-    response = await create_data_api_client().run_realtime_report(request)
+    async def _execute_realtime_report():
+        return await create_data_api_client().run_realtime_report(request)
+
+    response = await retry_on_auth_error(_execute_realtime_report)
     return proto_to_dict(response)
 
 

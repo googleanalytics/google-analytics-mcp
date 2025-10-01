@@ -27,6 +27,7 @@ from analytics_mcp.tools.utils import (
     construct_property_rn,
     create_data_api_client,
     proto_to_dict,
+    retry_on_auth_error,
 )
 from google.analytics import data_v1beta
 
@@ -168,8 +169,10 @@ async def run_report(
     if currency_code:
         request.currency_code = currency_code
 
-    response = await create_data_api_client().run_report(request)
+    async def _execute_report():
+        return await create_data_api_client().run_report(request)
 
+    response = await retry_on_auth_error(_execute_report)
     return proto_to_dict(response)
 
 

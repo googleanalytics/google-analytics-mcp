@@ -21,6 +21,7 @@ from analytics_mcp.tools.utils import (
     construct_property_rn,
     create_admin_api_client,
     proto_to_dict,
+    retry_on_auth_error,
 )
 from google.analytics import admin_v1beta
 
@@ -29,13 +30,16 @@ from google.analytics import admin_v1beta
 async def get_account_summaries() -> List[Dict[str, Any]]:
     """Retrieves information about the user's Google Analytics accounts and properties."""
 
-    # Uses an async list comprehension so the pager returned by
-    # list_account_summaries retrieves all pages.
-    summary_pager = await create_admin_api_client().list_account_summaries()
-    all_pages = [
-        proto_to_dict(summary_page) async for summary_page in summary_pager
-    ]
-    return all_pages
+    async def _get_summaries():
+        # Uses an async list comprehension so the pager returned by
+        # list_account_summaries retrieves all pages.
+        summary_pager = await create_admin_api_client().list_account_summaries()
+        all_pages = [
+            proto_to_dict(summary_page) async for summary_page in summary_pager
+        ]
+        return all_pages
+
+    return await retry_on_auth_error(_get_summaries)
 
 
 @mcp.tool(title="List links to Google Ads accounts")
@@ -47,16 +51,20 @@ async def list_google_ads_links(property_id: int | str) -> List[Dict[str, Any]]:
           - A number
           - A string consisting of 'properties/' followed by a number
     """
-    request = admin_v1beta.ListGoogleAdsLinksRequest(
-        parent=construct_property_rn(property_id)
-    )
-    # Uses an async list comprehension so the pager returned by
-    # list_google_ads_links retrieves all pages.
-    links_pager = await create_admin_api_client().list_google_ads_links(
-        request=request
-    )
-    all_pages = [proto_to_dict(link_page) async for link_page in links_pager]
-    return all_pages
+
+    async def _get_ads_links():
+        request = admin_v1beta.ListGoogleAdsLinksRequest(
+            parent=construct_property_rn(property_id)
+        )
+        # Uses an async list comprehension so the pager returned by
+        # list_google_ads_links retrieves all pages.
+        links_pager = await create_admin_api_client().list_google_ads_links(
+            request=request
+        )
+        all_pages = [proto_to_dict(link_page) async for link_page in links_pager]
+        return all_pages
+
+    return await retry_on_auth_error(_get_ads_links)
 
 
 @mcp.tool(title="Gets details about a property")
@@ -67,9 +75,13 @@ async def get_property_details(property_id: int | str) -> Dict[str, Any]:
           - A number
           - A string consisting of 'properties/' followed by a number
     """
-    client = create_admin_api_client()
-    request = admin_v1beta.GetPropertyRequest(
-        name=construct_property_rn(property_id)
-    )
-    response = await client.get_property(request=request)
-    return proto_to_dict(response)
+
+    async def _get_property():
+        client = create_admin_api_client()
+        request = admin_v1beta.GetPropertyRequest(
+            name=construct_property_rn(property_id)
+        )
+        response = await client.get_property(request=request)
+        return proto_to_dict(response)
+
+    return await retry_on_auth_error(_get_property)

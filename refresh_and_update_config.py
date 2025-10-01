@@ -2,13 +2,15 @@
 """Script to refresh Google OAuth token and update config with expiry."""
 
 import json
+import sys
 import time
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
-def refresh_and_update_config():
+def refresh_and_update_config(config_path=None):
     """Refresh the Google OAuth access token and update config."""
-    config_path = '/Users/mkotsollaris/projects/google-analytics-mcp/google-analytics-config (4).json'
+    if not config_path:
+        config_path = '/Users/mkotsollaris/Projects/google-analytics-config.json'
     
     try:
         # Load current config
@@ -60,7 +62,8 @@ def refresh_and_update_config():
         return False
 
 if __name__ == "__main__":
-    success = refresh_and_update_config()
+    config_path = sys.argv[1] if len(sys.argv) > 1 else None
+    success = refresh_and_update_config(config_path)
     if success:
         print("\n🎉 Token refresh complete! You can now restart your MCP server.")
     else:

@@ -1,28 +1,40 @@
 #!/usr/bin/env python3
-"""Script to refresh Google OAuth token and update config with expiry."""
+"""Script to manually refresh Google OAuth token and update config with expiry.
+
+This script is useful if you need to manually refresh your OAuth token,
+though the MCP server will automatically refresh tokens as needed.
+
+Usage:
+    python refresh_and_update_config.py /path/to/config.json
+"""
 
 import json
 import sys
-import time
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
-def refresh_and_update_config(config_path=None):
-    """Refresh the Google OAuth access token and update config."""
-    if not config_path:
-        config_path = '/Users/mkotsollaris/Projects/google-analytics-config.json'
-    
+
+def refresh_and_update_config(config_path: str) -> bool:
+    """Refresh the Google OAuth access token and update config file.
+
+    Args:
+        config_path: Path to the Google Analytics config JSON file
+
+    Returns:
+        True if successful, False otherwise
+    """
     try:
         # Load current config
         with open(config_path, 'r') as f:
             config = json.load(f)
-        
+
         oauth_config = config.get('googleOAuthCredentials', {})
         tokens = config.get('googleAnalyticsTokens', {})
-        
-        print("🔄 Refreshing OAuth token...")
-        print(f"Current access token: {tokens.get('accessToken', 'None')[:50]}...")
-        
+
+        if not oauth_config or not tokens:
+            print("❌ Config file missing OAuth credentials or tokens", file=sys.stderr)
+            return False
+
         # Create credentials
         credentials = Credentials(
             token=tokens.get('accessToken'),
@@ -32,39 +44,37 @@ def refresh_and_update_config(config_path=None):
             client_secret=oauth_config.get('clientSecret'),
             scopes=['https://www.googleapis.com/auth/analytics.readonly']
         )
-        
-        # Force refresh the token
-        print("🔄 Refreshing token...")
+
+        # Refresh the token
         credentials.refresh(Request())
-        
-        # Calculate expiry time (1 hour from now - typical OAuth token expiry)
-        expires_at = int(time.time()) + 3600
-        
+
         # Update config with new token and expiry
         config['googleAnalyticsTokens']['accessToken'] = credentials.token
-        config['googleAnalyticsTokens']['expiresAt'] = expires_at
-        
+        if credentials.expiry:
+            config['googleAnalyticsTokens']['expiresAt'] = int(credentials.expiry.timestamp())
+
         # Save updated config
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=2)
-        
-        print("✅ Token refreshed successfully!")
-        print(f"New access token: {credentials.token[:50]}...")
-        print(f"Expires at: {expires_at} ({time.ctime(expires_at)})")
-        print("Config file updated.")
-        
+
+        print(f"✅ Token refreshed and saved to {config_path}")
         return True
-        
+
+    except FileNotFoundError:
+        print(f"❌ Config file not found: {config_path}", file=sys.stderr)
+        return False
     except Exception as e:
-        print(f"❌ Error refreshing token: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"❌ Error refreshing token: {e}", file=sys.stderr)
         return False
 
+
 if __name__ == "__main__":
-    config_path = sys.argv[1] if len(sys.argv) > 1 else None
+    if len(sys.argv) < 2:
+        print("Usage: python refresh_and_update_config.py <config_path>", file=sys.stderr)
+        print("\nExample:", file=sys.stderr)
+        print("  python refresh_and_update_config.py /path/to/google-analytics-config.json", file=sys.stderr)
+        sys.exit(1)
+
+    config_path = sys.argv[1]
     success = refresh_and_update_config(config_path)
-    if success:
-        print("\n🎉 Token refresh complete! You can now restart your MCP server.")
-    else:
-        print("\n💥 Token refresh failed. Check the error messages above.")
+    sys.exit(0 if success else 1)

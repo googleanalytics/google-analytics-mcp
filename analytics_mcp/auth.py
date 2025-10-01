@@ -44,25 +44,28 @@ def invalidate_cache():
     _cached_credentials = None
 
 
-def create_credentials(config_path: Optional[str] = None) -> google.auth.credentials.Credentials:
+def create_credentials(config_path: Optional[str] = None, force_refresh: bool = False) -> google.auth.credentials.Credentials:
     """Create Google Analytics API credentials.
 
     Tries OAuth2 from config file first, then falls back to Application Default Credentials.
 
     Args:
         config_path: Optional path to OAuth config file
+        force_refresh: If True, bypass cache and reload from disk
 
     Returns:
         Google auth credentials
     """
     global _cached_credentials
 
-    # Return cached credentials if still valid
-    if _cached_credentials and not _cached_credentials.expired:
+    # Return cached credentials if still valid and not forcing refresh
+    if not force_refresh and _cached_credentials and not _cached_credentials.expired:
         logger.debug("Using cached credentials (not expired)")
         return _cached_credentials
-    elif _cached_credentials:
+    elif _cached_credentials and not force_refresh:
         logger.info("Cached credentials expired, recreating")
+    elif force_refresh:
+        logger.info("Force refresh requested, reloading credentials from disk")
 
     # Try OAuth2 authentication from config file
     if config_path:
@@ -125,23 +128,33 @@ def _try_oauth_authentication(config_path: str) -> Optional[Credentials]:
             expiry=expiry
         )
 
-        # Refresh token if expired or no expiry info
-        if not expires_at or credentials.expired:
-            logger.info(f"Token expired or missing expiry, refreshing (expired={credentials.expired})")
+        # Always try to refresh if we have a refresh token
+        # This ensures we get a fresh token even if the cached one is stale
+        # The refresh is cheap and Google handles the actual expiry check
+        if refresh_token:
             try:
-                credentials.refresh(Request())
-                logger.info("Token refreshed successfully")
+                # Check if token is expired or will expire soon (within 5 minutes)
+                should_refresh = not expires_at or credentials.expired
+                if expires_at and not credentials.expired:
+                    # Preemptively refresh if token expires in < 5 minutes
+                    time_until_expiry = expires_at - int(datetime.now(timezone.utc).timestamp())
+                    should_refresh = time_until_expiry < 300  # 5 minutes
 
-                # Update the config file with new token
-                if credentials.token and credentials.expiry:
-                    new_expires_at = int(credentials.expiry.timestamp())
-                    _update_config_file(config_path, credentials.token, new_expires_at)
-                    logger.info(f"Config file updated with new token (expires: {new_expires_at})")
+                if should_refresh:
+                    logger.info(f"Refreshing token (expired={credentials.expired})")
+                    credentials.refresh(Request())
+                    logger.info("Token refreshed successfully")
+
+                    # Update the config file with new token
+                    if credentials.token and credentials.expiry:
+                        new_expires_at = int(credentials.expiry.timestamp())
+                        _update_config_file(config_path, credentials.token, new_expires_at)
+                        logger.info(f"Config file updated with new token (expires: {new_expires_at})")
+                else:
+                    logger.debug(f"Using cached token (expires at {expires_at})")
             except Exception as e:
-                logger.error(f"Failed to refresh token: {e}", exc_info=True)
-                return None
-        else:
-            logger.debug(f"Using cached token (expires at {expires_at})")
+                logger.warning(f"Failed to refresh token, will retry on API call: {e}")
+                # Don't fail here - return the credentials and let retry_on_auth_error handle it
 
         return credentials
 

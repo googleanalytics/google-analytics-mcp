@@ -14,13 +14,13 @@
 
 """Common utilities used by the MCP server."""
 
+from importlib import metadata
 from typing import Any, Dict
 
-from google.analytics import admin_v1beta, data_v1beta
-from google.api_core.gapic_v1.client_info import ClientInfo
-from importlib import metadata
 import google.auth
 import proto
+from google.analytics import admin_v1beta, data_v1beta
+from google.api_core.gapic_v1.client_info import ClientInfo
 
 
 def _get_package_version_with_fallback():

@@ -16,19 +16,15 @@
 
 from typing import Any, Dict, List
 
-from analytics_mcp.coordinator import mcp
-from analytics_mcp.tools.reporting.metadata import (
-    get_date_ranges_hints,
-    get_dimension_filter_hints,
-    get_metric_filter_hints,
-    get_order_bys_hints,
-)
-from analytics_mcp.tools.utils import (
-    construct_property_rn,
-    create_data_api_client,
-    proto_to_dict,
-)
 from google.analytics import data_v1beta
+
+from analytics_mcp.coordinator import mcp
+from analytics_mcp.tools.reporting.metadata import (get_date_ranges_hints,
+                                                    get_dimension_filter_hints,
+                                                    get_metric_filter_hints,
+                                                    get_order_bys_hints)
+from analytics_mcp.tools.utils import (construct_property_rn,
+                                       create_data_api_client, proto_to_dict)
 
 
 def _run_report_description() -> str:
@@ -46,18 +42,20 @@ def _run_report_description() -> str:
           The `dimensions` list must consist solely of either of the following:
 
           1.  Standard dimensions defined in the HTML table at
-              https://developers.google.com/analytics/devguides/reporting/data/v1/api-schema#dimensions.
+              https://developers.google.com/analytics/devguides/reporting/
+              data/v1/api-schema#dimensions.
               These dimensions are available to *every* property.
           2.  Custom dimensions for the `property_id`. Use the
-              `get_custom_dimensions_and_metrics` tool to retrieve the list of
-              custom dimensions for a property.
+              `get_custom_dimensions_and_metrics` tool to retrieve the list
+              of custom dimensions for a property.
 
           ### Hints for `metrics`
 
           The `metrics` list must consist solely of either of the following:
 
           1.  Standard metrics defined in the HTML table at
-              https://developers.google.com/analytics/devguides/reporting/data/v1/api-schema#metrics.
+              https://developers.google.com/analytics/devguides/reporting/
+              data/v1/api-schema#metrics.
               These metrics are available to *every* property.
           2.  Custom metrics for the `property_id`. Use the
               `get_custom_dimensions_and_metrics` tool to retrieve the list of
@@ -95,47 +93,58 @@ async def run_report(
     """Runs a Google Analytics Data API report.
 
     Note that the reference docs at
-    https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta
-    all use camelCase field names, but field names passed to this method should
-    be in snake_case since the tool is using the protocol buffers (protobuf)
-    format. The protocol buffers for the Data API are available at
-    https://github.com/googleapis/googleapis/tree/master/google/analytics/data/v1beta.
+    https://developers.google.com/analytics/devguides/reporting/data/
+    v1/rest/v1beta all use camelCase field names, but field names
+    passed to this method should be in snake_case since the tool is
+    using the protocol buffers (protobuf) format. The protocol
+    buffers for the Data API are available at
+    https://github.com/googleapis/googleapis/tree/master/google/
+    analytics/data/v1beta.
 
     Args:
-        property_id: The Google Analytics property ID as a string (e.g., "213025502").
-          Get property IDs from get_account_summaries().
+        property_id: The Google Analytics property ID as a string
+          (e.g., "213025502"). Get property IDs from
+          get_account_summaries().
         date_ranges: A list of date ranges
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/DateRange)
+          (https://developers.google.com/analytics/devguides/
+          reporting/data/v1/rest/v1beta/DateRange)
           to include in the report.
         dimensions: A list of dimensions to include in the report.
         metrics: A list of metrics to include in the report.
         dimension_filter: A Data API FilterExpression
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
-          to apply to the dimensions.  Don't use this for filtering metrics. Use
-          metric_filter instead. The `field_name` in a `dimension_filter` must
-          be a dimension, as defined in the `get_standard_dimensions` and
-          `get_dimensions` tools.
+          (https://developers.google.com/analytics/devguides/
+          reporting/data/v1/rest/v1beta/FilterExpression)
+          to apply to the dimensions.  Don't use this for filtering
+          metrics. Use metric_filter instead. The `field_name` in a
+          `dimension_filter` must be a dimension, as defined in the
+          `get_standard_dimensions` and `get_dimensions` tools.
         metric_filter: A Data API FilterExpression
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
-          to apply to the metrics.  Don't use this for filtering dimensions. Use
-          dimension_filter instead. The `field_name` in a `metric_filter` must
-          be a metric, as defined in the `get_standard_metrics` and
-          `get_metrics` tools.
+          (https://developers.google.com/analytics/devguides/
+          reporting/data/v1/rest/v1beta/FilterExpression)
+          to apply to the metrics.  Don't use this for filtering
+          dimensions. Use dimension_filter instead. The `field_name`
+          in a `metric_filter` must be a metric, as defined in the
+          `get_standard_metrics` and `get_metrics` tools.
         order_bys: A list of Data API OrderBy
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/OrderBy)
+          (https://developers.google.com/analytics/devguides/
+          reporting/data/v1/rest/v1beta/OrderBy)
           objects to apply to the dimensions and metrics.
-        limit: The maximum number of rows to return in each response. Value must
-          be a positive integer <= 250,000. Used to paginate through large
-          reports, following the guide at
-          https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
-        offset: The row count of the start row. The first row is counted as row
-          0. Used to paginate through large
-          reports, following the guide at
-          https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
-        currency_code: The currency code to use for currency values. Must be in
-          ISO4217 format, such as "AED", "USD", "JPY". If the field is empty, the
-          report uses the property's default currency.
-        return_property_quota: Whether to return property quota in the response.
+        limit: The maximum number of rows to return in each response.
+          Value must be a positive integer <= 250,000. Used to
+          paginate through large reports, following the guide at
+          https://developers.google.com/analytics/devguides/
+          reporting/data/v1/basics#pagination.
+        offset: The row count of the start row. The first row is
+          counted as row 0. Used to paginate through large reports,
+          following the guide at
+          https://developers.google.com/analytics/devguides/
+          reporting/data/v1/basics#pagination.
+        currency_code: The currency code to use for currency values.
+          Must be in ISO4217 format, such as "AED", "USD", "JPY".
+          If the field is empty, the report uses the property's
+          default currency.
+        return_property_quota: Whether to return property quota in
+          the response.
     """
     # Always request quota to check if we're approaching limits
     request = data_v1beta.RunReportRequest(
@@ -194,33 +203,48 @@ async def run_report(
         if response.metadata.data_loss_from_other_row:
             metadata["data_loss_from_other_row"] = True
         if response.metadata.sampling_metadatas:
-            metadata["sampling_metadatas"] = [proto_to_dict(sm) for sm in response.metadata.sampling_metadatas]
+            metadata["sampling_metadatas"] = [
+                proto_to_dict(sm)
+                for sm in response.metadata.sampling_metadatas
+            ]
         if metadata:
             result["metadata"] = metadata
-    
+
     # Include totals/maximums/minimums only if they have data
     if response.totals:
-        result["totals"] = [proto_to_dict(total) for total in response.totals]
+        result["totals"] = [
+            proto_to_dict(total) for total in response.totals
+        ]
     if response.maximums:
-        result["maximums"] = [proto_to_dict(maximum) for maximum in response.maximums]
+        result["maximums"] = [
+            proto_to_dict(maximum) for maximum in response.maximums
+        ]
     if response.minimums:
-        result["minimums"] = [proto_to_dict(minimum) for minimum in response.minimums]
-    
+        result["minimums"] = [
+            proto_to_dict(minimum) for minimum in response.minimums
+        ]
+
     # Check quota usage and include if >90% used or explicitly requested
     if response.property_quota:
         quota_dict = proto_to_dict(response.property_quota)
         quota_warning = None
-        
+
         # Check if any quota metric is >90% used
         for quota_name, quota_info in quota_dict.items():
-            if isinstance(quota_info, dict) and "consumed" in quota_info and "remaining" in quota_info:
+            if (
+                isinstance(quota_info, dict)
+                and "consumed" in quota_info
+                and "remaining" in quota_info
+            ):
                 consumed = quota_info.get("consumed", 0)
                 remaining = quota_info.get("remaining", 0)
                 total = consumed + remaining
                 if total > 0 and (consumed / total) > 0.9:
                     quota_warning = (
-                        f"WARNING: {quota_name} is at {(consumed / total * 100):.1f}% "
-                        f"({consumed}/{total}). Approaching quota limit."
+                        f"WARNING: {quota_name} is at "
+                        f"{(consumed / total * 100):.1f}% "
+                        f"({consumed}/{total}). "
+                        f"Approaching quota limit."
                     )
                     break
         

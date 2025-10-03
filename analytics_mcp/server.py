@@ -17,14 +17,13 @@
 """Entry point for the Google Analytics MCP server."""
 
 from analytics_mcp.coordinator import mcp
-
 # The following imports are necessary to register the tools with the `mcp`
 # object, even though they are not directly used in this file.
 # The `# noqa: F401` comment tells the linter to ignore the "unused import"
 # warning.
 from analytics_mcp.tools.admin import info  # noqa: F401
-from analytics_mcp.tools.reporting import realtime  # noqa: F401
 from analytics_mcp.tools.reporting import core  # noqa: F401
+from analytics_mcp.tools.reporting import realtime  # noqa: F401
 
 
 def run_server() -> None:

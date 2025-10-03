@@ -32,7 +32,10 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(
             utils.construct_property_rn(" 12345  "),
             "properties/12345",
-            "Whitespace around property ID should be trimmed and considered valid",
+            (
+                "Whitespace around property ID should be trimmed "
+                "and considered valid"
+            ),
         )
         self.assertEqual(
             utils.construct_property_rn("213025502"),

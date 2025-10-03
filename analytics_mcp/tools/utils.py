@@ -14,13 +14,13 @@
 
 """Common utilities used by the MCP server."""
 
+from importlib import metadata
 from typing import Any, Dict
 
-from google.analytics import admin_v1beta, data_v1beta
-from google.api_core.gapic_v1.client_info import ClientInfo
-from importlib import metadata
 import google.auth
 import proto
+from google.analytics import admin_v1beta, data_v1beta
+from google.api_core.gapic_v1.client_info import ClientInfo
 
 
 def _get_package_version_with_fallback():
@@ -71,28 +71,27 @@ def create_data_api_client() -> data_v1beta.BetaAnalyticsDataAsyncClient:
     )
 
 
-def construct_property_rn(property_value: int | str) -> str:
-    """Returns a property resource name in the format required by APIs."""
-    property_num = None
-    if isinstance(property_value, int):
-        property_num = property_value
-    elif isinstance(property_value, str):
-        property_value = property_value.strip()
-        if property_value.isdigit():
-            property_num = int(property_value)
-        elif property_value.startswith("properties/"):
-            numeric_part = property_value.split("/")[-1]
-            if numeric_part.isdigit():
-                property_num = int(numeric_part)
-    if property_num is None:
-        raise ValueError(
-            (
-                f"Invalid property ID: {property_value}. "
-                "A valid property value is either a number or a string starting "
-                "with 'properties/' and followed by a number."
-            )
-        )
+def construct_property_rn(property_value: str) -> str:
+    """Returns a property resource name in the format required by APIs.
 
+    Args:
+        property_value: A property ID as a numeric string (e.g., "213025502").
+                       Get property IDs from get_account_summaries().
+
+    Returns:
+        A property resource name in the format "properties/{property_id}".
+
+    Raises:
+        ValueError: If property_value is not a numeric string.
+    """
+    property_value = property_value.strip()
+    if not property_value.isdigit():
+        raise ValueError(
+            f"Invalid property ID: {property_value}. "
+            "Expected a numeric string (e.g., '213025502'). "
+            "Get property IDs from get_account_summaries()."
+        )
+    property_num = int(property_value)
     return f"properties/{property_num}"
 
 

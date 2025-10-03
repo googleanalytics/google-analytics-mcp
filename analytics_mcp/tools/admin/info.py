@@ -16,36 +16,56 @@
 
 from typing import Any, Dict, List
 
+from google.analytics import admin_v1beta
+
 from analytics_mcp.coordinator import mcp
 from analytics_mcp.tools.utils import (
     construct_property_rn,
     create_admin_api_client,
     proto_to_dict,
 )
-from google.analytics import admin_v1beta
 
 
 @mcp.tool()
 async def get_account_summaries() -> List[Dict[str, Any]]:
-    """Retrieves information about the user's Google Analytics accounts and properties."""
+    """Retrieves information about the user's Google Analytics accounts and
+    properties.
+    """
 
     # Uses an async list comprehension so the pager returned by
     # list_account_summaries retrieves all pages.
     summary_pager = await create_admin_api_client().list_account_summaries()
-    all_pages = [
-        proto_to_dict(summary_page) async for summary_page in summary_pager
-    ]
-    return all_pages
+
+    summaries = []
+    async for summary_page in summary_pager:
+        # Extract just the ID from resource names
+        account_id = summary_page.account.split("/")[-1]
+
+        summaries.append(
+            {
+                "account_id": account_id,
+                "account_name": summary_page.display_name,
+                "properties": [
+                    {
+                        "id": ps.property.split("/")[-1],
+                        "name": ps.display_name,
+                    }
+                    for ps in summary_page.property_summaries
+                ],
+            }
+        )
+
+    return summaries
 
 
 @mcp.tool(title="List links to Google Ads accounts")
-async def list_google_ads_links(property_id: int | str) -> List[Dict[str, Any]]:
+async def list_google_ads_links(property_id: str) -> List[Dict[str, Any]]:
     """Returns a list of links to Google Ads accounts for a property.
 
     Args:
-        property_id: The Google Analytics property ID. Accepted formats are:
-          - A number
-          - A string consisting of 'properties/' followed by a number
+        property_id: The Google Analytics property ID as a string
+          (e.g., "213025502"). Get property IDs from
+          get_account_summaries().
     """
     request = admin_v1beta.ListGoogleAdsLinksRequest(
         parent=construct_property_rn(property_id)
@@ -60,16 +80,21 @@ async def list_google_ads_links(property_id: int | str) -> List[Dict[str, Any]]:
 
 
 @mcp.tool(title="Gets details about a property")
-async def get_property_details(property_id: int | str) -> Dict[str, Any]:
+async def get_property_details(property_id: str) -> Dict[str, Any]:
     """Returns details about a property.
     Args:
-        property_id: The Google Analytics property ID. Accepted formats are:
-          - A number
-          - A string consisting of 'properties/' followed by a number
+        property_id: The Google Analytics property ID as a string
+          (e.g., "213025502"). Get property IDs from
+          get_account_summaries().
     """
     client = create_admin_api_client()
     request = admin_v1beta.GetPropertyRequest(
         name=construct_property_rn(property_id)
     )
     response = await client.get_property(request=request)
-    return proto_to_dict(response)
+
+    # Convert to dict and remove redundant parent field
+    result = proto_to_dict(response)
+    result.pop("parent", None)
+
+    return result

@@ -25,11 +25,6 @@ class TestUtils(unittest.TestCase):
     def test_construct_property_rn(self):
         """Tests construct_property_rn using valid input."""
         self.assertEqual(
-            utils.construct_property_rn(12345),
-            "properties/12345",
-            "Numeric property ID should b considered valid",
-        )
-        self.assertEqual(
             utils.construct_property_rn("12345"),
             "properties/12345",
             "Numeric property ID as string should be considered valid",
@@ -37,34 +32,42 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(
             utils.construct_property_rn(" 12345  "),
             "properties/12345",
-            "Whitespace around property ID should be considered valid",
+            (
+                "Whitespace around property ID should be trimmed "
+                "and considered valid"
+            ),
         )
         self.assertEqual(
-            utils.construct_property_rn("properties/12345"),
-            "properties/12345",
-            "Full resource name should be considered valid",
+            utils.construct_property_rn("213025502"),
+            "properties/213025502",
+            "Real-world property ID should be considered valid",
         )
 
     def test_construct_property_rn_invalid_input(self):
         """Tests that construct_property_rn raises a ValueError for invalid input."""
-        with self.assertRaises(ValueError, msg="None should fail"):
-            utils.construct_property_rn(None)
         with self.assertRaises(ValueError, msg="Empty string should fail"):
             utils.construct_property_rn("")
+        with self.assertRaises(
+            ValueError, msg="Whitespace-only string should fail"
+        ):
+            utils.construct_property_rn("   ")
         with self.assertRaises(
             ValueError, msg="Non-numeric string should fail"
         ):
             utils.construct_property_rn("abc")
         with self.assertRaises(
-            ValueError, msg="Resource name without ID should fail"
+            ValueError, msg="Alphanumeric string should fail"
         ):
-            utils.construct_property_rn("properties/")
+            utils.construct_property_rn("abc123")
         with self.assertRaises(
-            ValueError, msg="Resource name with non-numeric ID should fail"
+            ValueError, msg="Negative number string should fail"
         ):
-            utils.construct_property_rn("properties/abc")
+            utils.construct_property_rn("-12345")
         with self.assertRaises(
-            ValueError,
-            msg="Resource name with more than 2 components should fail",
+            ValueError, msg="Full resource name format no longer supported"
         ):
-            utils.construct_property_rn("properties/123/abc")
+            utils.construct_property_rn("properties/12345")
+        with self.assertRaises(
+            ValueError, msg="Number with decimal should fail"
+        ):
+            utils.construct_property_rn("123.45")

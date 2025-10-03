@@ -16,6 +16,8 @@
 
 from typing import Any, Dict, List
 
+from google.analytics import data_v1beta
+
 from analytics_mcp.coordinator import mcp
 from analytics_mcp.tools.utils import (
     construct_property_rn,
@@ -23,7 +25,6 @@ from analytics_mcp.tools.utils import (
     proto_to_dict,
     proto_to_json,
 )
-from google.analytics import data_v1beta
 
 
 def get_date_ranges_hints():
@@ -122,7 +123,9 @@ def get_metric_filter_hints():
         filter=data_v1beta.Filter(
             field_name="eventCount",
             numeric_filter=data_v1beta.Filter.NumericFilter(
-                operation=data_v1beta.Filter.NumericFilter.Operation.GREATER_THAN,
+                operation=(
+                    data_v1beta.Filter.NumericFilter.Operation.GREATER_THAN
+                ),
                 value=data_v1beta.NumericValue(int64_value=10),
             ),
         )
@@ -183,7 +186,9 @@ def get_dimension_filter_hints():
         filter=data_v1beta.Filter(
             field_name="eventName",
             string_filter=data_v1beta.Filter.StringFilter(
-                match_type=data_v1beta.Filter.StringFilter.MatchType.BEGINS_WITH,
+                match_type=(
+                    data_v1beta.Filter.StringFilter.MatchType.BEGINS_WITH
+                ),
                 value="add",
             ),
         )
@@ -249,21 +254,25 @@ def get_order_bys_hints():
     dimension_alphanumeric_ascending = data_v1beta.OrderBy(
         dimension=data_v1beta.OrderBy.DimensionOrderBy(
             dimension_name="eventName",
-            order_type=data_v1beta.OrderBy.DimensionOrderBy.OrderType.ALPHANUMERIC,
+            order_type=(
+                data_v1beta.OrderBy.DimensionOrderBy.OrderType.ALPHANUMERIC
+            ),
         ),
         desc=False,
     )
     dimension_alphanumeric_no_case_descending = data_v1beta.OrderBy(
         dimension=data_v1beta.OrderBy.DimensionOrderBy(
             dimension_name="campaignName",
-            order_type=data_v1beta.OrderBy.DimensionOrderBy.OrderType.CASE_INSENSITIVE_ALPHANUMERIC,
+            order_type=(
+                data_v1beta.OrderBy.DimensionOrderBy.OrderType.CASE_INSENSITIVE_ALPHANUMERIC
+            ),
         ),
         desc=True,
     )
     dimension_numeric_ascending = data_v1beta.OrderBy(
         dimension=data_v1beta.OrderBy.DimensionOrderBy(
             dimension_name="audienceId",
-            order_type=data_v1beta.OrderBy.DimensionOrderBy.OrderType.NUMERIC,
+            order_type=(data_v1beta.OrderBy.DimensionOrderBy.OrderType.NUMERIC),
         ),
         desc=False,
     )
@@ -316,33 +325,63 @@ def get_order_bys_hints():
 
 
 @mcp.tool(
-    title="Retrieves the custom Core Reporting dimensions and metrics for a specific property"
+    title=(
+        "Retrieves the custom Core Reporting dimensions and metrics "
+        "for a specific property"
+    )
 )
 async def get_custom_dimensions_and_metrics(
-    property_id: int | str,
+    property_id: str,
+    include_descriptions: bool = False,
 ) -> Dict[str, List[Dict[str, Any]]]:
     """Returns the property's custom dimensions and metrics.
 
     Args:
-        property_id: The Google Analytics property ID. Accepted formats are:
-          - A number
-          - A string consisting of 'properties/' followed by a number
+        property_id: The Google Analytics property ID as a string
+          (e.g., "213025502"). Get property IDs from
+          get_account_summaries().
+        include_descriptions: Whether to include user-written
+          descriptions (default: False). Descriptions can be helpful
+          for understanding custom dimensions/metrics but increase
+          token usage.
 
     """
     metadata = await create_data_api_client().get_metadata(
         name=f"{construct_property_rn(property_id)}/metadata"
     )
+
     custom_metrics = [
-        proto_to_dict(metric)
+        {
+            "api_name": metric.api_name,
+            "display_name": metric.ui_name,
+            "scope": metric.category,
+            "type": metric.type_.name if metric.type_ else "STANDARD",
+            **(
+                {"description": metric.description}
+                if include_descriptions and metric.description
+                else {}
+            ),
+        }
         for metric in metadata.metrics
         if metric.custom_definition
     ]
+
     custom_dimensions = [
-        proto_to_dict(dimension)
+        {
+            "api_name": dimension.api_name,
+            "display_name": dimension.ui_name,
+            "scope": dimension.category,
+            **(
+                {"description": dimension.description}
+                if include_descriptions and dimension.description
+                else {}
+            ),
+        }
         for dimension in metadata.dimensions
         if dimension.custom_definition
     ]
+
     return {
-        "custom_dimensions": custom_dimensions,
-        "custom_metrics": custom_metrics,
+        "dimensions": custom_dimensions,
+        "metrics": custom_metrics,
     }

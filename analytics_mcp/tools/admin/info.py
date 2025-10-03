@@ -34,9 +34,7 @@ async def get_account_summaries() -> List[Dict[str, Any]]:
 
     # Uses an async list comprehension so the pager returned by
     # list_account_summaries retrieves all pages.
-    summary_pager = (
-        await create_admin_api_client().list_account_summaries()
-    )
+    summary_pager = await create_admin_api_client().list_account_summaries()
 
     summaries = []
     async for summary_page in summary_pager:
@@ -94,9 +92,9 @@ async def get_property_details(property_id: str) -> Dict[str, Any]:
         name=construct_property_rn(property_id)
     )
     response = await client.get_property(request=request)
-    
+
     # Convert to dict and remove redundant parent field
     result = proto_to_dict(response)
     result.pop("parent", None)
-    
+
     return result

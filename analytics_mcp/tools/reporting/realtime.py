@@ -163,26 +163,28 @@ async def run_realtime_report(
         request.limit = limit
 
     response = await create_data_api_client().run_realtime_report(request)
-    
+
     # Compact format - eliminate repetition
     result = {
         "row_count": response.row_count,
         "dimension_headers": [h.name for h in response.dimension_headers],
         "metric_headers": [h.name for h in response.metric_headers],
-        "rows": [
-            {
-                "dimensions": [dv.value for dv in row.dimension_values],
-                "metrics": [mv.value for mv in row.metric_values]
-            }
-            for row in response.rows
-        ] if response.rows else []
+        "rows": (
+            [
+                {
+                    "dimensions": [dv.value for dv in row.dimension_values],
+                    "metrics": [mv.value for mv in row.metric_values],
+                }
+                for row in response.rows
+            ]
+            if response.rows
+            else []
+        ),
     }
-    
+
     # Include totals/maximums/minimums only if they have data
     if response.totals:
-        result["totals"] = [
-            proto_to_dict(total) for total in response.totals
-        ]
+        result["totals"] = [proto_to_dict(total) for total in response.totals]
     if response.maximums:
         result["maximums"] = [
             proto_to_dict(maximum) for maximum in response.maximums
@@ -215,13 +217,13 @@ async def run_realtime_report(
                         f"Approaching quota limit."
                     )
                     break
-        
+
         # Include quota if explicitly requested or if usage >90%
         if return_property_quota or quota_warning:
             result["quota"] = quota_dict
             if quota_warning:
                 result["quota_warning"] = quota_warning
-    
+
     return result
 
 

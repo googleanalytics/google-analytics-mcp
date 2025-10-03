@@ -34,21 +34,18 @@ class TestQuotaWarning(unittest.IsolatedAsyncioTestCase):
         mock_response.totals = None
         mock_response.maximums = None
         mock_response.minimums = None
-        
+
         # Create quota mock
         mock_quota = MagicMock()
         mock_quota_dict = {
             "tokens_per_day": {
                 "consumed": quota_consumed,
-                "remaining": quota_remaining
+                "remaining": quota_remaining,
             },
-            "tokens_per_hour": {
-                "consumed": 10,
-                "remaining": 39990
-            }
+            "tokens_per_hour": {"consumed": 10, "remaining": 39990},
         }
         mock_response.property_quota = mock_quota
-        
+
         return mock_response, mock_quota_dict
 
     @patch("analytics_mcp.tools.reporting.core.create_data_api_client")
@@ -73,9 +70,7 @@ class TestQuotaWarning(unittest.IsolatedAsyncioTestCase):
         # Call run_report with return_property_quota=False
         result = await core.run_report(
             property_id="12345",
-            date_ranges=[
-                {"start_date": "yesterday", "end_date": "yesterday"}
-            ],
+            date_ranges=[{"start_date": "yesterday", "end_date": "yesterday"}],
             dimensions=["country"],
             metrics=["sessions"],
             return_property_quota=False,
@@ -113,9 +108,7 @@ class TestQuotaWarning(unittest.IsolatedAsyncioTestCase):
         # Call run_report with return_property_quota=False
         result = await core.run_report(
             property_id="12345",
-            date_ranges=[
-                {"start_date": "yesterday", "end_date": "yesterday"}
-            ],
+            date_ranges=[{"start_date": "yesterday", "end_date": "yesterday"}],
             dimensions=["country"],
             metrics=["sessions"],
             return_property_quota=False,
@@ -130,7 +123,7 @@ class TestQuotaWarning(unittest.IsolatedAsyncioTestCase):
             result,
             "Warning should be present when usage > 90%",
         )
-        
+
         # Verify warning message format
         warning = result["quota_warning"]
         self.assertIn("WARNING", warning)
@@ -160,9 +153,7 @@ class TestQuotaWarning(unittest.IsolatedAsyncioTestCase):
         # Call run_report with return_property_quota=False
         result = await core.run_report(
             property_id="12345",
-            date_ranges=[
-                {"start_date": "yesterday", "end_date": "yesterday"}
-            ],
+            date_ranges=[{"start_date": "yesterday", "end_date": "yesterday"}],
             dimensions=["country"],
             metrics=["sessions"],
             return_property_quota=False,
@@ -196,9 +187,7 @@ class TestQuotaWarning(unittest.IsolatedAsyncioTestCase):
         # Call run_report with return_property_quota=True
         result = await core.run_report(
             property_id="12345",
-            date_ranges=[
-                {"start_date": "yesterday", "end_date": "yesterday"}
-            ],
+            date_ranges=[{"start_date": "yesterday", "end_date": "yesterday"}],
             dimensions=["country"],
             metrics=["sessions"],
             return_property_quota=True,
@@ -247,7 +236,7 @@ class TestQuotaWarning(unittest.IsolatedAsyncioTestCase):
             result,
             "Warning should be present for realtime",
         )
-        
+
         # Verify warning format
         warning = result["quota_warning"]
         self.assertIn("WARNING", warning)
@@ -287,14 +276,12 @@ class TestQuotaWarning(unittest.IsolatedAsyncioTestCase):
         # Call run_report
         result = await core.run_report(
             property_id="12345",
-            date_ranges=[
-                {"start_date": "yesterday", "end_date": "yesterday"}
-            ],
+            date_ranges=[{"start_date": "yesterday", "end_date": "yesterday"}],
             dimensions=["country"],
             metrics=["sessions"],
             return_property_quota=False,
         )
-        
+
         # Verify warning is triggered by tokens_per_hour
         self.assertIn("quota_warning", result)
         self.assertIn("tokens_per_hour", result["quota_warning"])

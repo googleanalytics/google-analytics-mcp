@@ -272,9 +272,7 @@ def get_order_bys_hints():
     dimension_numeric_ascending = data_v1beta.OrderBy(
         dimension=data_v1beta.OrderBy.DimensionOrderBy(
             dimension_name="audienceId",
-            order_type=(
-                data_v1beta.OrderBy.DimensionOrderBy.OrderType.NUMERIC
-            ),
+            order_type=(data_v1beta.OrderBy.DimensionOrderBy.OrderType.NUMERIC),
         ),
         desc=False,
     )

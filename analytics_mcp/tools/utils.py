@@ -73,14 +73,14 @@ def create_data_api_client() -> data_v1beta.BetaAnalyticsDataAsyncClient:
 
 def construct_property_rn(property_value: str) -> str:
     """Returns a property resource name in the format required by APIs.
-    
+
     Args:
         property_value: A property ID as a numeric string (e.g., "213025502").
                        Get property IDs from get_account_summaries().
-    
+
     Returns:
         A property resource name in the format "properties/{property_id}".
-    
+
     Raises:
         ValueError: If property_value is not a numeric string.
     """

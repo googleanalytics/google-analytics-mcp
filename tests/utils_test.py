@@ -45,9 +45,7 @@ class TestUtils(unittest.TestCase):
 
     def test_construct_property_rn_invalid_input(self):
         """Tests that construct_property_rn raises a ValueError for invalid input."""
-        with self.assertRaises(
-            ValueError, msg="Empty string should fail"
-        ):
+        with self.assertRaises(ValueError, msg="Empty string should fail"):
             utils.construct_property_rn("")
         with self.assertRaises(
             ValueError, msg="Whitespace-only string should fail"

@@ -56,6 +56,173 @@ def get_date_ranges_hints():
     """
 
 
+def get_funnel_steps_hints():
+    """Returns hints and examples for funnel steps configuration."""
+    from google.analytics import data_v1alpha
+
+    step_first_open = data_v1alpha.FunnelStep(
+        name="First open/visit",
+        filter_expression=data_v1alpha.FunnelFilterExpression(
+            or_group=data_v1alpha.FunnelFilterExpressionList(
+                expressions=[
+                    data_v1alpha.FunnelFilterExpression(
+                        funnel_event_filter=data_v1alpha.FunnelEventFilter(
+                            event_name="first_open"
+                        )
+                    ),
+                    data_v1alpha.FunnelFilterExpression(
+                        funnel_event_filter=data_v1alpha.FunnelEventFilter(
+                            event_name="first_visit"
+                        )
+                    ),
+                ]
+            )
+        ),
+    )
+
+    step_organic_visitors = data_v1alpha.FunnelStep(
+        name="Organic visitors",
+        filter_expression=data_v1alpha.FunnelFilterExpression(
+            funnel_field_filter=data_v1alpha.FunnelFieldFilter(
+                field_name="firstUserMedium",
+                string_filter=data_v1alpha.StringFilter(
+                    match_type=data_v1alpha.StringFilter.MatchType.CONTAINS,
+                    case_sensitive=False,
+                    value="organic",
+                ),
+            )
+        ),
+    )
+
+    step_session_start = data_v1alpha.FunnelStep(
+        name="Session start",
+        filter_expression=data_v1alpha.FunnelFilterExpression(
+            funnel_event_filter=data_v1alpha.FunnelEventFilter(
+                event_name="session_start"
+            )
+        ),
+    )
+
+    step_page_view = data_v1alpha.FunnelStep(
+        name="Screen/Page view",
+        filter_expression=data_v1alpha.FunnelFilterExpression(
+            or_group=data_v1alpha.FunnelFilterExpressionList(
+                expressions=[
+                    data_v1alpha.FunnelFilterExpression(
+                        funnel_event_filter=data_v1alpha.FunnelEventFilter(
+                            event_name="screen_view"
+                        )
+                    ),
+                    data_v1alpha.FunnelFilterExpression(
+                        funnel_event_filter=data_v1alpha.FunnelEventFilter(
+                            event_name="page_view"
+                        )
+                    ),
+                ]
+            )
+        ),
+    )
+
+    step_purchase = data_v1alpha.FunnelStep(
+        name="Purchase",
+        filter_expression=data_v1alpha.FunnelFilterExpression(
+            or_group=data_v1alpha.FunnelFilterExpressionList(
+                expressions=[
+                    data_v1alpha.FunnelFilterExpression(
+                        funnel_event_filter=data_v1alpha.FunnelEventFilter(
+                            event_name="purchase"
+                        )
+                    ),
+                    data_v1alpha.FunnelFilterExpression(
+                        funnel_event_filter=data_v1alpha.FunnelEventFilter(
+                            event_name="in_app_purchase"
+                        )
+                    ),
+                ]
+            )
+        ),
+    )
+
+    step_add_to_cart_value = data_v1alpha.FunnelStep(
+        name="Add to cart (value > 50)",
+        filter_expression=data_v1alpha.FunnelFilterExpression(
+            funnel_event_filter=data_v1alpha.FunnelEventFilter(
+                event_name="add_to_cart",
+                funnel_parameter_filter_expression=data_v1alpha.FunnelParameterFilterExpression(
+                    funnel_parameter_filter=data_v1alpha.FunnelParameterFilter(
+                        parameter_name="value",
+                        numeric_filter=data_v1alpha.NumericFilter(
+                            operation=data_v1alpha.NumericFilter.Operation.GREATER_THAN,
+                            value=data_v1alpha.NumericValue(double_value=50.0),
+                        ),
+                    )
+                ),
+            )
+        ),
+    )
+
+    step_home_page_view = data_v1alpha.FunnelStep(
+        name="Home page view",
+        filter_expression=data_v1alpha.FunnelFilterExpression(
+            and_group=data_v1alpha.FunnelFilterExpressionList(
+                expressions=[
+                    data_v1alpha.FunnelFilterExpression(
+                        funnel_event_filter=data_v1alpha.FunnelEventFilter(
+                            event_name="page_view"
+                        )
+                    ),
+                    data_v1alpha.FunnelFilterExpression(
+                        funnel_field_filter=data_v1alpha.FunnelFieldFilter(
+                            field_name="pagePath",
+                            string_filter=data_v1alpha.StringFilter(
+                                match_type=data_v1alpha.StringFilter.MatchType.EXACT,
+                                value="/",
+                            ),
+                        )
+                    ),
+                ]
+            )
+        ),
+    )
+
+    return f"""Example funnel_steps configurations:
+
+    1. Simple event-based step (first open/visit):
+        {proto_to_json(step_first_open)}
+
+    2. Field filter for organic traffic:
+        {proto_to_json(step_organic_visitors)}
+
+    3. Simple event filter:
+        {proto_to_json(step_session_start)}
+
+    4. Multiple events with OR condition:
+        {proto_to_json(step_page_view)}
+
+    5. Purchase events (multiple event types):
+        {proto_to_json(step_purchase)}
+
+    6. Event with parameter filter (value > 50):
+        {proto_to_json(step_add_to_cart_value)}
+
+    7. Complex AND condition (page view + specific path):
+        {proto_to_json(step_home_page_view)}
+
+
+    ## Complete Funnel Example
+
+    A typical e-commerce funnel with 5 steps:
+    [
+        {proto_to_json(step_first_open)},
+        {proto_to_json(step_organic_visitors)},
+        {proto_to_json(step_session_start)},
+        {proto_to_json(step_page_view)},
+        {proto_to_json(step_purchase)}
+    ]
+
+    """
+
+
 # Common notes to consider when applying dimension and metric filters.
 _FILTER_NOTES = """
   Notes:

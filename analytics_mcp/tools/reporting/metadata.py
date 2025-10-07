@@ -150,7 +150,7 @@ def get_funnel_steps_hints():
                 event_name="add_to_cart",
                 funnel_parameter_filter_expression=data_v1alpha.FunnelParameterFilterExpression(
                     funnel_parameter_filter=data_v1alpha.FunnelParameterFilter(
-                        parameter_name="value",
+                        event_parameter_name="value",
                         numeric_filter=data_v1alpha.NumericFilter(
                             operation=data_v1alpha.NumericFilter.Operation.GREATER_THAN,
                             value=data_v1alpha.NumericValue(double_value=50.0),

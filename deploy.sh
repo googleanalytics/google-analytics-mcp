@@ -202,9 +202,3 @@ echo "════════════════════════�
 
 echo ""
 echo "Deployment script finished successfully!"
-
-
-
-ga4mcp-auth-azure-tenant-id
-ga4mcp-auth-azure-client-secret
-ga4mcp-auth-azure-client-id

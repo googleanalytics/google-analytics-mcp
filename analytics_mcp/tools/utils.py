@@ -18,6 +18,8 @@ from typing import Any, Dict
 
 from google.analytics import admin_v1beta, data_v1beta
 from google.api_core.gapic_v1.client_info import ClientInfo
+from analytics_mcp.custom_header_middleware import request_headers_context
+
 from importlib import metadata
 import google.auth
 import proto
@@ -106,3 +108,23 @@ def proto_to_dict(obj: proto.Message) -> Dict[str, Any]:
 def proto_to_json(obj: proto.Message) -> str:
     """Converts a proto message to a JSON string."""
     return type(obj).to_json(obj, indent=None, preserving_proto_field_name=True)
+
+
+def get_property_id() -> str:
+    """Get propert_id from request headers."""
+
+    ctx = request_headers_context.get()
+    headers = ctx.get('headers', {})
+
+    property_id = headers.get("ga4_property", None)
+
+    if not property_id:
+        raise ValueError(
+            (
+                "GA4 Property not found. Please provide 'ga4_property' header "
+                "A valid property value is either a number or a string starting "
+                "with 'properties/' and followed by a number."
+             )
+        )
+
+    return property_id

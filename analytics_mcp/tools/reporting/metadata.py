@@ -20,6 +20,7 @@ from analytics_mcp.coordinator import mcp
 from analytics_mcp.tools.utils import (
     construct_property_rn,
     create_data_api_client,
+    get_property_id,
     proto_to_dict,
     proto_to_json,
 )
@@ -318,9 +319,7 @@ def get_order_bys_hints():
 @mcp.tool(
     title="Retrieves the custom Core Reporting dimensions and metrics for a specific property"
 )
-async def get_custom_dimensions_and_metrics(
-    property_id: int | str,
-) -> Dict[str, List[Dict[str, Any]]]:
+async def get_custom_dimensions_and_metrics() -> Dict[str, List[Dict[str, Any]]]:
     """Returns the property's custom dimensions and metrics.
 
     Args:
@@ -329,6 +328,7 @@ async def get_custom_dimensions_and_metrics(
           - A string consisting of 'properties/' followed by a number
 
     """
+    property_id = get_property_id()
     metadata = await create_data_api_client().get_metadata(
         name=f"{construct_property_rn(property_id)}/metadata"
     )

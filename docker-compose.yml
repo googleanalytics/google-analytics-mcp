@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  ga4mcp:
+    build: .
+    container_name: ga4mcp-server
+    ports:
+      - "9000:8000"
+    environment:
+      # Set your Google Analytics credentials
+      # Option 1: Use service account key file
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/service-account-key.json
+      
+      # Force Uvicorn (underlying server) to bind to all interfaces
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=9000
+      
+      # Also try standard HOST/PORT variables
+      - HOST=0.0.0.0
+      - PORT=9000
+      
+      # Option 2: Use Application Default Credentials (ADC)
+      # Mount your local ADC directory (uncomment the volume below)
+      # - GOOGLE_APPLICATION_CREDENTIALS=/home/mcp/.config/gcloud/application_default_credentials.json
+    volumes:
+      # Option 1: Mount service account key file
+      - ./credentials:/app/credentials:ro
+      
+      # Option 2: Mount your local ADC (uncomment this and comment the above if using ADC)
+      # - ~/.config/gcloud:/home/mcp/.config/gcloud:ro
+      
+      # For development: mount source code for live reloading
+      - ./analytics_mcp:/app/analytics_mcp
+    # Override to use uvicorn directly if environment variables don't work
+    # command: ["uvicorn", "--host", "0.0.0.0", "--port", "8000", "analytics_mcp.server:app"]
+    
+    # Use original command with environment variables
+    command: ["uv", "run", "python", "analytics_mcp/server.py"]    # Uncomment for development mode with auto-restart
+    # command: ["python", "-u", "analytics_mcp/server.py"]
+    restart: unless-stopped
+    
+    # Health check for SSE server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--max-time", "5", "http://localhost:9000/sse"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

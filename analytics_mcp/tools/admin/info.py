@@ -20,10 +20,10 @@ from analytics_mcp.coordinator import mcp
 from analytics_mcp.tools.utils import (
     construct_property_rn,
     create_admin_api_client,
+    get_property_id,
     proto_to_dict,
 )
 from google.analytics import admin_v1beta
-
 
 @mcp.tool()
 async def get_account_summaries() -> List[Dict[str, Any]]:
@@ -39,14 +39,9 @@ async def get_account_summaries() -> List[Dict[str, Any]]:
 
 
 @mcp.tool(title="List links to Google Ads accounts")
-async def list_google_ads_links(property_id: int | str) -> List[Dict[str, Any]]:
-    """Returns a list of links to Google Ads accounts for a property.
-
-    Args:
-        property_id: The Google Analytics property ID. Accepted formats are:
-          - A number
-          - A string consisting of 'properties/' followed by a number
-    """
+async def list_google_ads_links() -> List[Dict[str, Any]]:
+    """Returns a list of links to Google Ads accounts for a property."""
+    property_id = get_property_id() 
     request = admin_v1beta.ListGoogleAdsLinksRequest(
         parent=construct_property_rn(property_id)
     )
@@ -60,13 +55,9 @@ async def list_google_ads_links(property_id: int | str) -> List[Dict[str, Any]]:
 
 
 @mcp.tool(title="Gets details about a property")
-async def get_property_details(property_id: int | str) -> Dict[str, Any]:
-    """Returns details about a property.
-    Args:
-        property_id: The Google Analytics property ID. Accepted formats are:
-          - A number
-          - A string consisting of 'properties/' followed by a number
-    """
+async def get_property_details() -> Dict[str, Any]:
+    """Returns details about a property."""
+    property_id = get_property_id()
     client = create_admin_api_client()
     request = admin_v1beta.GetPropertyRequest(
         name=construct_property_rn(property_id)

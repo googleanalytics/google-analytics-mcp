@@ -26,6 +26,7 @@ from analytics_mcp.tools.reporting.metadata import (
 from analytics_mcp.tools.utils import (
     construct_property_rn,
     create_data_api_client,
+    get_property_id,
     proto_to_dict,
 )
 from google.analytics import data_v1beta
@@ -78,9 +79,8 @@ def _run_report_description() -> str:
 
           """
 
-
+@mcp.tool()
 async def run_report(
-    property_id: int | str,
     date_ranges: List[Dict[str, str]],
     dimensions: List[str],
     metrics: List[str],
@@ -102,9 +102,6 @@ async def run_report(
     https://github.com/googleapis/googleapis/tree/master/google/analytics/data/v1beta.
 
     Args:
-        property_id: The Google Analytics property ID. Accepted formats are:
-          - A number
-          - A string consisting of 'properties/' followed by a number
         date_ranges: A list of date ranges
           (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/DateRange)
           to include in the report.
@@ -139,7 +136,7 @@ async def run_report(
         return_property_quota: Whether to return property quota in the response.
     """
     request = data_v1beta.RunReportRequest(
-        property=construct_property_rn(property_id),
+        property=construct_property_rn(get_property_id()),
         dimensions=[
             data_v1beta.Dimension(name=dimension) for dimension in dimensions
         ],
@@ -177,8 +174,8 @@ async def run_report(
 # runtime. Uses the `add_tool` method instead of an annnotation since `add_tool`
 # provides the flexibility needed to generate the description while also
 # including the `run_report` method's docstring.
-mcp.add_tool(
-    run_report,
-    title="Run a Google Analytics Data API report using the Data API",
-    description=_run_report_description(),
-)
+#mcp.add_tool(
+    #run_report,
+    #title="Run a Google Analytics Data API report using the Data API",
+    #description=_run_report_description(),
+#)

@@ -20,6 +20,7 @@ from analytics_mcp.coordinator import mcp
 from analytics_mcp.tools.utils import (
     construct_property_rn,
     create_data_api_client,
+    get_property_id,
     proto_to_dict,
 )
 from analytics_mcp.tools.reporting.metadata import (
@@ -76,9 +77,8 @@ def _run_realtime_report_description() -> str:
 
 """
 
-
+@mcp.tool()
 async def run_realtime_report(
-    property_id: int | str,
     dimensions: List[str],
     metrics: List[str],
     dimension_filter: Dict[str, Any] = None,
@@ -132,7 +132,7 @@ async def run_realtime_report(
         return_property_quota: Whether to return realtime property quota in the response.
     """
     request = data_v1beta.RunRealtimeReportRequest(
-        property=construct_property_rn(property_id),
+        property=construct_property_rn(get_property_id()),
         dimensions=[
             data_v1beta.Dimension(name=dimension) for dimension in dimensions
         ],
@@ -166,8 +166,8 @@ async def run_realtime_report(
 # runtime. Uses the `add_tool` method instead of an annnotation since `add_tool`
 # provides the flexibility needed to generate the description while also
 # including the `run_realtime_report` method's docstring.
-mcp.add_tool(
-    run_realtime_report,
-    title="Run a Google Analytics realtime report using the Data API",
-    description=_run_realtime_report_description(),
-)
+#mcp.add_tool(
+    #run_realtime_report,
+    #title="Run a Google Analytics realtime report using the Data API",
+    #description=_run_realtime_report_description(),
+#)

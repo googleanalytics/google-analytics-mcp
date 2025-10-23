@@ -20,9 +20,10 @@ from analytics_mcp.coordinator import mcp
 from analytics_mcp.tools.utils import (
     construct_property_rn,
     create_admin_api_client,
+    create_admin_alpha_api_client,
     proto_to_dict,
 )
-from google.analytics import admin_v1beta
+from google.analytics import admin_v1beta, admin_v1alpha
 
 
 @mcp.tool()
@@ -73,3 +74,26 @@ async def get_property_details(property_id: int | str) -> Dict[str, Any]:
     )
     response = await client.get_property(request=request)
     return proto_to_dict(response)
+
+
+@mcp.tool(title="Gets property annotations for a property")
+async def get_property_annotations(property_id: int | str) -> List[Dict[str, Any]]:
+    """Returns annotations for a property.
+    
+    Annotations are a feature that allows you to leave notes on GA4 for specific dates or periods.
+    They are typically used to record service releases, marketing campaign launches or changes,
+    and rapid traffic increases or decreases due to external factors.
+    
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1alpha.ListReportingDataAnnotationsRequest(
+        parent=construct_property_rn(property_id)
+    )
+    annotations_pager = await create_admin_alpha_api_client().list_reporting_data_annotations(
+        request=request
+    )
+    all_pages = [proto_to_dict(annotation_page) async for annotation_page in annotations_pager]
+    return all_pages

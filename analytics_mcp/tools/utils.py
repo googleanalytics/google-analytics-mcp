@@ -71,7 +71,9 @@ def create_data_api_client() -> data_v1beta.BetaAnalyticsDataAsyncClient:
     )
 
 
-def create_admin_alpha_api_client() -> admin_v1alpha.AnalyticsAdminServiceAsyncClient:
+def create_admin_alpha_api_client() -> (
+    admin_v1alpha.AnalyticsAdminServiceAsyncClient
+):
     """Returns a properly configured Google Analytics Admin API (alpha) async client.
     Uses Application Default Credentials with read-only scope.
     """

@@ -77,7 +77,7 @@ async def get_property_details(property_id: int | str) -> Dict[str, Any]:
 
 
 @mcp.tool(title="Gets property annotations for a property")
-async def get_property_annotations(property_id: int | str) -> List[Dict[str, Any]]:
+async def list_property_annotations(property_id: int | str) -> List[Dict[str, Any]]:
     """Returns annotations for a property.
     
     Annotations are a feature that allows you to leave notes on GA4 for specific dates or periods.

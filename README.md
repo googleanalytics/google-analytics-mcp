@@ -12,6 +12,10 @@ This repo contains the source code for running a local
 [MCP](https://modelcontextprotocol.io) server that interacts with APIs for
 [Google Analytics](https://support.google.com/analytics).
 
+<a href="https://glama.ai/mcp/servers/@googleanalytics/google-analytics-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@googleanalytics/google-analytics-mcp/badge" alt="Google Analytics Server MCP server" />
+</a>
+
 Join the discussion and ask questions in the
 [🤖-analytics-mcp channel](https://discord.com/channels/971845904002871346/1398002598665257060)
 on Discord.

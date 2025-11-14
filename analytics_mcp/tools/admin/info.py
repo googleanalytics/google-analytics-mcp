@@ -14,20 +14,20 @@
 
 """Tools for gathering Google Analytics account and property information."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from analytics_mcp.coordinator import mcp
 from analytics_mcp.tools.utils import (
     construct_property_rn,
-    create_admin_api_client,
     create_admin_alpha_api_client,
+    create_admin_api_client,
     proto_to_dict,
 )
-from google.analytics import admin_v1beta, admin_v1alpha
+from google.analytics import admin_v1alpha, admin_v1beta
 
 
 @mcp.tool()
-async def get_account_summaries() -> List[Dict[str, Any]]:
+async def get_account_summaries() -> list[dict[str, Any]]:
     """Retrieves information about the user's Google Analytics accounts and properties."""
 
     # Uses an async list comprehension so the pager returned by
@@ -39,8 +39,8 @@ async def get_account_summaries() -> List[Dict[str, Any]]:
     return all_pages
 
 
-@mcp.tool(title="List links to Google Ads accounts")
-async def list_google_ads_links(property_id: int | str) -> List[Dict[str, Any]]:
+@mcp.tool(title="list links to Google Ads accounts")
+async def list_google_ads_links(property_id: int | str) -> list[dict[str, Any]]:
     """Returns a list of links to Google Ads accounts for a property.
 
     Args:
@@ -61,7 +61,7 @@ async def list_google_ads_links(property_id: int | str) -> List[Dict[str, Any]]:
 
 
 @mcp.tool(title="Gets details about a property")
-async def get_property_details(property_id: int | str) -> Dict[str, Any]:
+async def get_property_details(property_id: int | str) -> dict[str, Any]:
     """Returns details about a property.
     Args:
         property_id: The Google Analytics property ID. Accepted formats are:
@@ -79,7 +79,7 @@ async def get_property_details(property_id: int | str) -> Dict[str, Any]:
 @mcp.tool(title="Gets property annotations for a property")
 async def list_property_annotations(
     property_id: int | str,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Returns annotations for a property.
 
     Annotations are a feature that allows you to leave notes on GA4 for specific dates or periods.

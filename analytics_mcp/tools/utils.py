@@ -14,23 +14,28 @@
 
 """Common utilities used by the MCP server."""
 
-from typing import Any, Dict
-
-from google.analytics import admin_v1beta, data_v1beta, admin_v1alpha
-from google.api_core.gapic_v1.client_info import ClientInfo
 from importlib import metadata
+from typing import Any
+
 import google.auth
+import google.oauth2.credentials
 import proto
+from google.analytics import admin_v1alpha, admin_v1beta, data_v1beta
+from google.api_core.gapic_v1.client_info import ClientInfo
+from google.auth.credentials import Credentials
+from mcp.server.auth.middleware.auth_context import get_access_token
+
+from analytics_mcp.coordinator import mcp
 
 
-def _get_package_version_with_fallback():
+def _get_package_version_with_fallback() -> str:
     """Returns the version of the package.
 
     Falls back to 'unknown' if the version can't be resolved.
     """
     try:
         return metadata.version("analytics-mcp")
-    except:
+    except Exception:
         return "unknown"
 
 
@@ -44,11 +49,23 @@ _READ_ONLY_ANALYTICS_SCOPE = (
     "https://www.googleapis.com/auth/analytics.readonly"
 )
 
+if mcp.settings.auth is not None:
 
-def _create_credentials() -> google.auth.credentials.Credentials:
-    """Returns Application Default Credentials with read-only scope."""
-    (credentials, _) = google.auth.default(scopes=[_READ_ONLY_ANALYTICS_SCOPE])
-    return credentials
+    def _create_credentials() -> Credentials:
+        access_token = get_access_token()
+        assert access_token is not None, "Failed to obtain access token"
+        return google.oauth2.credentials.Credentials(
+            token=access_token.token, scopes=[_READ_ONLY_ANALYTICS_SCOPE]
+        )
+
+else:
+
+    def _create_credentials() -> Credentials:
+        """Returns Application Default Credentials with read-only scope."""
+        (credentials, _) = google.auth.default(
+            scopes=[_READ_ONLY_ANALYTICS_SCOPE]
+        )
+        return credentials  # type: ignore[no-any-return]
 
 
 def create_admin_api_client() -> admin_v1beta.AnalyticsAdminServiceAsyncClient:
@@ -97,17 +114,15 @@ def construct_property_rn(property_value: int | str) -> str:
                 property_num = int(numeric_part)
     if property_num is None:
         raise ValueError(
-            (
-                f"Invalid property ID: {property_value}. "
-                "A valid property value is either a number or a string starting "
-                "with 'properties/' and followed by a number."
-            )
+            f"Invalid property ID: {property_value}. "
+            "A valid property value is either a number or a string starting "
+            "with 'properties/' and followed by a number."
         )
 
     return f"properties/{property_num}"
 
 
-def proto_to_dict(obj: proto.Message) -> Dict[str, Any]:
+def proto_to_dict(obj: proto.Message) -> dict[str, Any]:
     """Converts a proto message to a dictionary."""
     return type(obj).to_dict(
         obj, use_integers_for_enums=False, preserving_proto_field_name=True

@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ .Release.Name }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.repository }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: FASTMCP_HOST
+              value: "0.0.0.0"
+            - name: FASTMCP_LOG_LEVEL
+              value: "INFO"
+            - name: FASTMCP_TRANSPORT
+              value: "streamable-http"
+            - name: FASTMCP_AUTH__ISSUER_URL
+              value: "https://mcp-auth.{{ .Values.domain }}"
+            - name: FASTMCP_AUTH__RESOURCE_SERVER_URL
+              value: "https://mcp-ga.{{ .Values.domain }}/mcp"
+            - name: FASTMCP_AUTH__REQUIRED_SCOPES
+              value: '["https://www.googleapis.com/auth/analytics.readonly"]'
+          resources:
+            {{- with .Values.resources }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ .Release.Name }}

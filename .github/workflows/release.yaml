@@ -1,0 +1,102 @@
+name: Release to prod
+
+run-name: Deploy to 'prod'
+
+on:
+  push:
+    branches:
+    - main
+  workflow_dispatch:
+
+env:
+  NAME: mcp-ga
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  generate-image-tag:
+    name: Generate Docker Image Tag
+    uses: ./.github/workflows/generate-tag.yaml
+
+  build-and-push-image:
+    name: Build Docker Image and Push to GAR
+    needs: generate-image-tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      REGISTRY: europe-west1-docker.pkg.dev
+      REPOSITORY: stape-production/stape
+      IMAGE: mcp-ga
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/207001532273/locations/global/workloadIdentityPools/github/providers/stape-io
+          service_account: github-actions@stape-production.iam.gserviceaccount.com
+          token_format: access_token
+
+      - name: Login to Google Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ needs.generate-image-tag.outputs.image_tag }}
+          secrets: |
+            node_auth_token=${{ secrets.NODE_AUTH_TOKEN }}
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN_GLOBAL }}
+            redis_url=${{ env.REDIS_URL }}
+            github_run_id=${{ github.run_id }}
+            github_run_attempt=${{ github.run_attempt }}
+
+  deploy-to-kubernetes:
+    name: Deploy to 'prod'
+    needs:
+      - generate-image-tag
+      - build-and-push-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/207001532273/locations/global/workloadIdentityPools/github/providers/stape-io
+          service_account: github-actions@stape-production.iam.gserviceaccount.com
+          token_format: access_token
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          project_id: ${{ secrets.PROJECT_ID }}
+          cluster_name: ${{ secrets.GKE_CLUSTER }}
+          location: ${{ secrets.GKE_LOCATION }}
+
+      - name: Setup helm
+        uses: azure/setup-helm@v4.3.0
+
+      - name: Update Image Tag
+        run: sed -i "s/latest/${{ needs.generate-image-tag.outputs.image_tag }}/g" chart/values-prod.yaml
+
+      - name: Upgrade Helm Chart
+        run: helm upgrade --install --namespace ${{ env.NAME }} --create-namespace ${{ env.NAME }} chart/ --values chart/values-prod.yaml --wait

@@ -22,7 +22,7 @@ from analytics_mcp.tools import utils
 class TestUtils(unittest.TestCase):
     """Test cases for the utils module."""
 
-    def test_construct_property_rn(self):
+    def test_construct_property_rn(self) -> None:
         """Tests construct_property_rn using valid input."""
         self.assertEqual(
             utils.construct_property_rn(12345),
@@ -45,10 +45,10 @@ class TestUtils(unittest.TestCase):
             "Full resource name should be considered valid",
         )
 
-    def test_construct_property_rn_invalid_input(self):
+    def test_construct_property_rn_invalid_input(self) -> None:
         """Tests that construct_property_rn raises a ValueError for invalid input."""
         with self.assertRaises(ValueError, msg="None should fail"):
-            utils.construct_property_rn(None)
+            utils.construct_property_rn(None)  # type: ignore[arg-type]
         with self.assertRaises(ValueError, msg="Empty string should fail"):
             utils.construct_property_rn("")
         with self.assertRaises(

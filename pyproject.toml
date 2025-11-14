@@ -10,8 +10,8 @@ readme = "README.md"
 dependencies = [
     "google-analytics-data==0.19.0",
     "google-analytics-admin==0.26.0",
-    "google-auth~=2.40",
-    "mcp[cli]>=1.2.0",
+    "google-auth~=2.43",
+    "mcp[cli]>=1.21.1",
     "httpx>=0.28.1"
 ]
 keywords = [
@@ -52,9 +52,55 @@ google-analytics-mcp = "analytics_mcp.server:run_server"
 [project.optional-dependencies]
 dev = [
     "black",
-    "nox >=2025.5.1, <2026"
+    "nox >=2025.5.1, <2026",
+    "ruff",
+    "mypy",
 ]
 
 [build-system]
 requires = ["setuptools>=69.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.mypy]
+strict = false
+files = [
+    "analytics_mcp",
+    "tests",
+]
+warn_return_any = true
+warn_unused_ignores = true
+warn_unreachable = true
+show_error_codes = true
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["proto.*", "google.auth.*"]
+follow_untyped_imports = true
+
+[tool.ruff]
+line-length = 80
+src = ["analytics_mcp", "tests"]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "ARG001", # unused arguments in functions
+]
+ignore = [
+    "B008",  # do not perform function calls in argument defaults
+    "B904",  # Allow raising exceptions without from e, for HTTPException
+    "C408",  # Unnecessary `dict` call
+    "E501",  # Line too long
+]
+[tool.setuptools.packages.find]
+include = ["analytics_mcp*"]
+exclude = ["tests*", "chart*"]

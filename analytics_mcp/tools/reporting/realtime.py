@@ -14,21 +14,22 @@
 
 """Tools for running realtime reports using the Data API."""
 
-from typing import Any, Dict, List
+from typing import Any
+
+from google.analytics import data_v1beta
 
 from analytics_mcp.coordinator import mcp
-from analytics_mcp.tools.utils import (
-    construct_property_rn,
-    create_data_api_client,
-    proto_to_dict,
-)
 from analytics_mcp.tools.reporting.metadata import (
     get_date_ranges_hints,
     get_dimension_filter_hints,
     get_metric_filter_hints,
     get_order_bys_hints,
 )
-from google.analytics import data_v1beta
+from analytics_mcp.tools.utils import (
+    construct_property_rn,
+    create_data_api_client,
+    proto_to_dict,
+)
 
 
 def _run_realtime_report_description() -> str:
@@ -79,15 +80,15 @@ def _run_realtime_report_description() -> str:
 
 async def run_realtime_report(
     property_id: int | str,
-    dimensions: List[str],
-    metrics: List[str],
-    dimension_filter: Dict[str, Any] = None,
-    metric_filter: Dict[str, Any] = None,
-    order_bys: List[Dict[str, Any]] = None,
-    limit: int = None,
-    offset: int = None,
+    dimensions: list[str],
+    metrics: list[str],
+    dimension_filter: dict[str, Any] | None = None,
+    metric_filter: dict[str, Any] | None = None,
+    order_bys: list[dict[str, Any]] | None = None,
+    limit: int | None = None,
+    offset: int | None = None,
     return_property_quota: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Runs a Google Analytics Data API realtime report.
 
     See

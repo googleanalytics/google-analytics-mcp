@@ -1,0 +1,29 @@
+name: Generate Image Tag
+
+on:
+  workflow_call:
+    outputs:
+      image_tag:
+        description: "Generated image tag"
+        value: ${{ jobs.generate.outputs.image_tag }}
+      sha_short:
+        description: "Generate git commit"
+        value: ${{ jobs.generate.outputs.sha_short }}
+
+
+jobs:
+  generate:
+    name: Generate Tag
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set_tag.outputs.image_tag }}
+      sha_short: ${{ steps.set_tag.outputs.sha_short }}
+    steps:
+      - name: Set image_tag and sha_short
+        id: set_tag
+        run: |
+          TAG="$(echo '${{ github.sha }}' | cut -c1-7)-${{ github.run_id }}-${{ github.run_attempt }}"
+          echo "image_tag=$TAG" >> $GITHUB_OUTPUT
+
+          SHA_SHORT="$(echo '${{ github.sha }}' | cut -c1-7)"
+          echo "sha_short=$SHA_SHORT" >> $GITHUB_OUTPUT

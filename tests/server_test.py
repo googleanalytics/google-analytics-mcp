@@ -20,7 +20,7 @@ import unittest
 class TestUtils(unittest.TestCase):
     """Test cases for the server module."""
 
-    def test_server_initialization(self):
+    def test_server_initialization(self) -> None:
         """Tests that the MCP server instance is initialized.
 
         This servers as a smoke test to confirm there are no obvious issues

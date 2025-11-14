@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import nox
-import os
-import pathlib
 
 PYTHON_VERSIONS = ["3.10", "3.11", "3.12", "3.13"]
 
@@ -38,7 +36,7 @@ TEST_DEPENDENCIES = [
 ]
 
 
-def _format(session, check=False):
+def _format(session, check=False):  # type: ignore[no-untyped-def]
     """Helper function to run formatters.
 
     Args:
@@ -65,19 +63,19 @@ def _format(session, check=False):
 
 
 @nox.session(venv_backend="none")
-def lint(session):
+def lint(session):  # type: ignore[no-untyped-def]
     """Fails if the code is not formatted correctly."""
     _format(session, check=True)
 
 
 @nox.session(venv_backend="none")
-def format(session):
+def format(session):  # type: ignore[no-untyped-def]
     """Runs the black formatter and applies formatting fixes."""
     _format(session)
 
 
 @nox.session(python=PYTHON_VERSIONS)
-def tests(session):
+def tests(session):  # type: ignore[no-untyped-def]
     session.install(".")
     # modules for testing
     session.install(*TEST_DEPENDENCIES)

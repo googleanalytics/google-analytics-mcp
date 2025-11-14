@@ -1,0 +1,6 @@
+domain: "stape.dev"
+image:
+  repository: "europe-west1-docker.pkg.dev/stape-development/stape"
+  name: "mcp-ga"
+  tag: "latest"
+

@@ -1,4 +1,4 @@
-host: "stape.ai"
+domain: "stape.ai"
 image:
   repository: "europe-west1-docker.pkg.dev/stape-production/stape"
   name: "mcp-ga"

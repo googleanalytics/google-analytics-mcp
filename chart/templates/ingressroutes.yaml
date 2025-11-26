@@ -7,7 +7,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`{{ .Values.host }}`)
+      match: Host(`mcp-ga.{{ .Values.domain }}`)
       priority: 10
       services:
         - name: {{ .Release.Name }}

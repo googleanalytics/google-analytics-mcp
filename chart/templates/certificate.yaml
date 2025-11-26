@@ -3,10 +3,10 @@ kind: Certificate
 metadata:
   name: {{ .Release.Name }}
 spec:
-  commonName: {{ .Values.host }}
+  commonName: "mcp-ga.{{ .Values.domain }}"
   secretName: {{ .Release.Name }}-certificate
   dnsNames:
-    - {{ .Values.host }}
+    - "mcp-ga.{{ .Values.domain }}"
   issuerRef:
     name: cloudflare
     kind: ClusterIssuer

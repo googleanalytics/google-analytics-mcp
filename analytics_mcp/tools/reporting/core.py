@@ -81,7 +81,7 @@ def _run_report_description() -> str:
 
 async def run_report(
     property_id: int | str,
-    date_ranges: List[Dict[str, str]],
+    date_ranges: List[Dict[str, Any]],
     dimensions: List[str],
     metrics: List[str],
     dimension_filter: Dict[str, Any] = None,

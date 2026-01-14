@@ -43,3 +43,7 @@ rm -rf ~/.mcp-auth
 to clear any locally stored state and tokens.
 rm -rf ~/.mcp-auth
 Then restarting your MCP client.
+
+## Useful Resources:
+
+Step-by-step guide on how to configure Google Analytics MCP Server: https://stape.io/blog/mcp-server-for-google-analytics

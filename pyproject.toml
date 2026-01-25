@@ -12,7 +12,8 @@ dependencies = [
     "google-analytics-admin==0.26.0",
     "google-auth~=2.43",
     "mcp[cli]>=1.21.1",
-    "httpx>=0.28.1"
+    "httpx>=0.28.1",
+    "joserfc>=1.6.1",
 ]
 keywords = [
     "google analytics",

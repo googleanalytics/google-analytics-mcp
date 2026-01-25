@@ -18,17 +18,79 @@ The singleton allows other modules to register their tools with the same MCP
 server using `@mcp.tool` annotations, thereby 'coordinating' the bootstrapping
 of the server.
 """
+
+from typing import Literal
+
+import httpx
 from mcp.server.fastmcp import FastMCP
 
-from analytics_mcp.auth import TokenVerifier
-from analytics_mcp.settings import FastMcpSettings
+from analytics_mcp.auth import BearerAuth, TokenVerifier
+from analytics_mcp.jwt import JWTProvider
+from analytics_mcp.settings import (
+    BasicAuthSettings,
+    BearerAuthSettings,
+    FastMcpSettings,
+    JwtAuthSettings,
+)
 
 
-def _create_token_verifier(issuer_url: str, required_scopes: list[str] | None = None) -> TokenVerifier:
+def _create_jwt_provider() -> JWTProvider:
+    from joserfc import jwk
+
+    settings = JwtAuthSettings()
+    if settings.private_keys is None or settings.algorithm is None:
+        raise ValueError(
+            "JWTProvider cannot be created without private keys and algorithm."
+        )
+
+    private_keys = jwk.KeySet.import_key_set(
+        {"keys": settings.private_keys.get_secret_value()}
+    )
+
+    return JWTProvider(
+        private_keys=private_keys,
+        algorithm=settings.algorithm,
+        claims=settings.claims,
+        token_lifetime=settings.token_lifetime,
+    )
+
+
+def _create_bearer_auth() -> httpx.Auth:
+    settings = BearerAuthSettings()
+    if settings.token is not None:
+        token = settings.token.get_secret_value()
+        return BearerAuth(token_provider=lambda: token)
+    else:
+        return BearerAuth(token_provider=_create_jwt_provider())
+
+
+def _create_basic_auth() -> httpx.Auth:
+    settings: BasicAuthSettings = BasicAuthSettings()  # type: ignore[call-arg]
+    return httpx.BasicAuth(
+        username=settings.username,
+        password=settings.password.get_secret_value(),
+    )
+
+
+def _create_auth(type: Literal["bearer", "basic", "none"]) -> httpx.Auth | None:
+    if type == "bearer":
+        return _create_bearer_auth()
+    elif type == "basic":
+        return _create_basic_auth()
+    elif type == "none":
+        return None
+    else:
+        raise ValueError(f"Unsupported auth type: {type}")
+
+
+def _create_token_verifier(
+    required_scopes: list[str] | None = None
+) -> TokenVerifier:
     from analytics_mcp.settings import TokenVerifierSettings
 
-    settings = TokenVerifierSettings(url=issuer_url, required_scopes=required_scopes)
+    settings = TokenVerifierSettings(required_scopes=required_scopes) # type: ignore[call-arg]
     return TokenVerifier(
+        auth=_create_auth(settings.auth),
         url=settings.url,
         method=settings.method,
         required_scopes=settings.required_scopes,
@@ -40,7 +102,7 @@ def _create_mcp_server() -> FastMCP:
     settings = FastMcpSettings()
     token_verifier = None
     if settings.auth is not None:
-        token_verifier = _create_token_verifier(str(settings.auth.issuer_url), settings.auth.required_scopes)
+        token_verifier = _create_token_verifier(settings.auth.required_scopes)
     settings_dict = settings.model_dump()
     mcp = FastMCP(
         "Google Analytics MCP Server",

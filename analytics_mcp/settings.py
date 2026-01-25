@@ -64,6 +64,19 @@ class FastMcpSettings(BaseFastMcpSettings):
     transport_security: TransportSecuritySettings | None = None
 
 
+class TokenVerifierSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="FASTMCP_TOKEN_VERIFIER_",
+        env_file=".env",
+        extra="ignore",
+    )
+
+    url: str
+    method: Literal["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"] = "GET"
+    required_scopes: list[str] | None = None
+    content_type: Literal["application/json", "application/x-www-form-urlencoded"] = "application/json"
+
+
 class ServerSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="FASTMCP_",
@@ -74,4 +87,4 @@ class ServerSettings(BaseSettings):
     transport: Literal["stdio", "streamable-http", "sse"] = "stdio"
 
 
-__all__ = ["FastMcpSettings", "ServerSettings"]
+__all__ = ["FastMcpSettings", "ServerSettings", "TokenVerifierSettings"]

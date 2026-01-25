@@ -18,13 +18,7 @@ The singleton allows other modules to register their tools with the same MCP
 server using `@mcp.tool` annotations, thereby 'coordinating' the bootstrapping
 of the server.
 """
-
-from mcp.server.auth.handlers.metadata import (
-    ProtectedResourceMetadataHandler,
-)
-from mcp.server.auth.routes import cors_middleware
 from mcp.server.fastmcp import FastMCP
-from mcp.shared.auth import ProtectedResourceMetadata
 
 from analytics_mcp.auth import TokenVerifier
 from analytics_mcp.settings import FastMcpSettings
@@ -53,32 +47,6 @@ def _create_mcp_server() -> FastMCP:
         token_verifier=token_verifier,
         **settings_dict,
     )
-    # if mcp.settings.auth and mcp.settings.auth.resource_server_url:
-    #     protected_resource_metadata = ProtectedResourceMetadata(
-    #         resource=mcp.settings.auth.resource_server_url,
-    #         authorization_servers=(
-    #             [mcp.settings.auth.issuer_url]
-    #             if mcp.settings.auth.issuer_url
-    #             else []
-    #         ),
-    #         scopes_supported=mcp.settings.auth.required_scopes,
-    #     )
-
-    #     handler = cors_middleware(
-    #         ProtectedResourceMetadataHandler(
-    #             protected_resource_metadata
-    #         ).handle,
-    #         ["GET", "OPTIONS"],
-    #     )
-
-    #     mcp.custom_route(
-    #         f"{mcp.settings.sse_path.rstrip('/')}/.well-known/oauth-protected-resource",
-    #         methods=["GET", "OPTIONS"],
-    #     )(handler)
-    #     mcp.custom_route(
-    #         f"{mcp.settings.streamable_http_path.rstrip('/')}/.well-known/oauth-protected-resource",
-    #         methods=["GET", "OPTIONS"],
-    #     )(handler)
     return mcp
 
 

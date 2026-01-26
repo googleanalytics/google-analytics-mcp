@@ -85,21 +85,9 @@ class TokenVerifier(_SDKTokenVerifier):
                 token_info = TokenVerifyResponse.model_validate(response.json())
         except (httpx.RequestError, httpx.HTTPStatusError) as e:
             logging.error(f"HTTP error during token verification: {str(e)}")
-            raise TokenError(
-                "invalid_request",
-                "Failed to verify token",
-            ) from e
-
-
+            return None
 
         scopes = (token_info.scope or "").split()
-        missing_scopes = self.required_scopes.difference(scopes)
-        if missing_scopes:
-            logging.debug(f"Token is missing required scopes: {missing_scopes}")
-            raise TokenError(
-                "invalid_scope",
-                f"Missing scopes: {', '.join(missing_scopes)}",
-            )
 
         expires_at = None
         if token_info.expires_in is not None:

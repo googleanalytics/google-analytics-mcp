@@ -88,7 +88,7 @@ def _create_token_verifier(
 ) -> TokenVerifier:
     from analytics_mcp.settings import TokenVerifierSettings
 
-    settings = TokenVerifierSettings(required_scopes=required_scopes) # type: ignore[call-arg]
+    settings = TokenVerifierSettings(required_scopes=required_scopes)
     return TokenVerifier(
         auth=_create_auth(settings.auth),
         url=settings.url,

@@ -108,7 +108,7 @@ class TokenVerifierSettings(BaseSettings):
         extra="ignore",
     )
 
-    url: str
+    url: str = "https://www.googleapis.com/oauth2/v1/tokeninfo"
     auth: Literal["bearer", "basic", "none"] = "none"
     method: Literal["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"] = "GET"
     required_scopes: list[str] | None = None

@@ -1,10 +1,11 @@
 import logging
+import time
 import typing
 from collections.abc import Callable
 from typing import Any, Final, Literal
 
 import httpx
-from mcp.server.auth.provider import AccessToken
+from mcp.server.auth.provider import AccessToken, TokenError
 from mcp.server.auth.provider import TokenVerifier as _SDKTokenVerifier
 from pydantic import BaseModel
 
@@ -12,10 +13,12 @@ HTTP_TIMEOUT_SECONDS: Final[float] = 5.0
 
 
 class TokenVerifyResponse(BaseModel):
-    client_id: str
-    token: str
-    scopes: list[str]
-    expires_at: int | None = None
+    issued_to: str
+    audience: str
+    scope: str
+    expires_in: int | None = None
+    access_type: str | None = None
+    token: str | None = None
 
 
 class TokenVerifyRequest(BaseModel):
@@ -64,6 +67,7 @@ class TokenVerifier(_SDKTokenVerifier):
             raise ValueError(f"Unsupported HTTP method: {self.method}")
 
     async def verify_token(self, token: str) -> AccessToken | None:
+        now = int(time.time())
         try:
             async with httpx.AsyncClient(
                 auth=self.auth,
@@ -79,19 +83,33 @@ class TokenVerifier(_SDKTokenVerifier):
                 response.raise_for_status()
                 logging.debug("Token verified successfully")
                 token_info = TokenVerifyResponse.model_validate(response.json())
-        except httpx.RequestError as e:
-            logging.error(f"HTTP error during token verification: {e}")
-            return None
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
+            logging.error(f"HTTP error during token verification: {str(e)}")
+            raise TokenError(
+                "invalid_request",
+                "Failed to verify token",
+            ) from e
 
-        missing_scopes = self.required_scopes.difference(token_info.scopes)
+
+
+        scopes = (token_info.scope or "").split()
+        missing_scopes = self.required_scopes.difference(scopes)
         if missing_scopes:
             logging.debug(f"Token is missing required scopes: {missing_scopes}")
-            return None
+            raise TokenError(
+                "invalid_scope",
+                f"Missing scopes: {', '.join(missing_scopes)}",
+            )
+
+        expires_at = None
+        if token_info.expires_in is not None:
+            expires_at = now + token_info.expires_in
+
         return AccessToken(
-            token=token_info.token,
-            client_id=token_info.client_id,
-            expires_at=token_info.expires_at,
-            scopes=token_info.scopes,
+            token=token_info.token or token,
+            client_id=token_info.audience,
+            expires_at=expires_at,
+            scopes=scopes,
         )
 
 

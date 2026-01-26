@@ -1,68 +1,103 @@
+# Secrets and sensitive files
+.env
+.env.*
+*.key
+*.pem
+*_rsa
+*_rsa.*
+*.p12
+*.pfx
+.aws/
+.ssh/
+credentials
+secrets.yml
+secrets.yaml
+secrets/
+
+
+# Python
+__pycache__/
 *.py[cod]
-*.sw[op]
-
-# C extensions
+*$py.class
 *.so
-
-# Packages
-*.egg
-*.egg-info
-dist
-build
-eggs
-.eggs
-parts
-bin
-var
-sdist
-develop-eggs
-.installed.cfg
-lib
-lib64
-__pycache__
-
-# Installer logs
-pip-log.txt
-
-# Unit test / coverage reports
-.coverage
-.nox
-.cache
-.pytest_cache
-
-
-# Mac
-.DS_Store
-
-# JetBrains
-.idea
-
-# VS Code
-.vscode
-
-# emacs
-*~
-
-# Built documentation
-docs/_build
-docs.metadata
-
-# Virtual environment
+.Python
 env/
 venv/
 .venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+*.egg-info/
 
-# pyenv
-.python-version
+# Version control
+.git/
+.gitignore
+.gitattributes
+.gitmodules
 
-# Test logs
-coverage.xml
-*sponge_log.xml
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
 
-# System test environment variables.
-system_tests/local_test_setup
+# Documentation
+*.md
+README*
+LICENSE*
+CHANGELOG*
+MANIFEST.in
+CODEOWNERS
+docs/
+documentation/
+.readthedocs.yml
+mkdocs.yml
 
-# Make sure a generated file isn't accidentally committed.
-pylintrc
-pylintrc.test
-.git
+# Tests & Coverage
+test/
+tests/
+__tests__/
+*.test.py
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+jest.config.js
+vitest.config.js
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.circleci/
+.travis.yml
+azure-pipelines.yml
+Jenkinsfile
+.drone.yml
+
+# Log files
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS-specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini

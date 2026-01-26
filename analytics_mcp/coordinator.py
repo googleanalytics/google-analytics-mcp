@@ -30,21 +30,21 @@ from analytics_mcp.settings import (
     BasicAuthSettings,
     BearerAuthSettings,
     FastMcpSettings,
-    JwtAuthSettings,
+    JwtProviderSettings,
 )
 
 
 def _create_jwt_provider() -> JWTProvider:
     from joserfc import jwk
 
-    settings = JwtAuthSettings()
-    if settings.private_keys is None or settings.algorithm is None:
+    settings = JwtProviderSettings()  # type: ignore[call-arg]
+    if not settings.private_keys or settings.algorithm is None:
         raise ValueError(
             "JWTProvider cannot be created without private keys and algorithm."
         )
 
     private_keys = jwk.KeySet.import_key_set(
-        {"keys": settings.private_keys.get_secret_value()}
+        {"keys": settings.private_keys}
     )
 
     return JWTProvider(

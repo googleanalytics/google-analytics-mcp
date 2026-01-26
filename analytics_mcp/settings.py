@@ -86,16 +86,14 @@ class BearerAuthSettings(BaseSettings):
     token: SecretStr | None = None
 
 
-class JwtAuthSettings(BaseSettings):
+class JwtProviderSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="JWT_PROVIDER_",
         env_file=".env",
         extra="ignore",
     )
 
-    private_keys: Secret[list[dict[str, Any]]] = Field(
-        default_factory=lambda: Secret([])
-    )
+    private_keys: list[dict[str, Any]]
     algorithm: str | None = None
     token_lifetime: dt.timedelta = dt.timedelta(minutes=1)
     claims: dict[str, Any] = Field(default_factory=dict)

@@ -5,7 +5,7 @@ from collections.abc import Callable
 from typing import Any, Final, Literal
 
 import httpx
-from mcp.server.auth.provider import AccessToken, TokenError
+from mcp.server.auth.provider import AccessToken
 from mcp.server.auth.provider import TokenVerifier as _SDKTokenVerifier
 from pydantic import BaseModel
 

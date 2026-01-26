@@ -43,9 +43,7 @@ def _create_jwt_provider() -> JWTProvider:
             "JWTProvider cannot be created without private keys and algorithm."
         )
 
-    private_keys = jwk.KeySet.import_key_set(
-        {"keys": settings.private_keys}
-    )
+    private_keys = jwk.KeySet.import_key_set({"keys": settings.private_keys})
 
     return JWTProvider(
         private_keys=private_keys,
@@ -84,7 +82,7 @@ def _create_auth(type: Literal["bearer", "basic", "none"]) -> httpx.Auth | None:
 
 
 def _create_token_verifier(
-    required_scopes: list[str] | None = None
+    required_scopes: list[str] | None = None,
 ) -> TokenVerifier:
     from analytics_mcp.settings import TokenVerifierSettings
 

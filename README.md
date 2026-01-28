@@ -60,7 +60,7 @@ Setup involves the following steps:
 
 ### Configure Python 🐍
 
-[Install pipx](https://pipx.pypa.io/stable/#install-pipx).
+[Install uv](https://docs.astral.sh/uv/getting-started/installation/).
 
 ### Enable APIs in your project ✅
 
@@ -136,9 +136,8 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
     {
       "mcpServers": {
         "analytics-mcp": {
-          "command": "pipx",
+          "command": "uvx",
           "args": [
-            "run",
             "analytics-mcp"
           ],
           "env": {

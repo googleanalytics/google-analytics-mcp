@@ -1,0 +1,17 @@
+{
+  "name": "google-analytics",
+  "version": "0.1.0",
+  "description": "Google Analytics MCP Server extension for Gemini CLI",
+  "author": "Josh Radcliff, Matt Landers",
+  "mcpServers": {
+    "analytics-mcp": {
+      "command": "uvx",
+      "args": [
+        "analytics-mcp"
+      ]
+    }
+  },
+  "gemini": {
+    "contextFile": "GEMINI.md"
+  }
+}

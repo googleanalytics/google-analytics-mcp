@@ -31,10 +31,58 @@ from analytics_mcp.tools.utils import (
 from google.analytics import data_v1beta
 
 
+_RUN_REPORT_DOC = """Runs a Google Analytics Data API report.
+
+Note that the reference docs at
+https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta
+all use camelCase field names, but field names passed to this method should
+be in snake_case since the tool is using the protocol buffers (protobuf)
+format. The protocol buffers for the Data API are available at
+https://github.com/googleapis/googleapis/tree/master/google/analytics/data/v1beta.
+
+Args:
+    property_id: The Google Analytics property ID. Accepted formats are:
+      - A number
+      - A string consisting of 'properties/' followed by a number
+    date_ranges: A list of date ranges
+      (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/DateRange)
+      to include in the report.
+    dimensions: A list of dimensions to include in the report.
+    metrics: A list of metrics to include in the report.
+    dimension_filter: A Data API FilterExpression
+      (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
+      to apply to the dimensions.  Don't use this for filtering metrics. Use
+      metric_filter instead. The `field_name` in a `dimension_filter` must
+      be a dimension, as defined in the `get_standard_dimensions` and
+      `get_dimensions` tools.
+    metric_filter: A Data API FilterExpression
+      (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
+      to apply to the metrics.  Don't use this for filtering dimensions. Use
+      dimension_filter instead. The `field_name` in a `metric_filter` must
+      be a metric, as defined in the `get_standard_metrics` and
+      `get_metrics` tools.
+    order_bys: A list of Data API OrderBy
+      (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/OrderBy)
+      objects to apply to the dimensions and metrics.
+    limit: The maximum number of rows to return in each response. Value must
+      be a positive integer <= 250,000. Used to paginate through large
+      reports, following the guide at
+      https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
+    offset: The row count of the start row. The first row is counted as row
+      0. Used to paginate through large
+      reports, following the guide at
+      https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
+    currency_code: The currency code to use for currency values. Must be in
+      ISO4217 format, such as "AED", "USD", "JPY". If the field is empty, the
+      report uses the property's default currency.
+    return_property_quota: Whether to return property quota in the response.
+"""
+
+
 def _run_report_description() -> str:
     """Returns the description for the `run_report` tool."""
     return f"""
-          {run_report.__doc__}
+          {_RUN_REPORT_DOC}
 
           ## Hints for arguments
 
@@ -79,6 +127,10 @@ def _run_report_description() -> str:
           """
 
 
+@mcp.tool(
+    title="Run a Google Analytics Data API report using the Data API",
+    description=_run_report_description(),
+)
 async def run_report(
     property_id: int | str,
     date_ranges: List[Dict[str, str]],
@@ -92,52 +144,7 @@ async def run_report(
     currency_code: str = None,
     return_property_quota: bool = False,
 ) -> Dict[str, Any]:
-    """Runs a Google Analytics Data API report.
-
-    Note that the reference docs at
-    https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta
-    all use camelCase field names, but field names passed to this method should
-    be in snake_case since the tool is using the protocol buffers (protobuf)
-    format. The protocol buffers for the Data API are available at
-    https://github.com/googleapis/googleapis/tree/master/google/analytics/data/v1beta.
-
-    Args:
-        property_id: The Google Analytics property ID. Accepted formats are:
-          - A number
-          - A string consisting of 'properties/' followed by a number
-        date_ranges: A list of date ranges
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/DateRange)
-          to include in the report.
-        dimensions: A list of dimensions to include in the report.
-        metrics: A list of metrics to include in the report.
-        dimension_filter: A Data API FilterExpression
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
-          to apply to the dimensions.  Don't use this for filtering metrics. Use
-          metric_filter instead. The `field_name` in a `dimension_filter` must
-          be a dimension, as defined in the `get_standard_dimensions` and
-          `get_dimensions` tools.
-        metric_filter: A Data API FilterExpression
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
-          to apply to the metrics.  Don't use this for filtering dimensions. Use
-          dimension_filter instead. The `field_name` in a `metric_filter` must
-          be a metric, as defined in the `get_standard_metrics` and
-          `get_metrics` tools.
-        order_bys: A list of Data API OrderBy
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/OrderBy)
-          objects to apply to the dimensions and metrics.
-        limit: The maximum number of rows to return in each response. Value must
-          be a positive integer <= 250,000. Used to paginate through large
-          reports, following the guide at
-          https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
-        offset: The row count of the start row. The first row is counted as row
-          0. Used to paginate through large
-          reports, following the guide at
-          https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
-        currency_code: The currency code to use for currency values. Must be in
-          ISO4217 format, such as "AED", "USD", "JPY". If the field is empty, the
-          report uses the property's default currency.
-        return_property_quota: Whether to return property quota in the response.
-    """
+    run_report.__doc__ = _RUN_REPORT_DOC
     request = data_v1beta.RunReportRequest(
         property=construct_property_rn(property_id),
         dimensions=[
@@ -172,13 +179,3 @@ async def run_report(
 
     return proto_to_dict(response)
 
-
-# The `run_report` tool requires a more complex description that's generated at
-# runtime. Uses the `add_tool` method instead of an annnotation since `add_tool`
-# provides the flexibility needed to generate the description while also
-# including the `run_report` method's docstring.
-mcp.add_tool(
-    run_report,
-    title="Run a Google Analytics Data API report using the Data API",
-    description=_run_report_description(),
-)

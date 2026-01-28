@@ -31,10 +31,55 @@ from analytics_mcp.tools.reporting.metadata import (
 from google.analytics import data_v1beta
 
 
+_RUN_REALTIME_REPORT_DOC = """Runs a Google Analytics Data API realtime report.
+
+See
+https://developers.google.com/analytics/devguides/reporting/data/v1/realtime-basics
+for more information.
+
+Args:
+    property_id: The Google Analytics property ID. Accepted formats are:
+      - A number
+      - A string consisting of 'properties/' followed by a number
+    dimensions: A list of dimensions to include in the report. Dimensions must be realtime dimensions.
+    metrics: A list of metrics to include in the report. Metrics must be realtime metrics.
+    dimension_filter: A Data API FilterExpression
+      (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
+      to apply to the dimensions.  Don't use this for filtering metrics. Use
+      metric_filter instead. The `field_name` in a `dimension_filter` must
+      be a dimension, as defined in the `get_standard_dimensions` and
+      `get_dimensions` tools.
+      For more information about the expected format of this argument, see
+      the `run_report_dimension_filter_hints` tool.
+    metric_filter: A Data API FilterExpression
+      (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
+      to apply to the metrics.  Don't use this for filtering dimensions. Use
+      dimension_filter instead. The `field_name` in a `metric_filter` must
+      be a metric, as defined in the `get_standard_metrics` and
+      `get_metrics` tools.
+      For more information about the expected format of this argument, see
+      the `run_report_metric_filter_hints` tool.
+    order_bys: A list of Data API OrderBy
+      (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/OrderBy)
+      objects to apply to the dimensions and metrics.
+      For more information about the expected format of this argument, see
+      the `run_report_order_bys_hints` tool.
+    limit: The maximum number of rows to return in each response. Value must
+      be a positive integer <= 250,000. Used to paginate through large
+      reports, following the guide at
+      https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
+    offset: The row count of the start row. The first row is counted as row
+      0. Used to paginate through large
+      reports, following the guide at
+      https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
+    return_property_quota: Whether to return realtime property quota in the response.
+"""
+
+
 def _run_realtime_report_description() -> str:
     """Returns the description for the `run_realtime_report` tool."""
     return f"""
-          {run_realtime_report.__doc__}
+          {_RUN_REALTIME_REPORT_DOC}
 
           ## Hints for arguments
 
@@ -77,6 +122,10 @@ def _run_realtime_report_description() -> str:
 """
 
 
+@mcp.tool(
+    title="Run a Google Analytics realtime report using the Data API",
+    description=_run_realtime_report_description(),
+)
 async def run_realtime_report(
     property_id: int | str,
     dimensions: List[str],
@@ -88,49 +137,7 @@ async def run_realtime_report(
     offset: int = None,
     return_property_quota: bool = False,
 ) -> Dict[str, Any]:
-    """Runs a Google Analytics Data API realtime report.
-
-    See
-    https://developers.google.com/analytics/devguides/reporting/data/v1/realtime-basics
-    for more information.
-
-    Args:
-        property_id: The Google Analytics property ID. Accepted formats are:
-          - A number
-          - A string consisting of 'properties/' followed by a number
-        dimensions: A list of dimensions to include in the report. Dimensions must be realtime dimensions.
-        metrics: A list of metrics to include in the report. Metrics must be realtime metrics.
-        dimension_filter: A Data API FilterExpression
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
-          to apply to the dimensions.  Don't use this for filtering metrics. Use
-          metric_filter instead. The `field_name` in a `dimension_filter` must
-          be a dimension, as defined in the `get_standard_dimensions` and
-          `get_dimensions` tools.
-          For more information about the expected format of this argument, see
-          the `run_report_dimension_filter_hints` tool.
-        metric_filter: A Data API FilterExpression
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
-          to apply to the metrics.  Don't use this for filtering dimensions. Use
-          dimension_filter instead. The `field_name` in a `metric_filter` must
-          be a metric, as defined in the `get_standard_metrics` and
-          `get_metrics` tools.
-          For more information about the expected format of this argument, see
-          the `run_report_metric_filter_hints` tool.
-        order_bys: A list of Data API OrderBy
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/OrderBy)
-          objects to apply to the dimensions and metrics.
-          For more information about the expected format of this argument, see
-          the `run_report_order_bys_hints` tool.
-        limit: The maximum number of rows to return in each response. Value must
-          be a positive integer <= 250,000. Used to paginate through large
-          reports, following the guide at
-          https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
-        offset: The row count of the start row. The first row is counted as row
-          0. Used to paginate through large
-          reports, following the guide at
-          https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
-        return_property_quota: Whether to return realtime property quota in the response.
-    """
+    run_realtime_report.__doc__ = _RUN_REALTIME_REPORT_DOC
     request = data_v1beta.RunRealtimeReportRequest(
         property=construct_property_rn(property_id),
         dimensions=[
@@ -161,13 +168,3 @@ async def run_realtime_report(
     response = await create_data_api_client().run_realtime_report(request)
     return proto_to_dict(response)
 
-
-# The `run_realtime_report` tool requires a more complex description that's generated at
-# runtime. Uses the `add_tool` method instead of an annnotation since `add_tool`
-# provides the flexibility needed to generate the description while also
-# including the `run_realtime_report` method's docstring.
-mcp.add_tool(
-    run_realtime_report,
-    title="Run a Google Analytics realtime report using the Data API",
-    description=_run_realtime_report_description(),
-)

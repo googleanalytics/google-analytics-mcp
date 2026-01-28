@@ -22,4 +22,7 @@ of the server.
 from mcp.server.fastmcp import FastMCP
 
 # Creates the singleton.
-mcp = FastMCP("Google Analytics Server")
+mcp = FastMCP(
+    "Google Analytics Server",
+    description="MCP server for Google Analytics 4 (GA4) Admin and Reporting APIs",
+)

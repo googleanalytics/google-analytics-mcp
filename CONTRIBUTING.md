@@ -35,7 +35,7 @@ any contributor run the auto-formatter [`black`](https://github.com/psf/black).
 To get started, first install `nox` and `black`:
 
 ```
-pip install -e .[dev]
+uv pip install -e ".[dev]"
 ```
 
 Then run the formatter on all Python files:
@@ -73,30 +73,19 @@ Gemini outputs debug information as it processes prompts.
 
 ### Test from GitHub
 
-After you push changes to GitHub, use `pipx` to run the server for a specific
-branch, and use the `--no-cache` option so `pipx` gets the
-latest changes.
+After you push changes to GitHub, use `uvx` to run the server for a specific
+branch, and use the `--no-cache` option so `uvx` gets the
+latest code from your branch.
 
-Here's an example of an `mcpServers` entry that runs the latest code from a
-branch named `awesome-feature-42` in this repo:
+In the `mcpServers` configuration in `~/.gemini/settings.json`, set the `command`
+to `uvx` and `args` as follows (replacing `YOUR_GITHUB_USERNAME` and
+`YOUR_BRANCH_NAME`):
 
 ```json
-{
-  "mcpServers": {
-    "analytics-mcp": {
-      "command": "pipx",
-      "args": [
-        "run",
-        "--no-cache",
-        "--spec",
-        "git+https://github.com/googleanalytics/google-analytics-mcp.git@awesome-feature-42",
-        "analytics-mcp"
-      ],
-      "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_CREDENTIALS_JSON",
-        "GOOGLE_PROJECT_ID": "YOUR_PROJECT_ID"
-      }
-    }
-  }
-}
+"analytics-mcp": {
+  "command": "uvx",
+  "args": [
+    "--no-cache",
+    "git+https://github.com/YOUR_GITHUB_USERNAME/google-analytics-mcp.git@YOUR_BRANCH_NAME"
+  ],
 ```

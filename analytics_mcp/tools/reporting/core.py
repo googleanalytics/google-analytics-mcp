@@ -16,7 +16,6 @@
 
 from typing import Any, Dict, List
 
-from analytics_mcp.coordinator import mcp
 from analytics_mcp.tools.reporting.metadata import (
     get_date_ranges_hints,
     get_dimension_filter_hints,
@@ -171,14 +170,3 @@ async def run_report(
     response = await create_data_api_client().run_report(request)
 
     return proto_to_dict(response)
-
-
-# The `run_report` tool requires a more complex description that's generated at
-# runtime. Uses the `add_tool` method instead of an annnotation since `add_tool`
-# provides the flexibility needed to generate the description while also
-# including the `run_report` method's docstring.
-mcp.add_tool(
-    run_report,
-    title="Run a Google Analytics Data API report using the Data API",
-    description=_run_report_description(),
-)

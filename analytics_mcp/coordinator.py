@@ -19,7 +19,71 @@ server using `@mcp.tool` annotations, thereby 'coordinating' the bootstrapping
 of the server.
 """
 
-from mcp.server.fastmcp import FastMCP
+from adk.tools import FunctionTool
+from adk.tools.mcp_adapters import adk_to_mcp_tool_type
+from mcp import McpApp, ToolCall, ToolResult
 
-# Creates the singleton.
-mcp = FastMCP("Google Analytics Server")
+from analytics_mcp.tools.admin.info import (
+    get_account_summaries,
+    list_google_ads_links,
+    get_property_details,
+    list_property_annotations,
+)
+from analytics_mcp.tools.reporting.core import run_report, _run_report_description
+from analytics_mcp.tools.reporting.realtime import (
+    run_realtime_report,
+    _run_realtime_report_description,
+)
+from analytics_mcp.tools.reporting.metadata import get_custom_dimensions_and_metrics
+
+
+# 1. Instantiate the ADK tools
+tools = [
+    FunctionTool(get_account_summaries),
+    FunctionTool(list_google_ads_links),
+    FunctionTool(get_property_details),
+    FunctionTool(list_property_annotations),
+    FunctionTool(get_custom_dimensions_and_metrics),
+    FunctionTool(
+        run_report,
+        name="run_report",
+        description=_run_report_description(),
+    ),
+    FunctionTool(
+        run_realtime_report,
+        name="run_realtime_report",
+        description=_run_realtime_report_description(),
+    ),
+]
+tool_map = {t.name: t for t in tools}
+
+# 2. Create an MCP application
+app = McpApp(
+    title="Google Analytics Server",
+    description="An MCP server for Google Analytics.",
+)
+
+
+# 3. Implement list_tools to advertise the ADK tool
+@app.list_tools
+async def list_tools():
+    return {
+        "tools": [adk_to_mcp_tool_type(tool.tool_type) for tool in tools],
+    }
+
+
+# 4. Implement call_tool to execute the tool
+@app.call_tool
+async def call_tool(tool_call: ToolCall) -> ToolResult:
+    if tool_call.function.name in tool_map:
+        tool = tool_map[tool_call.function.name]
+        # 4a. Execute the tool
+        tool_result = await tool.run_async(tool_call.function.arguments)
+        # 4b. Format the response for MCP
+        return ToolResult(
+            call_id=tool_call.call_id,
+            content=str(tool_result.content),
+        )
+    raise ValueError(f"Tool {tool_call.function.name} not found")
+
+mcp = app

@@ -16,7 +16,6 @@
 
 from typing import Any, Dict, List
 
-from analytics_mcp.coordinator import mcp
 from analytics_mcp.tools.utils import (
     construct_property_rn,
     create_data_api_client,
@@ -309,9 +308,6 @@ def get_order_bys_hints():
     """
 
 
-@mcp.tool(
-    title="Retrieves the custom Core Reporting dimensions and metrics for a specific property"
-)
 async def get_custom_dimensions_and_metrics(
     property_id: int | str,
 ) -> Dict[str, List[Dict[str, Any]]]:

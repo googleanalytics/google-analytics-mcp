@@ -19,9 +19,18 @@ server using `@mcp.tool` annotations, thereby 'coordinating' the bootstrapping
 of the server.
 """
 
-from adk.tools import FunctionTool
-from adk.tools.mcp_adapters import adk_to_mcp_tool_type
-from mcp import McpApp, ToolCall, ToolResult
+
+# MCP Server Imports
+import json
+from mcp import types as mcp_types # Use alias to avoid conflict
+from mcp.server.lowlevel import Server, NotificationOptions
+
+
+# ADK Tool Imports
+from google.adk.tools.function_tool import FunctionTool
+from google.adk.tools.mcp_tool.conversion_utils import adk_to_mcp_tool_type
+
+
 
 from analytics_mcp.tools.admin.info import (
     get_account_summaries,
@@ -36,7 +45,6 @@ from analytics_mcp.tools.reporting.realtime import (
 )
 from analytics_mcp.tools.reporting.metadata import get_custom_dimensions_and_metrics
 
-
 # 1. Instantiate the ADK tools
 tools = [
     FunctionTool(get_account_summaries),
@@ -44,46 +52,32 @@ tools = [
     FunctionTool(get_property_details),
     FunctionTool(list_property_annotations),
     FunctionTool(get_custom_dimensions_and_metrics),
-    FunctionTool(
-        run_report,
-        name="run_report",
-        description=_run_report_description(),
-    ),
-    FunctionTool(
-        run_realtime_report,
-        name="run_realtime_report",
-        description=_run_realtime_report_description(),
-    ),
+    FunctionTool(run_report),
+    FunctionTool(run_realtime_report),
 ]
 tool_map = {t.name: t for t in tools}
 
-# 2. Create an MCP application
-app = McpApp(
-    title="Google Analytics Server",
-    description="An MCP server for Google Analytics.",
+app = Server(
+    name="Google Analytics Server",
 )
 
+@app.list_tools()
+async def list_tools() -> list[mcp_types.Tool]:
+    return [adk_to_mcp_tool_type(tool.tool_type) for tool in tools]
 
-# 3. Implement list_tools to advertise the ADK tool
-@app.list_tools
-async def list_tools():
-    return {
-        "tools": [adk_to_mcp_tool_type(tool.tool_type) for tool in tools],
-    }
-
-
-# 4. Implement call_tool to execute the tool
-@app.call_tool
-async def call_tool(tool_call: ToolCall) -> ToolResult:
-    if tool_call.function.name in tool_map:
-        tool = tool_map[tool_call.function.name]
+@app.call_tool()
+async def call_mcp_tool(
+    name: str, arguments: dict
+) -> list[mcp_types.Content]: # MCP uses mcp_types.Content
+    if name in tool_map:
+        tool = tool_map[name]
         # 4a. Execute the tool
-        tool_result = await tool.run_async(tool_call.function.arguments)
+        tool_result = await tool.run_async(arguments)
         # 4b. Format the response for MCP
-        return ToolResult(
-            call_id=tool_call.call_id,
-            content=str(tool_result.content),
-        )
-    raise ValueError(f"Tool {tool_call.function.name} not found")
+        response_text = json.dumps(tool_result, indent=2)
+        return [mcp_types.TextContent(type="text", text=response_text)]
+    
+    print("Tool not found:", name)
+    error_text = json.dumps({"error": f"Tool '{name}' not implemented by this server."})
+    return [mcp_types.TextContent(type="text", text=error_text)]
 
-mcp = app

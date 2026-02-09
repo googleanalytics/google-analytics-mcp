@@ -18,7 +18,7 @@ import unittest
 import asyncio
 from unittest.mock import patch
 
-from adk.tools.results import ToolResult
+from google.adk.tools.results import ToolResult
 from mcp import ToolCall, Function
 from analytics_mcp.coordinator import list_tools, call_tool, tool_map
 
@@ -30,8 +30,7 @@ class TestAdkServer(unittest.TestCase):
         """Tests that the list_tools function returns the correct tools."""
         loop = asyncio.get_event_loop()
         tool_list = loop.run_until_complete(list_tools())
-        self.assertIn("tools", tool_list)
-        self.assertEqual(len(tool_list["tools"]), 7)
+        self.assertEqual(len(tool_list), 7)
 
     def test_call_tool(self):
         """Tests that the call_tool function correctly calls a tool."""

@@ -15,17 +15,36 @@
 # limitations under the License.
 
 """Entry point for the Google Analytics MCP server."""
+import asyncio
+import coordinator
+from mcp.server.lowlevel import NotificationOptions
+from mcp.server.models import InitializationOptions
+import mcp.server.stdio 
 
-from analytics_mcp.coordinator import mcp
-
-
-def run_server() -> None:
-    """Runs the server.
-
-    Serves as the entrypoint for the 'runmcp' command.
-    """
-    mcp.run()
-
+async def run_mcp_stdio_server():
+    """Runs the MCP server over standard I/O."""
+    print("Starting MCP Stdio Server:", coordinator.app.name)
+    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+        await mcp.run(
+            read_stream,
+            write_stream,
+            InitializationOptions(
+                server_name=coordinator.app.name, # Use the server name defined above
+                server_version="1.0.0",
+                capabilities=coordinator.app.get_capabilities(
+                    # Define server capabilities - consult MCP docs for options
+                    notification_options=NotificationOptions(),
+                    experimental_capabilities={},
+                ),
+            ),
+        )
 
 if __name__ == "__main__":
-    run_server()
+    try:
+        asyncio.run(run_mcp_stdio_server())
+    except KeyboardInterrupt:
+        print("\nMCP Server (stdio) stopped by user.")
+    except Exception as e:
+        print(f"MCP Server (stdio) encountered an error: {e}")
+    finally:
+        print("MCP Server (stdio) process exiting.")

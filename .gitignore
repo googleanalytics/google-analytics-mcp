@@ -66,4 +66,5 @@ system_tests/local_test_setup
 pylintrc
 pylintrc.test
 
-/.env
+.env
+*.env

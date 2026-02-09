@@ -12,25 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Module declaring the singleton MCP instance.
+"""Module declaring the singleton MCP server.
 
 The singleton allows other modules to register their tools with the same MCP
-server using `@mcp.tool` annotations, thereby 'coordinating' the bootstrapping
-of the server.
+server.
 """
 
 
 # MCP Server Imports
 import json
 from mcp import types as mcp_types # Use alias to avoid conflict
-from mcp.server.lowlevel import Server, NotificationOptions
+from mcp.server.lowlevel import Server
 
 
 # ADK Tool Imports
 from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.mcp_tool.conversion_utils import adk_to_mcp_tool_type
-
-
 
 from analytics_mcp.tools.admin.info import (
     get_account_summaries,
@@ -47,7 +44,7 @@ from analytics_mcp.tools.reporting.metadata import get_custom_dimensions_and_met
 
 # 1. Instantiate the ADK tools
 tools = [
-    FunctionTool(get_account_summaries),
+    # FunctionTool(get_account_summaries),
     FunctionTool(list_google_ads_links),
     FunctionTool(get_property_details),
     FunctionTool(list_property_annotations),
@@ -63,7 +60,7 @@ app = Server(
 
 @app.list_tools()
 async def list_tools() -> list[mcp_types.Tool]:
-    return [adk_to_mcp_tool_type(tool.tool_type) for tool in tools]
+    return [adk_to_mcp_tool_type(tool) for tool in tools]
 
 @app.call_tool()
 async def call_mcp_tool(

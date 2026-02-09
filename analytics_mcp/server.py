@@ -20,12 +20,14 @@ import coordinator
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.models import InitializationOptions
 import mcp.server.stdio 
+import mcp.server 
+import traceback 
 
 async def run_mcp_stdio_server():
     """Runs the MCP server over standard I/O."""
     print("Starting MCP Stdio Server:", coordinator.app.name)
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await mcp.run(
+        await coordinator.app.run(
             read_stream,
             write_stream,
             InitializationOptions(
@@ -44,7 +46,9 @@ if __name__ == "__main__":
         asyncio.run(run_mcp_stdio_server())
     except KeyboardInterrupt:
         print("\nMCP Server (stdio) stopped by user.")
-    except Exception as e:
-        print(f"MCP Server (stdio) encountered an error: {e}")
+    except Exception:
+        import traceback
+        print("MCP Server (stdio) encountered an error:")
+        traceback.print_exc()
     finally:
         print("MCP Server (stdio) process exiting.")

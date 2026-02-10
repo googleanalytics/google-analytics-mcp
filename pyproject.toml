@@ -12,15 +12,10 @@ dependencies = [
     "google-analytics-admin==0.27.0",
     "google-auth~=2.40",
     "mcp[cli]>=1.2.0",
-    "google-adk>=0.1.0",
-    "httpx>=0.28.1"
+    "google-adk>=1.24.1",
+    "httpx>=0.28.1",
 ]
-keywords = [
-    "google analytics",
-    "analytics",
-    "mcp",
-    "ga4"
-]
+keywords = ["google analytics", "analytics", "mcp", "ga4"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -33,11 +28,11 @@ classifiers = [
     "Operating System :: OS Independent",
     "Topic :: Internet",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Scientific/Engineering :: Information Analysis"
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 authors = [
     { name = "Josh Radcliff", email = "jradcliff@users.noreply.github.com" },
-    { name = "Matt Landers", email = "matt-landers@users.noreply.github.com" }
+    { name = "Matt Landers", email = "matt-landers@users.noreply.github.com" },
 ]
 
 [project.urls]
@@ -51,10 +46,7 @@ analytics-mcp = "analytics_mcp.server:run_server"
 google-analytics-mcp = "analytics_mcp.server:run_server"
 
 [project.optional-dependencies]
-dev = [
-    "black",
-    "nox >=2025.5.1, <2026"
-]
+dev = ["black", "nox >=2025.5.1, <2026"]
 
 [build-system]
 requires = ["setuptools>=69.0.0", "wheel"]

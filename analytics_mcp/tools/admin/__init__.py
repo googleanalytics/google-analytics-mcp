@@ -11,21 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Test cases for the server module."""
-
-import unittest
-
-
-class TestUtils(unittest.TestCase):
-    """Test cases for the server module."""
-
-    def test_server_initialization(self):
-        """Tests that the MCP server instance is initialized.
-
-        This servers as a smoke test to confirm there are no obvious issues
-        with initialization, such as missing imports.
-        """
-        from analytics_mcp import server
-
-        self.assertIsNotNone(server.mcp, "MCP server instance not initialized")

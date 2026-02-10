@@ -21,6 +21,7 @@ server.
 
 # MCP Server Imports
 import json
+from json import tool
 from mcp import types as mcp_types # Use alias to avoid conflict
 from mcp.server.lowlevel import Server
 
@@ -44,7 +45,7 @@ from analytics_mcp.tools.reporting.metadata import get_custom_dimensions_and_met
 
 # 1. Instantiate the ADK tools
 tools = [
-    # FunctionTool(get_account_summaries),
+    FunctionTool(get_account_summaries),
     FunctionTool(list_google_ads_links),
     FunctionTool(get_property_details),
     FunctionTool(list_property_annotations),
@@ -52,15 +53,26 @@ tools = [
     FunctionTool(run_report),
     FunctionTool(run_realtime_report),
 ]
+
 tool_map = {t.name: t for t in tools}
 
 app = Server(
     name="Google Analytics Server",
 )
 
+mcp_tools = [adk_to_mcp_tool_type(tool) for tool in tools]
+for tool in mcp_tools:
+    # Check if inputSchema is empty
+    if tool.inputSchema == {}:
+        tool.inputSchema = {
+            "type": "object",
+            "properties": {}
+        }
+
+
 @app.list_tools()
 async def list_tools() -> list[mcp_types.Tool]:
-    return [adk_to_mcp_tool_type(tool) for tool in tools]
+    return mcp_tools
 
 @app.call_tool()
 async def call_mcp_tool(
@@ -68,11 +80,23 @@ async def call_mcp_tool(
 ) -> list[mcp_types.Content]: # MCP uses mcp_types.Content
     if name in tool_map:
         tool = tool_map[name]
-        # 4a. Execute the tool
-        tool_result = await tool.run_async(arguments)
-        # 4b. Format the response for MCP
-        response_text = json.dumps(tool_result, indent=2)
-        return [mcp_types.TextContent(type="text", text=response_text)]
+        try:
+            # Execute the ADK tool asynchronously with provided arguments
+            adk_tool_response = await tool.run_async(
+                args=arguments,
+                tool_context=None,
+            )
+
+            # Serialize the ADK tool response to JSON for MCP response
+            response_text = json.dumps(adk_tool_response, indent=2)
+            # MCP expects a list of mcp_types.Content parts
+            return [mcp_types.TextContent(type="text", text=response_text)]
+
+        except Exception as e:
+            print(f"MCP Server: Error executing ADK tool '{name}': {e}")
+            # Return an error message in MCP format
+            error_text = json.dumps({"error": f"Failed to execute tool '{name}': {str(e)}"})
+            return [mcp_types.TextContent(type="text", text=error_text)]
     
     print("Tool not found:", name)
     error_text = json.dumps({"error": f"Tool '{name}' not implemented by this server."})

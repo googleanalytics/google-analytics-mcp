@@ -43,24 +43,31 @@ from analytics_mcp.tools.reporting.realtime import (
 )
 from analytics_mcp.tools.reporting.metadata import get_custom_dimensions_and_metrics
 
-# 1. Instantiate the ADK tools
+run_report_with_description = FunctionTool(run_report)
+run_report_with_description.description = _run_report_description()
+run_realtime_report_with_description = FunctionTool(run_realtime_report)
+run_realtime_report_with_description.description = _run_realtime_report_description()
+
+# Instantiate the ADK tools
 tools = [
     FunctionTool(get_account_summaries),
     FunctionTool(list_google_ads_links),
     FunctionTool(get_property_details),
     FunctionTool(list_property_annotations),
     FunctionTool(get_custom_dimensions_and_metrics),
-    FunctionTool(run_report),
-    FunctionTool(run_realtime_report),
+    run_report_with_description,
+    run_realtime_report_with_description,
 ]
 
 tool_map = {t.name: t for t in tools}
 
 app = Server(
-    name="Google Analytics Server",
+    name="Google Analytics MCP Server",
 )
 
 mcp_tools = [adk_to_mcp_tool_type(tool) for tool in tools]
+# Update the inputSchema for tools that do not have parameters. 
+# TODO: This is a bug in the ADK and can be removed once it is fixed.
 for tool in mcp_tools:
     # Check if inputSchema is empty
     if tool.inputSchema == {}:
@@ -77,16 +84,14 @@ async def list_tools() -> list[mcp_types.Tool]:
 @app.call_tool()
 async def call_mcp_tool(
     name: str, arguments: dict
-) -> list[mcp_types.Content]: # MCP uses mcp_types.Content
+) -> list[mcp_types.Content]:
     if name in tool_map:
         tool = tool_map[name]
         try:
-            # Execute the ADK tool asynchronously with provided arguments
             adk_tool_response = await tool.run_async(
                 args=arguments,
                 tool_context=None,
             )
-
             # Serialize the ADK tool response to JSON for MCP response
             response_text = json.dumps(adk_tool_response, indent=2)
             # MCP expects a list of mcp_types.Content parts

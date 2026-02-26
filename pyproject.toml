@@ -11,7 +11,7 @@ dependencies = [
     "google-analytics-data==0.20.0",
     "google-analytics-admin==0.27.0",
     "google-auth~=2.40",
-    "mcp[cli]>=1.2.0",
+    "mcp>=1.24.0",
     "google-adk>=1.24.1",
     "httpx>=0.28.1",
 ]

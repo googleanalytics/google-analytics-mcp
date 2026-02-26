@@ -106,7 +106,6 @@ async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
             )
             return [mcp_types.TextContent(type="text", text=error_text)]
 
-    print("Tool not found:", name)
     error_text = json.dumps(
         {"error": f"Tool '{name}' not implemented by this server."}
     )

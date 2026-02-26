@@ -73,6 +73,7 @@ app = Server(
 mcp_tools = [adk_to_mcp_tool_type(tool) for tool in tools]
 # Update the inputSchema for tools that do not have parameters.
 # TODO: This is a bug in the ADK and can be removed once it is fixed.
+# https://github.com/google/adk-python/issues/948
 for tool in mcp_tools:
     # Check if inputSchema is empty
     if tool.inputSchema == {}:

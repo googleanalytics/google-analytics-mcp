@@ -18,13 +18,11 @@ The singleton allows other modules to register their tools with the same MCP
 server.
 """
 
-
 # MCP Server Imports
 import json
 from json import tool
-from mcp import types as mcp_types # Use alias to avoid conflict
+from mcp import types as mcp_types  # Use alias to avoid conflict
 from mcp.server.lowlevel import Server
-
 
 # ADK Tool Imports
 from google.adk.tools.function_tool import FunctionTool
@@ -36,17 +34,24 @@ from analytics_mcp.tools.admin.info import (
     get_property_details,
     list_property_annotations,
 )
-from analytics_mcp.tools.reporting.core import run_report, _run_report_description
+from analytics_mcp.tools.reporting.core import (
+    run_report,
+    _run_report_description,
+)
 from analytics_mcp.tools.reporting.realtime import (
     run_realtime_report,
     _run_realtime_report_description,
 )
-from analytics_mcp.tools.reporting.metadata import get_custom_dimensions_and_metrics
+from analytics_mcp.tools.reporting.metadata import (
+    get_custom_dimensions_and_metrics,
+)
 
 run_report_with_description = FunctionTool(run_report)
 run_report_with_description.description = _run_report_description()
 run_realtime_report_with_description = FunctionTool(run_realtime_report)
-run_realtime_report_with_description.description = _run_realtime_report_description()
+run_realtime_report_with_description.description = (
+    _run_realtime_report_description()
+)
 
 # Instantiate the ADK tools
 tools = [
@@ -66,25 +71,21 @@ app = Server(
 )
 
 mcp_tools = [adk_to_mcp_tool_type(tool) for tool in tools]
-# Update the inputSchema for tools that do not have parameters. 
+# Update the inputSchema for tools that do not have parameters.
 # TODO: This is a bug in the ADK and can be removed once it is fixed.
 for tool in mcp_tools:
     # Check if inputSchema is empty
     if tool.inputSchema == {}:
-        tool.inputSchema = {
-            "type": "object",
-            "properties": {}
-        }
+        tool.inputSchema = {"type": "object", "properties": {}}
 
 
 @app.list_tools()
 async def list_tools() -> list[mcp_types.Tool]:
     return mcp_tools
 
+
 @app.call_tool()
-async def call_mcp_tool(
-    name: str, arguments: dict
-) -> list[mcp_types.Content]:
+async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
     if name in tool_map:
         tool = tool_map[name]
         try:
@@ -100,10 +101,13 @@ async def call_mcp_tool(
         except Exception as e:
             print(f"MCP Server: Error executing ADK tool '{name}': {e}")
             # Return an error message in MCP format
-            error_text = json.dumps({"error": f"Failed to execute tool '{name}': {str(e)}"})
+            error_text = json.dumps(
+                {"error": f"Failed to execute tool '{name}': {str(e)}"}
+            )
             return [mcp_types.TextContent(type="text", text=error_text)]
-    
-    print("Tool not found:", name)
-    error_text = json.dumps({"error": f"Tool '{name}' not implemented by this server."})
-    return [mcp_types.TextContent(type="text", text=error_text)]
 
+    print("Tool not found:", name)
+    error_text = json.dumps(
+        {"error": f"Tool '{name}' not implemented by this server."}
+    )
+    return [mcp_types.TextContent(type="text", text=error_text)]

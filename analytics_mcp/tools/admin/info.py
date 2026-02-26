@@ -24,6 +24,7 @@ from analytics_mcp.tools.utils import (
 )
 from google.analytics import admin_v1beta, admin_v1alpha
 
+
 async def get_account_summaries() -> List[Dict[str, Any]]:
     """Retrieves information about the user's Google Analytics accounts and properties."""
 

@@ -35,7 +35,7 @@ any contributor run the auto-formatter [`black`](https://github.com/psf/black).
 To get started, first install `nox` and `black`:
 
 ```
-pip install -e .[dev]
+pip install -e ".[dev]"
 ```
 
 Then run the formatter on all Python files:

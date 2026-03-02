@@ -25,7 +25,7 @@ import mcp.server
 import traceback
 
 
-async def run_server():
+async def run_server_async():
     """Runs the MCP server over standard I/O."""
     print("Starting MCP Stdio Server:", coordinator.app.name)
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
@@ -43,6 +43,9 @@ async def run_server():
             ),
         )
 
+def run_server():
+    """Synchronous wrapper to run the async MCP server."""
+    asyncio.run(run_server_async())
 
 if __name__ == "__main__":
     try:

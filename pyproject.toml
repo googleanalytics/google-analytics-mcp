@@ -49,5 +49,5 @@ google-analytics-mcp = "analytics_mcp.server:run_server"
 dev = ["black", "nox >=2026.2.9, <2027"]
 
 [build-system]
-requires = ["setuptools>=69.0.0", "wheel"]
+requires = ["setuptools>=82.0.0", "wheel"]
 build-backend = "setuptools.build_meta"

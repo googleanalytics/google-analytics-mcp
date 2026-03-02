@@ -46,7 +46,7 @@ analytics-mcp = "analytics_mcp.server:run_server"
 google-analytics-mcp = "analytics_mcp.server:run_server"
 
 [project.optional-dependencies]
-dev = ["black", "nox >=2025.5.1, <2026"]
+dev = ["black", "nox >=2026.2.9, <2027"]
 
 [build-system]
 requires = ["setuptools>=69.0.0", "wheel"]

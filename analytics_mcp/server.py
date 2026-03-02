@@ -43,9 +43,11 @@ async def run_server_async():
             ),
         )
 
+
 def run_server():
     """Synchronous wrapper to run the async MCP server."""
     asyncio.run(run_server_async())
+
 
 if __name__ == "__main__":
     try:

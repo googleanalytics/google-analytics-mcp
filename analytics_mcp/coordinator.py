@@ -78,6 +78,10 @@ for tool in mcp_tools:
     # Check if inputSchema is empty
     if tool.inputSchema == {}:
         tool.inputSchema = {"type": "object", "properties": {}}
+    # Fix union type hints generating spurious "type": "null"
+    for prop in tool.inputSchema.get("properties", {}).values():
+        if "anyOf" in prop and prop.get("type") == "null":
+            del prop["type"]
 
 
 @app.list_tools()

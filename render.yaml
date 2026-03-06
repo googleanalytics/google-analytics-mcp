@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: google-analytics-mcp
+    runtime: python
+    # Render auto-detects Python version from .python-version or pyproject.toml.
+    # Requires Python >= 3.10 (set in pyproject.toml).
+
+    buildCommand: pip install -e .
+    startCommand: python -m analytics_mcp.http_server
+
+    # Render sets PORT automatically; the server reads it from the env.
+    # healthCheckPath tells Render's load-balancer which URL to probe.
+    healthCheckPath: /health
+
+    envVars:
+      # Paste the full contents of your service-account JSON here.
+      # Mark as "secret" in the Render dashboard so it is not shown in logs.
+      - key: GOOGLE_APPLICATION_CREDENTIALS_JSON
+        sync: false   # "sync: false" means Render will prompt you to fill it in
+
+      # Optional: a default GA4 property ID used by some tools.
+      - key: GA_PROPERTY_ID
+        sync: false

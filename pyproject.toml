@@ -14,6 +14,10 @@ dependencies = [
     "mcp>=1.24.0",
     "google-adk>=1.24.1",
     "httpx>=0.28.1",
+    # HTTP server dependencies (used by analytics_mcp.http_server for Render deployment)
+    "uvicorn>=0.30.0",
+    "starlette>=0.37.0",
+    "sse-starlette>=2.1.0",
 ]
 keywords = ["google analytics", "analytics", "mcp", "ga4"]
 classifiers = [

@@ -1,5 +1,5 @@
 ---
-name: Question
+name: Question YE THU NAING 🇲🇲
 about: Ask a question about this project that is neither a bug report nor a feature request.
 title: ''
 labels: question, triage

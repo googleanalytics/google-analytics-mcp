@@ -1,6 +1,6 @@
 ---
-name: Bug Report
-about: Report a problem that needs to be fixed.
+name: Bug 
+about:  a problem that needs to be fixed.
 title: ''
 labels: bug, triage
 assignees: ''

@@ -1,6 +1,6 @@
 // Based partially on https://github.com/GoogleCloudPlatform/python-docs-samples/blob/main/renovate.json
 {
-    "extends": [
+    "extends": [🇲🇲
         // https://docs.renovatebot.com/presets-config/#configrecommended
         "config:recommended",
         "schedule:earlyMondays",
@@ -22,6 +22,6 @@
         "labels": [
             "security"
         ],
-        "minimumReleaseAge": null
+        "minimumReleaseAge": YE THU NAING 
     },
 }

@@ -71,6 +71,30 @@ app = Server(
 )
 
 mcp_tools = [adk_to_mcp_tool_type(tool) for tool in tools]
+
+
+def _fix_additional_properties(schema: dict) -> None:
+    """Recursively convert non-boolean additionalProperties to boolean.
+
+    Some MCP clients (Claude Desktop, OpenAI Codex) expect
+    additionalProperties to be a boolean, not a schema object.
+    See https://github.com/googleanalytics/google-analytics-mcp/issues/40
+    """
+    if not isinstance(schema, dict):
+        return
+    if "additionalProperties" in schema and not isinstance(
+        schema["additionalProperties"], bool
+    ):
+        schema["additionalProperties"] = True
+    for value in schema.values():
+        if isinstance(value, dict):
+            _fix_additional_properties(value)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    _fix_additional_properties(item)
+
+
 # Update the inputSchema for tools that do not have parameters.
 # TODO: This is a bug in the ADK and can be removed once it is fixed.
 # https://github.com/google/adk-python/issues/948
@@ -82,6 +106,8 @@ for tool in mcp_tools:
     for prop in tool.inputSchema.get("properties", {}).values():
         if "anyOf" in prop and prop.get("type") == "null":
             del prop["type"]
+    # Fix non-boolean additionalProperties that break some MCP clients
+    _fix_additional_properties(tool.inputSchema)
 
 
 @app.list_tools()

@@ -109,13 +109,18 @@ for tool in mcp_tools:
     for prop in tool.inputSchema.get("properties", {}).values():
         if "anyOf" in prop and prop.get("type") == "null":
             del prop["type"]
-    
+
     # Ensure additionalProperties is compatible with all MCP clients
     sanitize_mcp_schema_properties(tool.inputSchema)
 
     # Explicitly mark required fields for reporting tools to guide the LLM
     if tool.name == "run_report":
-        tool.inputSchema["required"] = ["property_id", "date_ranges", "dimensions", "metrics"]
+        tool.inputSchema["required"] = [
+            "property_id",
+            "date_ranges",
+            "dimensions",
+            "metrics",
+        ]
     elif tool.name == "run_realtime_report":
         tool.inputSchema["required"] = ["property_id", "dimensions", "metrics"]
 

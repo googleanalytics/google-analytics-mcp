@@ -71,6 +71,33 @@ app = Server(
 )
 
 mcp_tools = [adk_to_mcp_tool_type(tool) for tool in tools]
+
+
+def sanitize_mcp_schema_properties(node: dict) -> None:
+    """Ensure additionalProperties is a boolean value to satisfy certain MCP clients.
+
+    This addresses issues with clients like Claude Desktop that fail when
+    additionalProperties is a schema object instead of a boolean.
+    """
+    if not isinstance(node, dict):
+        return
+
+    # Check and update the current node
+    if "additionalProperties" in node:
+        val = node["additionalProperties"]
+        if not isinstance(val, bool):
+            node["additionalProperties"] = True
+
+    # Traverse children
+    for key, child in node.items():
+        if isinstance(child, dict):
+            sanitize_mcp_schema_properties(child)
+        elif isinstance(child, list):
+            for element in child:
+                if isinstance(element, dict):
+                    sanitize_mcp_schema_properties(element)
+
+
 # Update the inputSchema for tools that do not have parameters.
 # TODO: This is a bug in the ADK and can be removed once it is fixed.
 # https://github.com/google/adk-python/issues/948
@@ -82,6 +109,20 @@ for tool in mcp_tools:
     for prop in tool.inputSchema.get("properties", {}).values():
         if "anyOf" in prop and prop.get("type") == "null":
             del prop["type"]
+
+    # Ensure additionalProperties is compatible with all MCP clients
+    sanitize_mcp_schema_properties(tool.inputSchema)
+
+    # Explicitly mark required fields for reporting tools to guide the LLM
+    if tool.name == "run_report":
+        tool.inputSchema["required"] = [
+            "property_id",
+            "date_ranges",
+            "dimensions",
+            "metrics",
+        ]
+    elif tool.name == "run_realtime_report":
+        tool.inputSchema["required"] = ["property_id", "dimensions", "metrics"]
 
 
 @app.list_tools()

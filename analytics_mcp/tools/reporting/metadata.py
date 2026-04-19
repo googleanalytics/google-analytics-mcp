@@ -18,7 +18,7 @@ from typing import Any, Dict, List
 
 from analytics_mcp.tools.utils import (
     construct_property_rn,
-    create_data_api_client,
+    create_data_api_client_sync,
     proto_to_dict,
     proto_to_json,
 )
@@ -319,20 +319,23 @@ async def get_custom_dimensions_and_metrics(
           - A string consisting of 'properties/' followed by a number
 
     """
-    metadata = await create_data_api_client().get_metadata(
-        name=f"{construct_property_rn(property_id)}/metadata"
-    )
-    custom_metrics = [
-        proto_to_dict(metric)
-        for metric in metadata.metrics
-        if metric.custom_definition
-    ]
-    custom_dimensions = [
-        proto_to_dict(dimension)
-        for dimension in metadata.dimensions
-        if dimension.custom_definition
-    ]
-    return {
-        "custom_dimensions": custom_dimensions,
-        "custom_metrics": custom_metrics,
-    }
+    import asyncio
+    def _fetch():
+        metadata = create_data_api_client_sync().get_metadata(
+            name=f"{construct_property_rn(property_id)}/metadata"
+        )
+        custom_metrics = [
+            proto_to_dict(metric)
+            for metric in metadata.metrics
+            if metric.custom_definition
+        ]
+        custom_dimensions = [
+            proto_to_dict(dimension)
+            for dimension in metadata.dimensions
+            if dimension.custom_definition
+        ]
+        return {
+            "custom_dimensions": custom_dimensions,
+            "custom_metrics": custom_metrics,
+        }
+    return await asyncio.to_thread(_fetch)

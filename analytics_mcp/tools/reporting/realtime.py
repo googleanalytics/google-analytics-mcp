@@ -18,7 +18,7 @@ from typing import Any, Dict, List
 
 from analytics_mcp.tools.utils import (
     construct_property_rn,
-    create_data_api_client,
+    create_data_api_client_sync,
     proto_to_dict,
 )
 from analytics_mcp.tools.reporting.metadata import (
@@ -130,32 +130,36 @@ async def run_realtime_report(
           https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
         return_property_quota: Whether to return realtime property quota in the response.
     """
-    request = data_v1beta.RunRealtimeReportRequest(
-        property=construct_property_rn(property_id),
-        dimensions=[
-            data_v1beta.Dimension(name=dimension) for dimension in dimensions
-        ],
-        metrics=[data_v1beta.Metric(name=metric) for metric in metrics],
-        return_property_quota=return_property_quota,
-    )
-
-    if dimension_filter:
-        request.dimension_filter = data_v1beta.FilterExpression(
-            dimension_filter
+    import asyncio
+    def _fetch():
+        request = data_v1beta.RunRealtimeReportRequest(
+            property=construct_property_rn(property_id),
+            dimensions=[
+                data_v1beta.Dimension(name=dimension) for dimension in dimensions
+            ],
+            metrics=[data_v1beta.Metric(name=metric) for metric in metrics],
+            return_property_quota=return_property_quota,
         )
 
-    if metric_filter:
-        request.metric_filter = data_v1beta.FilterExpression(metric_filter)
+        if dimension_filter:
+            request.dimension_filter = data_v1beta.FilterExpression(
+                dimension_filter
+            )
 
-    if order_bys:
-        request.order_bys = [
-            data_v1beta.OrderBy(order_by) for order_by in order_bys
-        ]
+        if metric_filter:
+            request.metric_filter = data_v1beta.FilterExpression(metric_filter)
 
-    if limit:
-        request.limit = limit
-    if offset:
-        request.offset = offset
+        if order_bys:
+            request.order_bys = [
+                data_v1beta.OrderBy(order_by) for order_by in order_bys
+            ]
 
-    response = await create_data_api_client().run_realtime_report(request)
-    return proto_to_dict(response)
+        if limit:
+            request.limit = limit
+        if offset:
+            request.offset = offset
+
+        response = create_data_api_client_sync().run_realtime_report(request)
+        return proto_to_dict(response)
+        
+    return await asyncio.to_thread(_fetch)

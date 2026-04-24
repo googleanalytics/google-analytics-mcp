@@ -114,7 +114,14 @@ following message. You'll need this for the next step!
 Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
 ```
 
-### Configure Gemini
+### Configure your MCP client
+
+Add the server to your MCP client's configuration. Replace
+`PATH_TO_CREDENTIALS_JSON` with the path you copied in the previous step, and
+`YOUR_PROJECT_ID` with your
+[Google Cloud project ID](https://support.google.com/googleapi/answer/7014113).
+
+#### Gemini CLI / Gemini Code Assist
 
 1.  Install [Gemini
     CLI](https://github.com/google-gemini/gemini-cli/blob/main/docs/get-started/installation.md)
@@ -123,14 +130,6 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
 
 1.  Create or edit the file at `~/.gemini/settings.json`, adding your server
     to the `mcpServers` list.
-
-    Replace `PATH_TO_CREDENTIALS_JSON` with the path you copied in the previous
-    step.
-
-    We also recommend that you add a `GOOGLE_CLOUD_PROJECT` attribute to the
-    `env` object. Replace `YOUR_PROJECT_ID` in the following example with the
-    [project ID](https://support.google.com/googleapi/answer/7014113) of your
-    Google Cloud project.
 
     ```json
     {
@@ -150,10 +149,37 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
     }
     ```
 
+#### Claude Code (Anthropic)
+
+Add to your project's `.mcp.json` or `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "analytics-mcp": {
+      "command": "pipx",
+      "args": [
+        "run",
+        "analytics-mcp"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_CREDENTIALS_JSON",
+        "GOOGLE_PROJECT_ID": "YOUR_PROJECT_ID"
+      }
+    }
+  }
+}
+```
+
+#### Cursor / VS Code (Copilot)
+
+Add to `.cursor/mcp.json` or `.vscode/mcp.json` in your project root using
+the same `mcpServers` format shown above.
+
 ## Try it out 🥼
 
-Launch Gemini Code Assist or Gemini CLI and type `/mcp`. You should see
-`analytics-mcp` listed in the results.
+Launch your MCP client. You should see `analytics-mcp` listed in the
+available servers.
 
 Here are some sample prompts to get you started:
 

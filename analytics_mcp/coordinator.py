@@ -45,12 +45,20 @@ from analytics_mcp.tools.reporting.realtime import (
 from analytics_mcp.tools.reporting.metadata import (
     get_custom_dimensions_and_metrics,
 )
+from analytics_mcp.tools.reporting.pivot import (
+    run_pivot_report,
+    _run_pivot_report_description,
+)
 
 run_report_with_description = FunctionTool(run_report)
 run_report_with_description.description = _run_report_description()
 run_realtime_report_with_description = FunctionTool(run_realtime_report)
 run_realtime_report_with_description.description = (
     _run_realtime_report_description()
+)
+run_pivot_report_with_description = FunctionTool(run_pivot_report)
+run_pivot_report_with_description.description = (
+    _run_pivot_report_description()
 )
 
 # Instantiate the ADK tools
@@ -123,6 +131,14 @@ for tool in mcp_tools:
         ]
     elif tool.name == "run_realtime_report":
         tool.inputSchema["required"] = ["property_id", "dimensions", "metrics"]
+    elif tool.name == "run_pivot_report":
+        tool.inputSchema["required"] = [
+            "property_id",
+            "date_ranges",
+            "dimensions",
+            "metrics",
+            "pivots",
+        ]
 
 
 @app.list_tools()

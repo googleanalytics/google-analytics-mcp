@@ -20,7 +20,6 @@ server.
 
 # MCP Server Imports
 import json
-from json import tool
 from mcp import types as mcp_types  # Use alias to avoid conflict
 from mcp.server.lowlevel import Server
 
@@ -42,6 +41,9 @@ from analytics_mcp.tools.reporting.realtime import (
     run_realtime_report,
     _run_realtime_report_description,
 )
+from analytics_mcp.tools.reporting.compatibility import (
+    check_compatibility,
+)
 from analytics_mcp.tools.reporting.metadata import (
     get_custom_dimensions_and_metrics,
 )
@@ -62,6 +64,7 @@ tools = [
     FunctionTool(get_custom_dimensions_and_metrics),
     run_report_with_description,
     run_realtime_report_with_description,
+    FunctionTool(check_compatibility),
 ]
 
 tool_map = {t.name: t for t in tools}

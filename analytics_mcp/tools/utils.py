@@ -30,7 +30,7 @@ def _get_package_version_with_fallback():
     """
     try:
         return metadata.version("analytics-mcp")
-    except:
+    except Exception:
         return "unknown"
 
 

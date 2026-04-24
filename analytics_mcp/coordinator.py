@@ -20,9 +20,10 @@ server.
 
 # MCP Server Imports
 import json
-from json import tool
 from mcp import types as mcp_types  # Use alias to avoid conflict
 from mcp.server.lowlevel import Server
+
+import analytics_mcp.prompts as prompts_module
 
 # ADK Tool Imports
 from google.adk.tools.function_tool import FunctionTool
@@ -156,3 +157,18 @@ async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
         {"error": f"Tool '{name}' not implemented by this server."}
     )
     return [mcp_types.TextContent(type="text", text=error_text)]
+
+
+@app.list_prompts()
+async def list_prompts() -> list[mcp_types.Prompt]:
+    return prompts_module.list_prompts()
+
+
+@app.get_prompt()
+async def get_prompt(
+    name: str, arguments: dict | None
+) -> mcp_types.GetPromptResult:
+    try:
+        return prompts_module.get_prompt(name, arguments)
+    except ValueError as e:
+        raise ValueError(str(e))

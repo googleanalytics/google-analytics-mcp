@@ -44,6 +44,25 @@ to provide several
 - `run_realtime_report`: Runs a Google Analytics realtime report using the
   Data API.
 
+## Prompts 💬
+
+The server exposes [MCP Prompts](https://modelcontextprotocol.io/docs/concepts/prompts)
+for common Google Analytics workflows. In Gemini CLI, prompts are available as
+[slash commands](https://google-gemini.github.io/gemini-cli/docs/tools/mcp-server.html#mcp-prompts-as-slash-commands).
+
+| Prompt | Description |
+|--------|-------------|
+| `traffic-summary` | Summarize overall traffic (sessions, users, bounce rate, engagement time) for a date range. |
+| `top-pages` | Show the top pages by sessions with engagement metrics. |
+| `acquisition-overview` | Break down traffic by source / medium and highlight top channels. |
+| `compare-periods` | Compare key metrics between two time periods with percentage changes. |
+| `campaign-performance` | Analyze UTM-tagged campaign performance ranked by conversions. |
+| `realtime-overview` | Show active users right now broken down by page, country, and device. |
+
+All prompts require a `property_id` argument. Most accept an optional
+`date_range` argument (e.g. `"last 30 days"`, `"last 7 days"`,
+`"2024-01-01 to 2024-01-31"`).
+
 ## Setup instructions 🔧
 
 ✨ Watch the [Google Analytics MCP Setup

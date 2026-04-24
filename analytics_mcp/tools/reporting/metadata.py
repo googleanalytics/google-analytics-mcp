@@ -237,6 +237,79 @@ def get_dimension_filter_hints():
     """ + _FILTER_NOTES
 
 
+def get_pivot_hints():
+    """Returns hints and examples for pivots arguments."""
+    pivot_by_country = data_v1beta.Pivot(
+        field_names=["country"],
+        limit=5,
+        order_bys=[
+            data_v1beta.OrderBy(
+                metric=data_v1beta.OrderBy.MetricOrderBy(
+                    metric_name="sessions",
+                ),
+                desc=True,
+            )
+        ],
+    )
+    pivot_by_browser = data_v1beta.Pivot(
+        field_names=["browser"],
+        limit=3,
+        offset=0,
+    )
+    pivot_by_source_medium = data_v1beta.Pivot(
+        field_names=["sessionSource", "sessionMedium"],
+        limit=10,
+        order_bys=[
+            data_v1beta.OrderBy(
+                dimension=data_v1beta.OrderBy.DimensionOrderBy(
+                    dimension_name="sessionSource",
+                    order_type=data_v1beta.OrderBy.DimensionOrderBy.OrderType.ALPHANUMERIC,
+                ),
+                desc=False,
+            )
+        ],
+    )
+
+    return f"""Example pivots arguments:
+
+    Each pivot in the `pivots` list must reference dimensions that are
+    also present in the report's `dimensions` argument.
+
+    A pivot report can contain multiple pivots. Every dimension
+    referenced by one of the report's dimensions must be included in
+    exactly one of the pivots.
+
+    1.  A single pivot by country, returning the top 5 by sessions:
+        [ {proto_to_json(pivot_by_country)} ]
+
+    2.  A simple pivot by browser, returning the first 3 rows:
+        [ {proto_to_json(pivot_by_browser)} ]
+
+    3.  A pivot by multiple dimensions (source + medium):
+        [ {proto_to_json(pivot_by_source_medium)} ]
+
+    4.  Multiple pivots (e.g. rows pivot by country, columns pivot by
+        browser). Every report dimension must appear in exactly one
+        pivot:
+        [
+          {proto_to_json(pivot_by_country)},
+          {proto_to_json(pivot_by_browser)}
+        ]
+
+    ### Pivot fields
+
+    - `field_names`: List of dimension names to pivot on. Must be a
+      subset of the report's `dimensions`.
+    - `limit`: The number of unique combinations of dimension values
+      to return in this pivot. Required. The `limit` parameter is
+      required for each Pivot.
+    - `offset`: The row count of the start row for this pivot.
+      Defaults to 0.
+    - `order_bys`: Specifies how dimensions and metrics in this pivot
+      are ordered. Uses the same OrderBy format as `run_report`.
+    """
+
+
 def get_order_bys_hints():
     """Returns hints and examples for order_bys arguments."""
     dimension_alphanumeric_ascending = data_v1beta.OrderBy(

@@ -14,12 +14,15 @@
 
 """Common utilities used by the MCP server."""
 
+import os
+import sys
 from typing import Any, Dict
 
 from google.analytics import admin_v1beta, data_v1beta, admin_v1alpha
 from google.api_core.gapic_v1.client_info import ClientInfo
 from importlib import metadata
 import google.auth
+import google.oauth2.credentials
 import proto
 
 
@@ -46,42 +49,85 @@ _READ_ONLY_ANALYTICS_SCOPE = (
 
 
 def _create_credentials() -> google.auth.credentials.Credentials:
-    """Returns Application Default Credentials with read-only scope."""
-    import sys
-    import os
-    import google.oauth2.credentials
-    print("_create_credentials started", file=sys.stderr)
-    try:
+    """Returns Application Default Credentials with read-only scope.
+
+    On Windows, prefers loading credentials directly from the file specified
+    by GOOGLE_APPLICATION_CREDENTIALS to avoid subprocess spawning, which can
+    interfere with the MCP server's stdio transport.
+    """
+    if sys.platform == "win32":
         path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
         if path and os.path.exists(path):
-            print(f"Loading credentials directly from {path}", file=sys.stderr)
-            credentials = google.oauth2.credentials.Credentials.from_authorized_user_file(path, scopes=[_READ_ONLY_ANALYTICS_SCOPE])
-            print("Credentials loaded successfully from file", file=sys.stderr)
-            return credentials
-        else:
-            print("GOOGLE_APPLICATION_CREDENTIALS not found, falling back to default", file=sys.stderr)
-            credentials, _ = google.auth.default(scopes=[_READ_ONLY_ANALYTICS_SCOPE])
-            print("google.auth.default finished", file=sys.stderr)
-            return credentials
-    except Exception as e:
-        print(f"google.auth.default failed: {e}", file=sys.stderr)
-        raise
+            return google.oauth2.credentials.Credentials.from_authorized_user_file(
+                path, scopes=[_READ_ONLY_ANALYTICS_SCOPE]
+            )
+    credentials, _ = google.auth.default(scopes=[_READ_ONLY_ANALYTICS_SCOPE])
+    return credentials
 
 
 def create_admin_api_client_sync() -> admin_v1beta.AnalyticsAdminServiceClient:
+    """Returns a properly configured Google Analytics Admin API sync client.
+
+    Uses Application Default Credentials with read-only scope.
+    On Windows, this sync client is used instead of the async variant to
+    avoid grpc.aio event loop conflicts with the MCP stdio transport.
+    """
     return admin_v1beta.AnalyticsAdminServiceClient(
         client_info=_CLIENT_INFO, credentials=_create_credentials()
     )
 
 
 def create_data_api_client_sync() -> data_v1beta.BetaAnalyticsDataClient:
+    """Returns a properly configured Google Analytics Data API sync client.
+
+    Uses Application Default Credentials with read-only scope.
+    On Windows, this sync client is used instead of the async variant to
+    avoid grpc.aio event loop conflicts with the MCP stdio transport.
+    """
     return data_v1beta.BetaAnalyticsDataClient(
         client_info=_CLIENT_INFO, credentials=_create_credentials()
     )
 
 
 def create_admin_alpha_api_client_sync() -> admin_v1alpha.AnalyticsAdminServiceClient:
+    """Returns a properly configured Google Analytics Admin API (alpha) sync client.
+
+    Uses Application Default Credentials with read-only scope.
+    On Windows, this sync client is used instead of the async variant to
+    avoid grpc.aio event loop conflicts with the MCP stdio transport.
+    """
     return admin_v1alpha.AnalyticsAdminServiceClient(
+        client_info=_CLIENT_INFO, credentials=_create_credentials()
+    )
+
+
+def create_admin_api_client() -> admin_v1beta.AnalyticsAdminServiceAsyncClient:
+    """Returns a properly configured Google Analytics Admin API async client.
+
+    Uses Application Default Credentials with read-only scope.
+    """
+    return admin_v1beta.AnalyticsAdminServiceAsyncClient(
+        client_info=_CLIENT_INFO, credentials=_create_credentials()
+    )
+
+
+def create_data_api_client() -> data_v1beta.BetaAnalyticsDataAsyncClient:
+    """Returns a properly configured Google Analytics Data API async client.
+
+    Uses Application Default Credentials with read-only scope.
+    """
+    return data_v1beta.BetaAnalyticsDataAsyncClient(
+        client_info=_CLIENT_INFO, credentials=_create_credentials()
+    )
+
+
+def create_admin_alpha_api_client() -> (
+    admin_v1alpha.AnalyticsAdminServiceAsyncClient
+):
+    """Returns a properly configured Google Analytics Admin API (alpha) async client.
+    Uses Application Default Credentials with read-only scope.
+    """
+    return admin_v1alpha.AnalyticsAdminServiceAsyncClient(
         client_info=_CLIENT_INFO, credentials=_create_credentials()
     )
 

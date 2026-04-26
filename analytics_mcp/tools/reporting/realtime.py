@@ -14,11 +14,14 @@
 
 """Tools for running realtime reports using the Data API."""
 
+import asyncio
+import sys
 from typing import Any, Dict, List
 
 from analytics_mcp.tools.utils import (
     construct_property_rn,
     create_data_api_client,
+    create_data_api_client_sync,
     proto_to_dict,
 )
 from analytics_mcp.tools.reporting.metadata import (
@@ -156,6 +159,13 @@ async def run_realtime_report(
         request.limit = limit
     if offset:
         request.offset = offset
+
+    if sys.platform == "win32":
+        def _fetch():
+            return proto_to_dict(
+                create_data_api_client_sync().run_realtime_report(request)
+            )
+        return await asyncio.to_thread(_fetch)
 
     response = await create_data_api_client().run_realtime_report(request)
     return proto_to_dict(response)

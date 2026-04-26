@@ -14,12 +14,15 @@
 
 """Common utilities used by the MCP server."""
 
+import os
+import sys
 from typing import Any, Dict
 
 from google.analytics import admin_v1beta, data_v1beta, admin_v1alpha
 from google.api_core.gapic_v1.client_info import ClientInfo
 from importlib import metadata
 import google.auth
+import google.oauth2.credentials
 import proto
 
 
@@ -46,9 +49,56 @@ _READ_ONLY_ANALYTICS_SCOPE = (
 
 
 def _create_credentials() -> google.auth.credentials.Credentials:
-    """Returns Application Default Credentials with read-only scope."""
+    """Returns Application Default Credentials with read-only scope.
+
+    On Windows, prefers loading credentials directly from the file specified
+    by GOOGLE_APPLICATION_CREDENTIALS to avoid subprocess spawning, which can
+    interfere with the MCP server's stdio transport.
+    """
+    if sys.platform == "win32":
+        path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+        if path and os.path.exists(path):
+            return google.oauth2.credentials.Credentials.from_authorized_user_file(
+                path, scopes=[_READ_ONLY_ANALYTICS_SCOPE]
+            )
     credentials, _ = google.auth.default(scopes=[_READ_ONLY_ANALYTICS_SCOPE])
     return credentials
+
+
+def create_admin_api_client_sync() -> admin_v1beta.AnalyticsAdminServiceClient:
+    """Returns a properly configured Google Analytics Admin API sync client.
+
+    Uses Application Default Credentials with read-only scope.
+    On Windows, this sync client is used instead of the async variant to
+    avoid grpc.aio event loop conflicts with the MCP stdio transport.
+    """
+    return admin_v1beta.AnalyticsAdminServiceClient(
+        client_info=_CLIENT_INFO, credentials=_create_credentials()
+    )
+
+
+def create_data_api_client_sync() -> data_v1beta.BetaAnalyticsDataClient:
+    """Returns a properly configured Google Analytics Data API sync client.
+
+    Uses Application Default Credentials with read-only scope.
+    On Windows, this sync client is used instead of the async variant to
+    avoid grpc.aio event loop conflicts with the MCP stdio transport.
+    """
+    return data_v1beta.BetaAnalyticsDataClient(
+        client_info=_CLIENT_INFO, credentials=_create_credentials()
+    )
+
+
+def create_admin_alpha_api_client_sync() -> admin_v1alpha.AnalyticsAdminServiceClient:
+    """Returns a properly configured Google Analytics Admin API (alpha) sync client.
+
+    Uses Application Default Credentials with read-only scope.
+    On Windows, this sync client is used instead of the async variant to
+    avoid grpc.aio event loop conflicts with the MCP stdio transport.
+    """
+    return admin_v1alpha.AnalyticsAdminServiceClient(
+        client_info=_CLIENT_INFO, credentials=_create_credentials()
+    )
 
 
 def create_admin_api_client() -> admin_v1beta.AnalyticsAdminServiceAsyncClient:

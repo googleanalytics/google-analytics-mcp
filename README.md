@@ -36,6 +36,7 @@ to provide several
 ### Run core reports 📙
 
 - `run_report`: Runs a Google Analytics report using the Data API.
+- `run_funnel_report`: Runs a Google Analytics funnel report using the Data API.
 - `get_custom_dimensions_and_metrics`: Retrieves the custom dimensions and
   metrics for a specific property.
 
@@ -67,8 +68,8 @@ Setup involves the following steps:
 [Follow the instructions](https://support.google.com/googleapi/answer/6158841)
 to enable the following APIs in your Google Cloud project:
 
-* [Google Analytics Admin API](https://console.cloud.google.com/apis/library/analyticsadmin.googleapis.com)
-* [Google Analytics Data API](https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com)
+- [Google Analytics Admin API](https://console.cloud.google.com/apis/library/analyticsadmin.googleapis.com)
+- [Google Analytics Data API](https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com)
 
 ### Configure credentials 🔑
 
@@ -137,10 +138,7 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
       "mcpServers": {
         "analytics-mcp": {
           "command": "pipx",
-          "args": [
-            "run",
-            "analytics-mcp"
-          ],
+          "args": ["run", "analytics-mcp"],
           "env": {
             "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_CREDENTIALS_JSON",
             "GOOGLE_PROJECT_ID": "YOUR_PROJECT_ID"

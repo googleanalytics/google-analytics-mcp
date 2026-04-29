@@ -45,12 +45,20 @@ from analytics_mcp.tools.reporting.realtime import (
 from analytics_mcp.tools.reporting.metadata import (
     get_custom_dimensions_and_metrics,
 )
+from analytics_mcp.tools.reporting.funnel import (
+    run_funnel_report,
+    _run_funnel_report_description,
+)
 
 run_report_with_description = FunctionTool(run_report)
 run_report_with_description.description = _run_report_description()
 run_realtime_report_with_description = FunctionTool(run_realtime_report)
 run_realtime_report_with_description.description = (
     _run_realtime_report_description()
+)
+run_funnel_report_with_description = FunctionTool(run_funnel_report)
+run_funnel_report_with_description.description = (
+    _run_funnel_report_description()
 )
 
 # Instantiate the ADK tools
@@ -62,6 +70,7 @@ tools = [
     FunctionTool(get_custom_dimensions_and_metrics),
     run_report_with_description,
     run_realtime_report_with_description,
+    run_funnel_report_with_description,
 ]
 
 tool_map = {t.name: t for t in tools}

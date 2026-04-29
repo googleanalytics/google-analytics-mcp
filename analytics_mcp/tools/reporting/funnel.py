@@ -154,8 +154,7 @@ async def run_funnel_report(
             )
         else:
             raise ValueError(
-                f"Step {i+1} must contain either 'filter_expression' or"
-                " 'event' key"
+                f"Step {i+1} must contain either 'filter_expression' or 'event' key"
             )
 
         funnel_step = data_v1alpha.FunnelStep(

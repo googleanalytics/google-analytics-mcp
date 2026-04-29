@@ -22,7 +22,7 @@ from analytics_mcp.tools.utils import (
     proto_to_dict,
     proto_to_json,
 )
-from google.analytics import data_v1beta
+from google.analytics import data_v1alpha, data_v1beta
 
 
 def get_date_ranges_hints():
@@ -57,8 +57,6 @@ def get_date_ranges_hints():
 
 def get_funnel_steps_hints():
     """Returns hints and examples for funnel steps configuration."""
-    from google.analytics import data_v1alpha
-
     step_first_open = data_v1alpha.FunnelStep(
         name="First open/visit",
         filter_expression=data_v1alpha.FunnelFilterExpression(

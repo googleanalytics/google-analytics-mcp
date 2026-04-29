@@ -1,7 +1,7 @@
 [project]
 name = "analytics-mcp"
 description = "MCP server for Google Analytics"
-version = "0.2.0"
+version = "0.3.0"
 # Lower bound of 3.10 due to the 'mcp' dependency:
 # https://github.com/modelcontextprotocol/python-sdk/blob/main/pyproject.toml
 requires-python = ">=3.10"

@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "adk-cheatsheet": {
+      "source": "google/adk-docs",
+      "sourceType": "github",
+      "computedHash": "79b12ecfef6421e592bf0e1a1fcb73548cc1d714ff0b7e619668d1d6b8b0faa8"
+    },
+    "adk-deploy-guide": {
+      "source": "google/adk-docs",
+      "sourceType": "github",
+      "computedHash": "cd9cb294edbae34148ca6e9d5c4b046ae627df037b8a8b8d4b330ff6a808c9e9"
+    },
+    "adk-dev-guide": {
+      "source": "google/adk-docs",
+      "sourceType": "github",
+      "computedHash": "82998a543795ede788f66f2243828b48ae5e0b6695e7a19d900bf4153c5fde46"
+    },
+    "adk-eval-guide": {
+      "source": "google/adk-docs",
+      "sourceType": "github",
+      "computedHash": "bab60302ffc684ad0d2244fde82849f973c3398598052f4c80918dd9d33770e8"
+    },
+    "adk-observability-guide": {
+      "source": "google/adk-docs",
+      "sourceType": "github",
+      "computedHash": "abe282356ebeeb67ec04a30e59539b069cf2a3bb5b0bd28d7dc9932523c07422"
+    },
+    "adk-scaffold": {
+      "source": "google/adk-docs",
+      "sourceType": "github",
+      "computedHash": "644a2eecc3eb84a8c4d0b45d0b897fed8ea5b3877f9746c008528fa500b1fb51"
+    }
+  }
+}

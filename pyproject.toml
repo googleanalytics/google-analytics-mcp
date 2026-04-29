@@ -12,7 +12,7 @@ dependencies = [
     "google-analytics-admin==0.28.0",
     "google-auth~=2.40",
     "mcp>=1.24.0",
-    "google-adk>=1.28.1",
+    "google-adk>=1.29.0",
     "httpx>=0.28.1",
 ]
 keywords = ["google analytics", "analytics", "mcp", "ga4"]

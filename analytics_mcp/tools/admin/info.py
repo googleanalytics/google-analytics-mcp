@@ -14,7 +14,7 @@
 
 """Tools for gathering Google Analytics account and property information."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from analytics_mcp.tools.utils import (
     construct_property_rn,
@@ -24,9 +24,39 @@ from analytics_mcp.tools.utils import (
 )
 from google.analytics import admin_v1beta, admin_v1alpha
 
+# Fields stripped from account summaries to reduce token count.
+_ACCOUNT_STRIP_FIELDS = {"name"}
+_PROPERTY_STRIP_FIELDS = {"name", "parent", "property_type"}
 
-async def get_account_summaries() -> List[Dict[str, Any]]:
-    """Retrieves information about the user's Google Analytics accounts and properties."""
+
+def _strip_account_summary(account: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove redundant fields from an account summary and its properties."""
+    cleaned = {k: v for k, v in account.items() if k not in _ACCOUNT_STRIP_FIELDS}
+    if "property_summaries" in cleaned:
+        cleaned["property_summaries"] = [
+            {k: v for k, v in prop.items() if k not in _PROPERTY_STRIP_FIELDS}
+            for prop in cleaned["property_summaries"]
+        ]
+    return cleaned
+
+
+async def get_account_summaries(
+    query: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Retrieves the user's Google Analytics accounts and properties.
+
+    Returns a compact representation with redundant fields (name, parent,
+    property_type) stripped to reduce token usage. Each account keeps its
+    ``account`` resource-name and ``display_name``; each property keeps its
+    ``property`` resource-name and ``display_name``.
+
+    Args:
+        query: Optional case-insensitive search string. When provided, only
+            accounts or properties whose display name contains the query are
+            returned. An account is included if its own display name matches
+            **or** any of its properties match; non-matching properties on an
+            otherwise-matching account are still filtered out.
+    """
 
     # Uses an async list comprehension so the pager returned by
     # list_account_summaries retrieves all pages.
@@ -34,6 +64,29 @@ async def get_account_summaries() -> List[Dict[str, Any]]:
     all_pages = [
         proto_to_dict(summary_page) async for summary_page in summary_pager
     ]
+
+    # Strip redundant fields.
+    all_pages = [_strip_account_summary(s) for s in all_pages]
+
+    # Apply optional display-name filter.
+    if query:
+        q = query.lower()
+        filtered = []
+        for account in all_pages:
+            acct_match = q in account.get("display_name", "").lower()
+            matching_props = [
+                p
+                for p in account.get("property_summaries", [])
+                if q in p.get("display_name", "").lower()
+            ]
+            if acct_match or matching_props:
+                account = dict(account)
+                if not acct_match:
+                    # Only include properties that matched.
+                    account["property_summaries"] = matching_props
+                filtered.append(account)
+        all_pages = filtered
+
     return all_pages
 
 

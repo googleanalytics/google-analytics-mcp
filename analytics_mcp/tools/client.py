@@ -56,7 +56,9 @@ def _get_credentials():
     global _CREDENTIALS
     # Expected to be called under _client_lock
     if _CREDENTIALS is None:
-        _CREDENTIALS, _ = google.auth.default(scopes=[_READ_ONLY_ANALYTICS_SCOPE])
+        _CREDENTIALS, _ = google.auth.default(
+            scopes=[_READ_ONLY_ANALYTICS_SCOPE]
+        )
     return _CREDENTIALS
 
 

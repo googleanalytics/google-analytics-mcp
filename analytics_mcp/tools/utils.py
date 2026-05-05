@@ -26,6 +26,8 @@ from google.api_core.gapic_v1.client_info import ClientInfo
 from importlib import metadata
 import google.auth
 import proto
+import sys
+import threading
 
 
 def _get_package_version_with_fallback():
@@ -49,54 +51,45 @@ _READ_ONLY_ANALYTICS_SCOPE = (
     "https://www.googleapis.com/auth/analytics.readonly"
 )
 
+# Initialize credentials and clients at the module level (Eager Loading).
+# This ensures they are created on the main thread during import, avoiding
+# deadlocks in worker threads.
+_CREDENTIALS, _ = google.auth.default(scopes=[_READ_ONLY_ANALYTICS_SCOPE])
 
-def _create_credentials() -> google.auth.credentials.Credentials:
-    """Returns Application Default Credentials with read-only scope."""
-    credentials, _ = google.auth.default(scopes=[_READ_ONLY_ANALYTICS_SCOPE])
-    return credentials
+_ADMIN_CLIENT = admin_v1beta.AnalyticsAdminServiceClient(
+    client_info=_CLIENT_INFO, credentials=_CREDENTIALS
+)
+_DATA_CLIENT = data_v1beta.BetaAnalyticsDataClient(
+    client_info=_CLIENT_INFO, credentials=_CREDENTIALS
+)
+_ADMIN_ALPHA_CLIENT = admin_v1alpha.AnalyticsAdminServiceClient(
+    client_info=_CLIENT_INFO, credentials=_CREDENTIALS
+)
+_DATA_ALPHA_CLIENT = data_v1alpha.AlphaAnalyticsDataClient(
+    client_info=_CLIENT_INFO, credentials=_CREDENTIALS
+)
 
 
-def create_admin_api_client() -> admin_v1beta.AnalyticsAdminServiceAsyncClient:
-    """Returns a properly configured Google Analytics Admin API async client.
-
-    Uses Application Default Credentials with read-only scope.
-    """
-    return admin_v1beta.AnalyticsAdminServiceAsyncClient(
-        client_info=_CLIENT_INFO, credentials=_create_credentials()
-    )
+def create_admin_api_client() -> admin_v1beta.AnalyticsAdminServiceClient:
+    """Returns the Google Analytics Admin API client."""
+    return _ADMIN_CLIENT
 
 
-def create_data_api_client() -> data_v1beta.BetaAnalyticsDataAsyncClient:
-    """Returns a properly configured Google Analytics Data API async client.
-
-    Uses Application Default Credentials with read-only scope.
-    """
-    return data_v1beta.BetaAnalyticsDataAsyncClient(
-        client_info=_CLIENT_INFO, credentials=_create_credentials()
-    )
+def create_data_api_client() -> data_v1beta.BetaAnalyticsDataClient:
+    """Returns the Google Analytics Data API client."""
+    return _DATA_CLIENT
 
 
 def create_admin_alpha_api_client() -> (
-    admin_v1alpha.AnalyticsAdminServiceAsyncClient
+    admin_v1alpha.AnalyticsAdminServiceClient
 ):
-    """Returns a properly configured Google Analytics Admin API (alpha) async client.
-    Uses Application Default Credentials with read-only scope.
-    """
-    return admin_v1alpha.AnalyticsAdminServiceAsyncClient(
-        client_info=_CLIENT_INFO, credentials=_create_credentials()
-    )
+    """Returns the Google Analytics Admin API (alpha) client."""
+    return _ADMIN_ALPHA_CLIENT
 
 
-def create_data_api_alpha_client() -> (
-    data_v1alpha.AlphaAnalyticsDataAsyncClient
-):
-    """Returns a properly configured Google Analytics Data API (Alpha) async client.
-
-    Uses Application Default Credentials with read-only scope.
-    """
-    return data_v1alpha.AlphaAnalyticsDataAsyncClient(
-        client_info=_CLIENT_INFO, credentials=_create_credentials()
-    )
+def create_data_api_alpha_client() -> data_v1alpha.AlphaAnalyticsDataClient:
+    """Returns the Google Analytics Data API (Alpha) client."""
+    return _DATA_ALPHA_CLIENT
 
 
 def construct_property_rn(property_value: int | str) -> str:

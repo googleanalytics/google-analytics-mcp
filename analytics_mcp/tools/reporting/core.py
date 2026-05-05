@@ -14,6 +14,7 @@
 
 """Tools for running core reports using the Data API."""
 
+import asyncio
 from typing import Any, Dict, List
 
 from analytics_mcp.tools.reporting.metadata import (
@@ -167,6 +168,9 @@ async def run_report(
     if currency_code:
         request.currency_code = currency_code
 
-    response = await create_data_api_client().run_report(request)
+    def _sync_call():
+        return create_data_api_client().run_report(request)
+
+    response = await asyncio.to_thread(_sync_call)
 
     return proto_to_dict(response)

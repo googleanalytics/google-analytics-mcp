@@ -14,6 +14,7 @@
 
 """Metadata to provide context and hints for reporting tools."""
 
+import asyncio
 from typing import Any, Dict, List
 
 from analytics_mcp.tools.utils import (
@@ -484,9 +485,13 @@ async def get_custom_dimensions_and_metrics(
           - A string consisting of 'properties/' followed by a number
 
     """
-    metadata = await create_data_api_client().get_metadata(
-        name=f"{construct_property_rn(property_id)}/metadata"
-    )
+
+    def _sync_call():
+        return create_data_api_client().get_metadata(
+            name=f"{construct_property_rn(property_id)}/metadata"
+        )
+
+    metadata = await asyncio.to_thread(_sync_call)
     custom_metrics = [
         proto_to_dict(metric)
         for metric in metadata.metrics

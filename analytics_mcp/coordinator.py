@@ -20,6 +20,7 @@ server.
 
 # MCP Server Imports
 import json
+import sys
 from json import tool
 from mcp import types as mcp_types  # Use alias to avoid conflict
 from mcp.server.lowlevel import Server
@@ -154,7 +155,10 @@ async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
             return [mcp_types.TextContent(type="text", text=response_text)]
 
         except Exception as e:
-            print(f"MCP Server: Error executing ADK tool '{name}': {e}")
+            print(
+                f"MCP Server: Error executing ADK tool '{name}': {e}",
+                file=sys.stderr,
+            )
             # Return an error message in MCP format
             error_text = json.dumps(
                 {"error": f"Failed to execute tool '{name}': {str(e)}"}

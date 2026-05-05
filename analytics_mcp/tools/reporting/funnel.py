@@ -14,6 +14,7 @@
 
 """Tools for running funnel reports using the Data API (Alpha)."""
 
+import asyncio
 from typing import Any, Dict, List
 
 from analytics_mcp.tools.reporting.metadata import (
@@ -191,5 +192,8 @@ async def run_funnel_report(
             data_v1alpha.Segment(segment) for segment in segments
         ]
 
-    response = await create_data_api_alpha_client().run_funnel_report(request)
+    def _sync_call():
+        return create_data_api_alpha_client().run_funnel_report(request)
+
+    response = await asyncio.to_thread(_sync_call)
     return proto_to_dict(response)

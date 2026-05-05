@@ -19,9 +19,11 @@ from typing import Any, Dict, List
 
 from analytics_mcp.tools.utils import (
     construct_property_rn,
+    proto_to_dict,
+)
+from analytics_mcp.tools.client import (
     create_admin_api_client,
     create_admin_alpha_api_client,
-    proto_to_dict,
 )
 from google.analytics import admin_v1beta, admin_v1alpha
 

@@ -19,9 +19,9 @@ from typing import Any, Dict, List
 
 from analytics_mcp.tools.utils import (
     construct_property_rn,
-    create_data_api_client,
     proto_to_dict,
 )
+from analytics_mcp.tools.client import create_data_api_client
 from analytics_mcp.tools.reporting.metadata import (
     get_date_ranges_hints,
     get_dimension_filter_hints,

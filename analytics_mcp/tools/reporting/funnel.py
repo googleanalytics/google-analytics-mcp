@@ -23,9 +23,9 @@ from analytics_mcp.tools.reporting.metadata import (
 )
 from analytics_mcp.tools.utils import (
     construct_property_rn,
-    create_data_api_alpha_client,
     proto_to_dict,
 )
+from analytics_mcp.tools.client import create_data_api_alpha_client
 from google.analytics import data_v1alpha
 
 

@@ -53,8 +53,20 @@ _CREDENTIALS = None
 
 
 def _get_credentials():
+    # In HTTP/OAuth mode, retrieve the per-request token from FastMCP context.
+    # This must be checked first so each user's request uses their own token.
+    try:
+        from fastmcp.server.dependencies import get_access_token
+        from google.oauth2.credentials import Credentials as OAuthCredentials
+
+        token = get_access_token()
+        if token and token.token:
+            return OAuthCredentials(token=token.token)
+    except Exception:
+        pass
+
+    # Fall back to Application Default Credentials for stdio/local mode.
     global _CREDENTIALS
-    # Expected to be called under _client_lock
     if _CREDENTIALS is None:
         _CREDENTIALS, _ = google.auth.default(
             scopes=[_READ_ONLY_ANALYTICS_SCOPE]

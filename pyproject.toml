@@ -14,6 +14,7 @@ dependencies = [
     "mcp>=1.24.0",
     "google-adk>=1.29.0",
     "httpx>=0.28.1",
+    "fastmcp>=3.2.0",
 ]
 keywords = ["google analytics", "analytics", "mcp", "ga4"]
 classifiers = [

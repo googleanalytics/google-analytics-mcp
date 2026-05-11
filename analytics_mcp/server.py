@@ -16,49 +16,44 @@
 
 """Entry point for the Google Analytics MCP server."""
 
-import asyncio
+import os
 import sys
-import analytics_mcp.coordinator as coordinator
-from mcp.server.lowlevel import NotificationOptions
-from mcp.server.models import InitializationOptions
-import mcp.server.stdio
-import mcp.server
 import traceback
 
+import analytics_mcp.coordinator as coordinator
 
-async def run_server_async():
-    """Runs the MCP server over standard I/O."""
-    print("Starting MCP Stdio Server:", coordinator.app.name, file=sys.stderr)
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await coordinator.app.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name=coordinator.app.name,  # Use the server name defined above
-                server_version="1.0.0",
-                capabilities=coordinator.app.get_capabilities(
-                    # Define server capabilities - consult MCP docs for options
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                ),
-            ),
+
+def run_server() -> None:
+    """Runs the MCP server.
+
+    Uses streamable-http transport with OAuth when ANALYTICS_MCP_OAUTH_CLIENT_ID
+    and ANALYTICS_MCP_OAUTH_CLIENT_SECRET are set (Cloud Run / remote mode).
+    Falls back to stdio transport for local subprocess use.
+    """
+    _client_id = os.environ.get("ANALYTICS_MCP_OAUTH_CLIENT_ID")
+    _client_secret = os.environ.get("ANALYTICS_MCP_OAUTH_CLIENT_SECRET")
+    port = int(os.environ.get("PORT", "8080"))
+
+    if _client_id and _client_secret:
+        print(
+            f"Starting MCP HTTP Server on port {port} (OAuth mode)",
+            file=sys.stderr,
         )
-
-
-def run_server():
-    """Synchronous wrapper to run the async MCP server."""
-    asyncio.run(run_server_async())
+        coordinator.mcp.run(
+            transport="streamable-http", port=port, host="0.0.0.0"
+        )
+    else:
+        print("Starting MCP Stdio Server", file=sys.stderr)
+        coordinator.mcp.run()
 
 
 if __name__ == "__main__":
     try:
         run_server()
     except KeyboardInterrupt:
-        print("\nMCP Server (stdio) stopped by user.", file=sys.stderr)
+        print("\nMCP Server stopped by user.", file=sys.stderr)
     except Exception:
-        import traceback
-
-        print("MCP Server (stdio) encountered an error:", file=sys.stderr)
+        print("MCP Server encountered an error:", file=sys.stderr)
         traceback.print_exc()
     finally:
-        print("MCP Server (stdio) process exiting.", file=sys.stderr)
+        print("MCP Server process exiting.", file=sys.stderr)

@@ -199,47 +199,63 @@ as for local setup:
 
 1. Click **Create** and note the **Client ID** and **Client secret**.
 
-#### 3. Build and push the Docker image 🐳
+#### 3. Build and push the image with Cloud Build 🐳
+
+[Cloud Build](https://cloud.google.com/build) builds and pushes the image
+without requiring Docker locally. Substitute your Artifact Registry repository
+path:
 
 ```shell
-export PROJECT_ID=YOUR_PROJECT_ID
-export REGION=us-central1
-export IMAGE=gcr.io/$PROJECT_ID/analytics-mcp
-
-docker build -t $IMAGE .
-docker push $IMAGE
+gcloud builds submit \
+  --tag REGION-docker.pkg.dev/YOUR_PROJECT_ID/YOUR_REPO/google-analytics-mcp:latest .
 ```
 
-Or build directly in the cloud:
+#### 4. First deploy — get the service URL ☁️
+
+Deploy without `ANALYTICS_MCP_BASE_URL` first so Cloud Run can assign the
+service URL:
 
 ```shell
-gcloud builds submit --tag $IMAGE
-```
-
-#### 4. Deploy to Cloud Run ☁️
-
-```shell
-gcloud run deploy analytics-mcp \
-  --image $IMAGE \
+gcloud run deploy YOUR_SERVICE_NAME \
+  --image REGION-docker.pkg.dev/YOUR_PROJECT_ID/YOUR_REPO/google-analytics-mcp:latest \
   --platform managed \
-  --region $REGION \
+  --region YOUR_REGION \
   --allow-unauthenticated \
-  --set-env-vars="ANALYTICS_MCP_OAUTH_CLIENT_ID=YOUR_CLIENT_ID,ANALYTICS_MCP_OAUTH_CLIENT_SECRET=YOUR_CLIENT_SECRET,ANALYTICS_MCP_BASE_URL=https://YOUR_SERVICE_URL,FASTMCP_HOST=0.0.0.0"
+  --set-env-vars="GOOGLE_PROJECT_ID=YOUR_PROJECT_ID,\
+ANALYTICS_MCP_OAUTH_CLIENT_ID=YOUR_OAUTH_CLIENT_ID,\
+ANALYTICS_MCP_OAUTH_CLIENT_SECRET=YOUR_OAUTH_CLIENT_SECRET,\
+FASTMCP_HOST=0.0.0.0"
 ```
 
-After the deploy completes, copy the **Service URL** printed by `gcloud` (e.g.
-`https://analytics-mcp-abc123-uc.a.run.app`) and:
+Note the **Service URL** printed at the end of the output, e.g.
+`https://YOUR_SERVICE_NAME-1234567890.REGION.run.app`.
 
-1. Replace `YOUR_SERVICE_URL` in the `ANALYTICS_MCP_BASE_URL` env var above
-   and redeploy, **or** update the variable in the Cloud Run console.
-1. Return to the OAuth client in the Cloud Console and replace the placeholder
-   redirect URI with:
+#### 5. Update OAuth redirect URI and redeploy ☁️
+
+1. Return to your OAuth client in the
+   [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   and replace the placeholder redirect URI with:
 
    ```text
    https://YOUR_SERVICE_URL/auth/callback
    ```
 
-#### 5. Connect from claude.ai 🤖
+1. Redeploy with `ANALYTICS_MCP_BASE_URL` set to the service URL:
+
+   ```shell
+   gcloud run deploy YOUR_SERVICE_NAME \
+     --image REGION-docker.pkg.dev/YOUR_PROJECT_ID/YOUR_REPO/google-analytics-mcp:latest \
+     --platform managed \
+     --region YOUR_REGION \
+     --allow-unauthenticated \
+     --set-env-vars="GOOGLE_PROJECT_ID=YOUR_PROJECT_ID,\
+   ANALYTICS_MCP_OAUTH_CLIENT_ID=YOUR_OAUTH_CLIENT_ID,\
+   ANALYTICS_MCP_OAUTH_CLIENT_SECRET=YOUR_OAUTH_CLIENT_SECRET,\
+   ANALYTICS_MCP_BASE_URL=https://YOUR_SERVICE_URL,\
+   FASTMCP_HOST=0.0.0.0"
+   ```
+
+#### 6. Connect from claude.ai 🤖
 
 1. Open [claude.ai](https://claude.ai) and go to **Settings → Integrations**.
 1. Add a new integration with the URL:

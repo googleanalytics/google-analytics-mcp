@@ -8,9 +8,19 @@
 [![GitHub forks](https://img.shields.io/github/forks/googleanalytics/google-analytics-mcp?style=social)](https://github.com/googleanalytics/google-analytics-mcp/network/members)
 [![YouTube Video Views](https://img.shields.io/youtube/views/PT4wGPxWiRQ)](https://www.youtube.com/watch?v=PT4wGPxWiRQ)
 
-This repo contains the source code for running a local
+This repo contains the source code for a
 [MCP](https://modelcontextprotocol.io) server that interacts with APIs for
 [Google Analytics](https://support.google.com/analytics).
+
+The server supports two deployment modes:
+
+- **Local (stdio)** — run as a subprocess by Gemini CLI, Claude Desktop, or
+  any MCP client. Uses Application Default Credentials. No extra infrastructure
+  needed.
+- **Remote (HTTP + OAuth)** — deploy to
+  [Google Cloud Run](https://cloud.google.com/run) and connect from web-based
+  clients such as [claude.ai](https://claude.ai). Users authenticate via OAuth
+  2.0; no credentials need to be shared with the server operator.
 
 Join the discussion and ask questions in the
 [🤖-analytics-mcp channel](https://discord.com/channels/971845904002871346/1398002598665257060)
@@ -46,6 +56,15 @@ to provide several
   Data API.
 
 ## Setup instructions 🔧
+
+Choose the mode that fits your use case:
+
+- [Local setup (stdio)](#local-setup-stdio) — simplest, runs on your machine
+- [Remote deployment (Cloud Run + OAuth)](#remote-deployment-cloud-run--oauth) — accessible from claude.ai and other web clients
+
+---
+
+### Local setup (stdio)
 
 ✨ Watch the [Google Analytics MCP Setup
 Tutorial](https://youtu.be/nS8HLdwmVlY) on YouTube for a step-by-step
@@ -147,6 +166,101 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
       }
     }
     ```
+
+---
+
+### Remote deployment (Cloud Run + OAuth)
+
+Deploy the server to Cloud Run so web-based MCP clients such as
+[claude.ai](https://claude.ai) can connect to it. Each user authenticates with
+their own Google account via OAuth 2.0 — no credentials need to be configured
+on the server.
+
+#### 1. Enable APIs ✅
+
+[Enable](https://support.google.com/googleapi/answer/6158841) the same two APIs
+as for local setup:
+
+- [Google Analytics Admin API](https://console.cloud.google.com/apis/library/analyticsadmin.googleapis.com)
+- [Google Analytics Data API](https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com)
+
+#### 2. Create an OAuth 2.0 client 🔑
+
+1. Open [APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
+   in the Google Cloud Console.
+1. Click **Create credentials → OAuth client ID**.
+1. Choose **Web application** as the application type.
+1. Under **Authorized redirect URIs**, add a placeholder for now — you will
+   update it after deploying:
+
+   ```text
+   https://YOUR_SERVICE_URL/auth/callback
+   ```
+
+1. Click **Create** and note the **Client ID** and **Client secret**.
+
+#### 3. Build and push the Docker image 🐳
+
+```shell
+export PROJECT_ID=YOUR_PROJECT_ID
+export REGION=us-central1
+export IMAGE=gcr.io/$PROJECT_ID/analytics-mcp
+
+docker build -t $IMAGE .
+docker push $IMAGE
+```
+
+Or build directly in the cloud:
+
+```shell
+gcloud builds submit --tag $IMAGE
+```
+
+#### 4. Deploy to Cloud Run ☁️
+
+```shell
+gcloud run deploy analytics-mcp \
+  --image $IMAGE \
+  --platform managed \
+  --region $REGION \
+  --allow-unauthenticated \
+  --set-env-vars="ANALYTICS_MCP_OAUTH_CLIENT_ID=YOUR_CLIENT_ID,ANALYTICS_MCP_OAUTH_CLIENT_SECRET=YOUR_CLIENT_SECRET,ANALYTICS_MCP_BASE_URL=https://YOUR_SERVICE_URL,FASTMCP_HOST=0.0.0.0"
+```
+
+After the deploy completes, copy the **Service URL** printed by `gcloud` (e.g.
+`https://analytics-mcp-abc123-uc.a.run.app`) and:
+
+1. Replace `YOUR_SERVICE_URL` in the `ANALYTICS_MCP_BASE_URL` env var above
+   and redeploy, **or** update the variable in the Cloud Run console.
+1. Return to the OAuth client in the Cloud Console and replace the placeholder
+   redirect URI with:
+
+   ```text
+   https://YOUR_SERVICE_URL/auth/callback
+   ```
+
+#### 5. Connect from claude.ai 🤖
+
+1. Open [claude.ai](https://claude.ai) and go to **Settings → Integrations**.
+1. Add a new integration with the URL:
+
+   ```text
+   https://YOUR_SERVICE_URL/mcp
+   ```
+
+1. Authorize with your Google account when prompted.
+
+#### Environment variable reference
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `ANALYTICS_MCP_OAUTH_CLIENT_ID` | Yes (HTTP mode) | OAuth 2.0 client ID |
+| `ANALYTICS_MCP_OAUTH_CLIENT_SECRET` | Yes (HTTP mode) | OAuth 2.0 client secret |
+| `ANALYTICS_MCP_BASE_URL` | Yes (HTTP mode) | Public URL of the deployed service |
+| `FASTMCP_HOST` | Cloud Run | Set to `0.0.0.0` to accept external connections |
+| `PORT` | Cloud Run | Port to listen on (default: `8080`, auto-set by Cloud Run) |
+
+---
 
 ## Try it out 🥼
 

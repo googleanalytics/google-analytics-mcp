@@ -50,6 +50,10 @@ from analytics_mcp.tools.reporting.funnel import (
     run_funnel_report,
     _run_funnel_report_description,
 )
+from analytics_mcp.tools.reporting.conversions import (
+    run_conversions_report,
+    _run_conversions_report_description,
+)
 
 run_report_with_description = FunctionTool(run_report)
 run_report_with_description.description = _run_report_description()
@@ -60,6 +64,10 @@ run_realtime_report_with_description.description = (
 run_funnel_report_with_description = FunctionTool(run_funnel_report)
 run_funnel_report_with_description.description = (
     _run_funnel_report_description()
+)
+run_conversions_report_with_description = FunctionTool(run_conversions_report)
+run_conversions_report_with_description.description = (
+    _run_conversions_report_description()
 )
 
 # Instantiate the ADK tools
@@ -72,6 +80,7 @@ tools = [
     run_report_with_description,
     run_realtime_report_with_description,
     run_funnel_report_with_description,
+    run_conversions_report_with_description,
 ]
 
 tool_map = {t.name: t for t in tools}
@@ -133,6 +142,14 @@ for tool in mcp_tools:
         ]
     elif tool.name == "run_realtime_report":
         tool.inputSchema["required"] = ["property_id", "dimensions", "metrics"]
+    elif tool.name == "run_conversions_report":
+        tool.inputSchema["required"] = [
+            "property_id",
+            "date_ranges",
+            "dimensions",
+            "metrics",
+            "conversion_spec",
+        ]
 
 
 @app.list_tools()

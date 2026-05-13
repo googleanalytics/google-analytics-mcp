@@ -123,7 +123,7 @@ async def run_conversions_report(
           - A number
           - A string consisting of 'properties/' followed by a number
         date_ranges: A list of date ranges
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/DateRange)
+          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1alpha/DateRange)
           to include in the report.
         dimensions: A list of dimensions to include in the report.
         metrics: A list of metrics to include in the report.
@@ -131,13 +131,13 @@ async def run_conversions_report(
           Should include 'conversion_actions' (list of resource names) and
           'attribution_model'.
         dimension_filter: A Data API FilterExpression
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
+          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1alpha/FilterExpression)
           to apply to the dimensions.
         metric_filter: A Data API FilterExpression
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/FilterExpression)
+          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1alpha/FilterExpression)
           to apply to the metrics.
         order_bys: A list of Data API OrderBy
-          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/OrderBy)
+          (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1alpha/OrderBy)
           objects to apply to the dimensions and metrics.
         limit: The maximum number of rows to return in each response. Value must
           be a positive integer <= 250,000.

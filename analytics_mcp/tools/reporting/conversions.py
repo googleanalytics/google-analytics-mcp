@@ -114,6 +114,12 @@ async def run_conversions_report(
 ) -> Dict[str, Any]:
     """Runs a Google Analytics Data API conversions report.
 
+    USE THIS TOOL INSTEAD OF `run_report` WHEN:
+    - You need to report specifically on conversions, ad performance, return on ad spend (ROAS), or attribution.
+    - You need to query specific conversion metrics (e.g., advertiserAdCost, returnOnAdSpendByInteractionDate, allConversionsByConversionDate, etc.).
+    - You need to apply a specific attribution model (e.g., DATA_DRIVEN or LAST_CLICK) to your data.
+    - The user's query explicitly asks about conversions, ad clicks, ad costs, or campaigns related to conversions.
+
     See the conversions report guide at
     https://developers.google.com/analytics/devguides/reporting/data/v1/conversions-api-basics
     for details and examples.

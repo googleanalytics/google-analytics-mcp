@@ -1,0 +1,29 @@
+{
+  "name": "analytics-mcp",
+  "version": "1.0.0",
+  "description": "Google Analytics MCP Server for managing GA properties and accounts.",
+  "mcpServers": {
+    "analytics-mcp": {
+      "command": "pipx",
+      "args": [
+        "run",
+        "analytics-mcp"
+      ],
+      "env": {}
+    }
+  },
+  "settings": [
+    {
+      "name": "Google application credentials path",
+      "description": "Path of your google application credentials",
+      "envVar": "GOOGLE_APPLICATION_CREDENTIALS",
+      "sensitive": true
+    },
+    {
+      "name": "Google project id",
+      "description": "google project id",
+      "envVar": "GOOGLE_PROJECT_ID",
+      "sensitive": true
+    }    
+  ]
+}

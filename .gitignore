@@ -67,3 +67,9 @@ pylintrc
 pylintrc.test
 
 .agents/skills
+
+# Local OAuth client JSONs and ADC files — never commit credentials
+*oauth_client*.json
+client_secret*.json
+application_default_credentials.json
+google-analytics-adc.json

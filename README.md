@@ -185,6 +185,102 @@ Here are some sample prompts to get you started:
   what are the custom dimensions and custom metrics in my property?
   ```
 
+---
+
+## Setup for Pulse teammates
+
+> Pulse-specific instructions. Pairs with the Pulse fork of [google-ads-mcp](https://github.com/pulse-integrated/google-ads-mcp). Same `~/Projects/mcp/` parent folder convention. If a teammate has already set up the Google Ads MCP on this Mac, most of the prerequisites are already done.
+
+### Prerequisites
+
+- **Claude Code installed** (not the regular Claude desktop app — different installer)
+- **Homebrew installed**
+- **A user account with access** to the GA4 properties you want to query (Pulse defaults to Sean's identity, since he has property-level access across our managed accounts)
+
+### Steps
+
+1. **Install gcloud and uv** if you don't have them:
+
+   ```bash
+   brew install --cask google-cloud-sdk
+   brew install uv
+   ```
+
+2. **Clone the repo** anywhere:
+
+   ```bash
+   git clone https://github.com/pulse-integrated/google-analytics-mcp.git
+   cd google-analytics-mcp
+   ```
+
+3. **Install dependencies:**
+
+   ```bash
+   uv sync
+   ```
+
+4. **Get the OAuth client JSON.** If Pulse already created an OAuth client for the Google Ads MCP, you can reuse it — same GCP project, same client ID and secret work for both APIs. Otherwise:
+
+   - https://console.cloud.google.com/apis/credentials
+   - Create OAuth client → Application type: **Desktop app**
+   - Download the JSON file. Don't commit it.
+
+5. **Enable the two GA APIs** in the GCP project (one-time, only needs to be done by one teammate):
+
+   - https://console.cloud.google.com/apis/library/analyticsadmin.googleapis.com
+   - https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com
+
+6. **Run the credential setup helper:**
+
+   ```bash
+   uv run setup_credentials.py
+   ```
+
+   It'll ask for the OAuth client JSON path, open a browser, and walk you through sign-in. Sign in with the Google account that has GA4 access. When done, the script prints the path to your ADC file (typically `~/.config/gcloud/application_default_credentials.json`).
+
+7. **Register the MCP with Claude Code.** Open `~/.claude.json` and add the entry to your top-level `mcpServers` block (merge alongside any existing entries like `google-ads`):
+
+   ```json
+   {
+     "mcpServers": {
+       "google-analytics": {
+         "type": "stdio",
+         "command": "/opt/homebrew/bin/uv",
+         "args": [
+           "--directory",
+           "/absolute/path/to/google-analytics-mcp",
+           "run",
+           "analytics-mcp"
+         ],
+         "env": {
+           "GOOGLE_APPLICATION_CREDENTIALS": "/Users/YOU/.config/gcloud/application_default_credentials.json"
+         }
+       }
+     }
+   }
+   ```
+
+8. **Restart Claude Code** so the new MCP loads.
+
+9. **Smoke test** from a terminal in the repo root:
+
+   ```bash
+   GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/gcloud/application_default_credentials.json" \
+     uv run python -c "from google.analytics.admin import AnalyticsAdminServiceClient; \
+     c = AnalyticsAdminServiceClient(); \
+     print([(a.display_name, a.account) for a in c.list_account_summaries()])"
+   ```
+
+   You should see a list of `(account_name, account_id)` pairs. That confirms the MCP can reach the GA4 Admin API. If it errors, the message usually points at the fix (often a missing scope on the OAuth flow).
+
+### Trade-offs worth knowing
+
+- **Shared identity:** if all teammates use the same ADC file (e.g. Sean's), reports will look like Sean made them in audit logs. For read-only reporting this is fine.
+- **API enablement is GCP-project-wide:** enabling the two GA APIs in the project covers every teammate using that OAuth client. Only one person needs to do step 5.
+- **No mutation tools:** this MCP is read-only. We're not building goals, audiences, or admin mutations into it for now.
+
+---
+
 ## Contributing ✨
 
 Contributions welcome! See the [Contributing Guide](CONTRIBUTING.md).

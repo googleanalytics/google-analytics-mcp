@@ -148,6 +148,58 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
     }
     ```
 
+## Deployment to Google Cloud Platform
+
+Instead of running this MCP server locally, you can host it on Google Cloud Run. This is useful for sharing the server across team members or running it as a web service.
+
+This mode uses OAuth for authentication. You will need a Google Cloud OAuth 2.0 Client ID and Secret.
+
+### Prerequisites
+
+1.  A Google Cloud project.
+2.  The `gcloud` CLI installed, authenticated, and active project set.
+    ```shell
+    gcloud config set project YOUR_PROJECT_ID
+    ```
+
+### Step 1: Build and Push Docker Image
+
+1.  Create a repository in Artifact Registry:
+    ```shell
+    gcloud artifacts repositories create mcp-servers --repository-format=docker --location=us-central1
+    ```
+2.  Build and submit the image:
+    ```shell
+    gcloud builds submit --tag us-central1-docker.pkg.dev/YOUR_PROJECT_ID/mcp-servers/analytics-mcp:latest .
+    ```
+
+### Step 2: Deploy to Google Cloud Run
+
+```shell
+gcloud run deploy analytics-mcp \
+  --image us-central1-docker.pkg.dev/YOUR_PROJECT_ID/mcp-servers/analytics-mcp:latest \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars="GOOGLE_PROJECT_ID=YOUR_PROJECT_ID,ANALYTICS_MCP_OAUTH_CLIENT_ID=YOUR_CLIENT_ID,ANALYTICS_MCP_OAUTH_CLIENT_SECRET=YOUR_CLIENT_SECRET,ANALYTICS_MCP_BASE_URL=YOUR_BASE_URL,FASTMCP_HOST=0.0.0.0"
+```
+
+Set `ANALYTICS_MCP_BASE_URL` to the Cloud Run URL assigned after your first deployment, then redeploy to update it.
+
+### Step 3: Configure MCP Client
+
+Update your MCP client configuration to point to the Cloud Run URL:
+
+```json
+{
+  "mcpServers": {
+    "analytics-mcp": {
+      "httpUrl": "https://your-cloud-run-url.a.run.app/mcp"
+    }
+  }
+}
+```
+
 ## Try it out 🥼
 
 Launch Gemini Code Assist or Gemini CLI and type `/mcp`. You should see

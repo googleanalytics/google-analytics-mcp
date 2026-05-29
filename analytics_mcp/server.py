@@ -16,49 +16,20 @@
 
 """Entry point for the Google Analytics MCP server."""
 
-import asyncio
-import sys
-import analytics_mcp.coordinator as coordinator
-from mcp.server.lowlevel import NotificationOptions
-from mcp.server.models import InitializationOptions
-import mcp.server.stdio
-import mcp.server
-import traceback
+import os
+from analytics_mcp.coordinator import mcp
 
 
-async def run_server_async():
-    """Runs the MCP server over standard I/O."""
-    print("Starting MCP Stdio Server:", coordinator.app.name, file=sys.stderr)
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await coordinator.app.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name=coordinator.app.name,  # Use the server name defined above
-                server_version="1.0.0",
-                capabilities=coordinator.app.get_capabilities(
-                    # Define server capabilities - consult MCP docs for options
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                ),
-            ),
-        )
+def run_server() -> None:
+    _CLIENT_ID = os.environ.get("ANALYTICS_MCP_OAUTH_CLIENT_ID")
+    _CLIENT_SECRET = os.environ.get("ANALYTICS_MCP_OAUTH_CLIENT_SECRET")
+    port = int(os.environ.get("PORT", "8080"))
 
-
-def run_server():
-    """Synchronous wrapper to run the async MCP server."""
-    asyncio.run(run_server_async())
+    if _CLIENT_ID and _CLIENT_SECRET:
+        mcp.run(transport="streamable-http", port=port, host="0.0.0.0")
+    else:
+        mcp.run()
 
 
 if __name__ == "__main__":
-    try:
-        run_server()
-    except KeyboardInterrupt:
-        print("\nMCP Server (stdio) stopped by user.", file=sys.stderr)
-    except Exception:
-        import traceback
-
-        print("MCP Server (stdio) encountered an error:", file=sys.stderr)
-        traceback.print_exc()
-    finally:
-        print("MCP Server (stdio) process exiting.", file=sys.stderr)
+    run_server()

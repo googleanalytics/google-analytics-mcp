@@ -78,6 +78,21 @@ def prevent_stdio_inheritance():
 def _get_credentials():
     global _CREDENTIALS
     # Expected to be called under _client_lock
+
+    # When running with OAuth (e.g. Cloud Run), use the token from the current
+    # request context set by FastMCP. These are per-request and must not be
+    # cached globally.
+    try:
+        from fastmcp.server.dependencies import get_access_token
+        from google.oauth2.credentials import Credentials as OAuthCredentials
+
+        token_obj = get_access_token()
+        if token_obj and token_obj.token:
+            return OAuthCredentials(token=token_obj.token)
+    except Exception:
+        pass
+
+    # Fall back to Application Default Credentials (cached for efficiency).
     if _CREDENTIALS is None:
         with prevent_stdio_inheritance():
             _CREDENTIALS, _ = google.auth.default(

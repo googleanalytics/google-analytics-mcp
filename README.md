@@ -148,6 +148,23 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
     }
     ```
 
+### Configure Claude Code
+
+1.  Add the MCP server with the following command:
+
+    Replace `PATH_TO_CREDENTIALS_JSON` with the path you copied in the previous
+    step, and replace `YOUR_PROJECT_ID` with the
+    [project ID](https://support.google.com/googleapi/answer/7014113) of your
+    Google Cloud project.
+
+    ```shell
+    claude mcp add analytics-mcp \
+      --scope user \
+      -e "GOOGLE_APPLICATION_CREDENTIALS=PATH_TO_CREDENTIALS_JSON" \
+      -e "GOOGLE_PROJECT_ID=YOUR_PROJECT_ID" \
+      -- pipx run analytics-mcp
+    ```
+
 ## Try it out 🥼
 
 Launch Gemini Code Assist or Gemini CLI and type `/mcp`. You should see

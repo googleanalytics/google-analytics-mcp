@@ -18,10 +18,11 @@ import asyncio
 import unittest
 from unittest.mock import MagicMock, patch
 
-from google.analytics import admin_v1beta
+from google.analytics import admin_v1alpha, admin_v1beta
 
 from analytics_mcp.tools.admin.info import (
     get_data_retention_settings,
+    list_audiences,
     list_custom_dimensions,
     list_custom_metrics,
     list_data_streams,
@@ -246,6 +247,36 @@ class TestGetDataRetentionSettings(unittest.TestCase):
         """Tests that an invalid property ID raises a ValueError."""
         with self.assertRaises(ValueError):
             asyncio.run(get_data_retention_settings("bogus"))
+
+
+class TestListAudiences(unittest.TestCase):
+    """Test cases for list_audiences."""
+
+    @patch("analytics_mcp.tools.admin.info.create_admin_alpha_api_client")
+    def test_returns_audiences(self, mock_create_client):
+        """Tests that audiences are listed via the alpha client."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        audience = admin_v1alpha.Audience(
+            name="properties/12345/audiences/777",
+            display_name="Purchasers",
+            description="Users who purchased.",
+            membership_duration_days=30,
+        )
+        mock_client.list_audiences.return_value = [audience]
+
+        result = asyncio.run(list_audiences(12345))
+
+        request = mock_client.list_audiences.call_args.kwargs["request"]
+        self.assertEqual(request.parent, "properties/12345")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["display_name"], "Purchasers")
+        self.assertEqual(result[0]["membership_duration_days"], 30)
+
+    def test_invalid_property_id_raises(self):
+        """Tests that an invalid property ID raises a ValueError."""
+        with self.assertRaises(ValueError):
+            asyncio.run(list_audiences("bogus"))
 
 
 if __name__ == "__main__":

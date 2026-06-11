@@ -162,6 +162,35 @@ async def list_data_streams(property_id: int | str) -> List[Dict[str, Any]]:
     return await asyncio.to_thread(_sync_call)
 
 
+async def list_audiences(property_id: int | str) -> List[Dict[str, Any]]:
+    """Returns the audiences defined on a property.
+
+    Audiences are segments of users, e.g. "Purchasers" or "Users who
+    visited the pricing page". Knowing what audiences exist helps when
+    interpreting audience-scoped dimensions in reports or suggesting
+    targeting strategies.
+
+    Note: this uses the alpha channel of the Admin API, which may
+    change without notice.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1alpha.ListAudiencesRequest(
+        parent=construct_property_rn(property_id)
+    )
+
+    def _sync_call():
+        audiences_pager = create_admin_alpha_api_client().list_audiences(
+            request=request
+        )
+        return [proto_to_dict(audience) for audience in audiences_pager]
+
+    return await asyncio.to_thread(_sync_call)
+
+
 async def get_data_retention_settings(
     property_id: int | str,
 ) -> Dict[str, Any]:

@@ -33,6 +33,7 @@ from analytics_mcp.tools.admin.info import (
     get_account_summaries,
     list_google_ads_links,
     get_property_details,
+    list_key_events,
     list_property_annotations,
 )
 from analytics_mcp.tools.reporting.core import (
@@ -75,6 +76,7 @@ tools = [
     FunctionTool(get_account_summaries),
     FunctionTool(list_google_ads_links),
     FunctionTool(get_property_details),
+    FunctionTool(list_key_events),
     FunctionTool(list_property_annotations),
     FunctionTool(get_custom_dimensions_and_metrics),
     run_report_with_description,

@@ -78,6 +78,31 @@ async def get_property_details(property_id: int | str) -> Dict[str, Any]:
     return proto_to_dict(response)
 
 
+async def list_key_events(property_id: int | str) -> List[Dict[str, Any]]:
+    """Returns the key events configured for a property.
+
+    Key events (formerly known as conversion events) are the events that a
+    property has marked as most important, such as purchases or sign-ups.
+    Reports use key events to calculate conversion-related metrics.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1beta.ListKeyEventsRequest(
+        parent=construct_property_rn(property_id)
+    )
+
+    def _sync_call():
+        key_events_pager = create_admin_api_client().list_key_events(
+            request=request
+        )
+        return [proto_to_dict(key_event) for key_event in key_events_pager]
+
+    return await asyncio.to_thread(_sync_call)
+
+
 async def list_property_annotations(
     property_id: int | str,
 ) -> List[Dict[str, Any]]:

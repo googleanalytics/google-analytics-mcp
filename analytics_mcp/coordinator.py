@@ -55,6 +55,7 @@ from analytics_mcp.tools.reporting.metadata import (
     get_custom_dimensions_and_metrics,
     get_metadata,
 )
+from analytics_mcp.tools.reporting.quotas import get_property_quotas
 from analytics_mcp.tools.reporting.funnel import (
     run_funnel_report,
     _run_funnel_report_description,
@@ -95,6 +96,7 @@ tools = [
     FunctionTool(run_access_report),
     FunctionTool(get_custom_dimensions_and_metrics),
     FunctionTool(get_metadata),
+    FunctionTool(get_property_quotas),
     run_report_with_description,
     run_realtime_report_with_description,
     run_funnel_report_with_description,

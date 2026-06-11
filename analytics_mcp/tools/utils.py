@@ -44,6 +44,31 @@ def construct_property_rn(property_value: int | str) -> str:
     return f"properties/{property_num}"
 
 
+def construct_account_rn(account_value: int | str) -> str:
+    """Returns an account resource name in the format required by APIs."""
+    account_num = None
+    if isinstance(account_value, int):
+        account_num = account_value
+    elif isinstance(account_value, str):
+        account_value = account_value.strip()
+        if account_value.isdigit():
+            account_num = int(account_value)
+        elif account_value.startswith("accounts/"):
+            numeric_part = account_value.split("/")[-1]
+            if numeric_part.isdigit():
+                account_num = int(numeric_part)
+    if account_num is None:
+        raise ValueError(
+            (
+                f"Invalid account ID: {account_value}. "
+                "A valid account value is either a number or a string starting "
+                "with 'accounts/' and followed by a number."
+            )
+        )
+
+    return f"accounts/{account_num}"
+
+
 def proto_to_dict(obj: proto.Message) -> Dict[str, Any]:
     """Converts a proto message to a dictionary."""
     return type(obj).to_dict(

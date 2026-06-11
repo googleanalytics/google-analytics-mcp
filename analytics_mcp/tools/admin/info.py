@@ -18,6 +18,7 @@ import asyncio
 from typing import Any, Dict, List
 
 from analytics_mcp.tools.utils import (
+    construct_account_rn,
     construct_property_rn,
     proto_to_dict,
 )
@@ -76,6 +77,37 @@ async def get_property_details(property_id: int | str) -> Dict[str, Any]:
 
     response = await asyncio.to_thread(_sync_call)
     return proto_to_dict(response)
+
+
+async def list_properties(
+    account_id: int | str, show_deleted: bool = False
+) -> List[Dict[str, Any]]:
+    """Returns the properties under a Google Analytics account.
+
+    Returns full property objects, including display name, industry
+    category, time zone, currency code, service level, and create time.
+    Use this for deeper property discovery than `get_account_summaries`,
+    which only returns summary information.
+
+    Args:
+        account_id: The Google Analytics account ID. Accepted formats are:
+          - A number
+          - A string consisting of 'accounts/' followed by a number
+        show_deleted: Whether to include soft-deleted (i.e. "trashed")
+          properties in the results. Defaults to False.
+    """
+    request = admin_v1beta.ListPropertiesRequest(
+        filter=f"parent:{construct_account_rn(account_id)}",
+        show_deleted=show_deleted,
+    )
+
+    def _sync_call():
+        properties_pager = create_admin_api_client().list_properties(
+            request=request
+        )
+        return [proto_to_dict(prop) for prop in properties_pager]
+
+    return await asyncio.to_thread(_sync_call)
 
 
 async def list_key_events(property_id: int | str) -> List[Dict[str, Any]]:

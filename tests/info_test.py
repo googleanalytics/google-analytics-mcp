@@ -23,6 +23,7 @@ from google.analytics import admin_v1beta
 from analytics_mcp.tools.admin.info import (
     list_data_streams,
     list_key_events,
+    list_properties,
 )
 
 
@@ -103,6 +104,49 @@ class TestListDataStreams(unittest.TestCase):
         """Tests that an invalid property ID raises a ValueError."""
         with self.assertRaises(ValueError):
             asyncio.run(list_data_streams("bogus"))
+
+
+class TestListProperties(unittest.TestCase):
+    """Test cases for list_properties."""
+
+    @patch("analytics_mcp.tools.admin.info.create_admin_api_client")
+    def test_returns_properties(self, mock_create_client):
+        """Tests that properties are listed with an account filter."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        prop = admin_v1beta.Property(
+            name="properties/12345",
+            display_name="My property",
+            time_zone="America/New_York",
+            currency_code="USD",
+        )
+        mock_client.list_properties.return_value = [prop]
+
+        result = asyncio.run(list_properties(98765))
+
+        request = mock_client.list_properties.call_args.kwargs["request"]
+        self.assertEqual(request.filter, "parent:accounts/98765")
+        self.assertFalse(request.show_deleted)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["display_name"], "My property")
+
+    @patch("analytics_mcp.tools.admin.info.create_admin_api_client")
+    def test_show_deleted_passthrough(self, mock_create_client):
+        """Tests that show_deleted is passed through to the request."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        mock_client.list_properties.return_value = []
+
+        asyncio.run(list_properties("accounts/55", show_deleted=True))
+
+        request = mock_client.list_properties.call_args.kwargs["request"]
+        self.assertEqual(request.filter, "parent:accounts/55")
+        self.assertTrue(request.show_deleted)
+
+    def test_invalid_account_id_raises(self):
+        """Tests that an invalid account ID raises a ValueError."""
+        with self.assertRaises(ValueError):
+            asyncio.run(list_properties("properties/123"))
 
 
 if __name__ == "__main__":

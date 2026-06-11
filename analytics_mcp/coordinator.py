@@ -35,6 +35,7 @@ from analytics_mcp.tools.admin.info import (
     get_property_details,
     list_data_streams,
     list_key_events,
+    list_properties,
     list_property_annotations,
 )
 from analytics_mcp.tools.reporting.core import (
@@ -80,6 +81,7 @@ tools = [
     FunctionTool(get_property_details),
     FunctionTool(list_data_streams),
     FunctionTool(list_key_events),
+    FunctionTool(list_properties),
     FunctionTool(list_property_annotations),
     FunctionTool(get_custom_dimensions_and_metrics),
     FunctionTool(get_metadata),

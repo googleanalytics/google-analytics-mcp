@@ -162,6 +162,62 @@ async def list_data_streams(property_id: int | str) -> List[Dict[str, Any]]:
     return await asyncio.to_thread(_sync_call)
 
 
+async def list_custom_dimensions(
+    property_id: int | str,
+) -> List[Dict[str, Any]]:
+    """Returns the custom dimensions defined on a property (Admin API).
+
+    Includes details that the Data API metadata endpoint doesn't return:
+    the dimension's scope (EVENT or USER), parameter name, description,
+    and whether it's excluded from ads personalization. Use the
+    `get_custom_dimensions_and_metrics` tool instead if you only need
+    the API names for building reports.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1beta.ListCustomDimensionsRequest(
+        parent=construct_property_rn(property_id)
+    )
+
+    def _sync_call():
+        dimensions_pager = create_admin_api_client().list_custom_dimensions(
+            request=request
+        )
+        return [proto_to_dict(dimension) for dimension in dimensions_pager]
+
+    return await asyncio.to_thread(_sync_call)
+
+
+async def list_custom_metrics(property_id: int | str) -> List[Dict[str, Any]]:
+    """Returns the custom metrics defined on a property (Admin API).
+
+    Includes details that the Data API metadata endpoint doesn't return:
+    the metric's scope, parameter name, description, measurement unit,
+    and restricted metric type. Use the
+    `get_custom_dimensions_and_metrics` tool instead if you only need
+    the API names for building reports.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1beta.ListCustomMetricsRequest(
+        parent=construct_property_rn(property_id)
+    )
+
+    def _sync_call():
+        metrics_pager = create_admin_api_client().list_custom_metrics(
+            request=request
+        )
+        return [proto_to_dict(metric) for metric in metrics_pager]
+
+    return await asyncio.to_thread(_sync_call)
+
+
 async def list_property_annotations(
     property_id: int | str,
 ) -> List[Dict[str, Any]]:

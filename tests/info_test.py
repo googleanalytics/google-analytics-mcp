@@ -21,6 +21,8 @@ from unittest.mock import MagicMock, patch
 from google.analytics import admin_v1beta
 
 from analytics_mcp.tools.admin.info import (
+    list_custom_dimensions,
+    list_custom_metrics,
     list_data_streams,
     list_key_events,
     list_properties,
@@ -147,6 +149,70 @@ class TestListProperties(unittest.TestCase):
         """Tests that an invalid account ID raises a ValueError."""
         with self.assertRaises(ValueError):
             asyncio.run(list_properties("properties/123"))
+
+
+class TestListCustomDimensions(unittest.TestCase):
+    """Test cases for list_custom_dimensions."""
+
+    @patch("analytics_mcp.tools.admin.info.create_admin_api_client")
+    def test_returns_custom_dimensions(self, mock_create_client):
+        """Tests that custom dimensions include Admin API detail."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        dimension = admin_v1beta.CustomDimension(
+            name="properties/12345/customDimensions/1",
+            parameter_name="plan_type",
+            display_name="Plan type",
+            description="The subscription plan type.",
+            scope=admin_v1beta.CustomDimension.DimensionScope.EVENT,
+        )
+        mock_client.list_custom_dimensions.return_value = [dimension]
+
+        result = asyncio.run(list_custom_dimensions(12345))
+
+        request = mock_client.list_custom_dimensions.call_args.kwargs["request"]
+        self.assertEqual(request.parent, "properties/12345")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["parameter_name"], "plan_type")
+        self.assertEqual(result[0]["scope"], "EVENT")
+
+    def test_invalid_property_id_raises(self):
+        """Tests that an invalid property ID raises a ValueError."""
+        with self.assertRaises(ValueError):
+            asyncio.run(list_custom_dimensions("bogus"))
+
+
+class TestListCustomMetrics(unittest.TestCase):
+    """Test cases for list_custom_metrics."""
+
+    @patch("analytics_mcp.tools.admin.info.create_admin_api_client")
+    def test_returns_custom_metrics(self, mock_create_client):
+        """Tests that custom metrics include Admin API detail."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        metric = admin_v1beta.CustomMetric(
+            name="properties/12345/customMetrics/1",
+            parameter_name="loyalty_points",
+            display_name="Loyalty points",
+            measurement_unit=(
+                admin_v1beta.CustomMetric.MeasurementUnit.STANDARD
+            ),
+            scope=admin_v1beta.CustomMetric.MetricScope.EVENT,
+        )
+        mock_client.list_custom_metrics.return_value = [metric]
+
+        result = asyncio.run(list_custom_metrics(12345))
+
+        request = mock_client.list_custom_metrics.call_args.kwargs["request"]
+        self.assertEqual(request.parent, "properties/12345")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["parameter_name"], "loyalty_points")
+        self.assertEqual(result[0]["measurement_unit"], "STANDARD")
+
+    def test_invalid_property_id_raises(self):
+        """Tests that an invalid property ID raises a ValueError."""
+        with self.assertRaises(ValueError):
+            asyncio.run(list_custom_metrics("bogus"))
 
 
 if __name__ == "__main__":

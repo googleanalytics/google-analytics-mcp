@@ -103,6 +103,33 @@ async def list_key_events(property_id: int | str) -> List[Dict[str, Any]]:
     return await asyncio.to_thread(_sync_call)
 
 
+async def list_data_streams(property_id: int | str) -> List[Dict[str, Any]]:
+    """Returns the data streams configured for a property.
+
+    Data streams are the sources that send data to a property, such as a
+    web site, an Android app, or an iOS app. Each stream includes its
+    platform-specific details, e.g. the measurement ID for a web stream.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1beta.ListDataStreamsRequest(
+        parent=construct_property_rn(property_id)
+    )
+
+    def _sync_call():
+        data_streams_pager = create_admin_api_client().list_data_streams(
+            request=request
+        )
+        return [
+            proto_to_dict(data_stream) for data_stream in data_streams_pager
+        ]
+
+    return await asyncio.to_thread(_sync_call)
+
+
 async def list_property_annotations(
     property_id: int | str,
 ) -> List[Dict[str, Any]]:

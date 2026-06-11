@@ -33,6 +33,7 @@ from analytics_mcp.tools.admin.info import (
     get_account_summaries,
     list_google_ads_links,
     get_property_details,
+    list_data_streams,
     list_key_events,
     list_property_annotations,
 )
@@ -76,6 +77,7 @@ tools = [
     FunctionTool(get_account_summaries),
     FunctionTool(list_google_ads_links),
     FunctionTool(get_property_details),
+    FunctionTool(list_data_streams),
     FunctionTool(list_key_events),
     FunctionTool(list_property_annotations),
     FunctionTool(get_custom_dimensions_and_metrics),

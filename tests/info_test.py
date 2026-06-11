@@ -20,7 +20,10 @@ from unittest.mock import MagicMock, patch
 
 from google.analytics import admin_v1beta
 
-from analytics_mcp.tools.admin.info import list_key_events
+from analytics_mcp.tools.admin.info import (
+    list_data_streams,
+    list_key_events,
+)
 
 
 class TestListKeyEvents(unittest.TestCase):
@@ -65,6 +68,41 @@ class TestListKeyEvents(unittest.TestCase):
         """Tests that an invalid property ID raises a ValueError."""
         with self.assertRaises(ValueError):
             asyncio.run(list_key_events("not-a-property"))
+
+
+class TestListDataStreams(unittest.TestCase):
+    """Test cases for list_data_streams."""
+
+    @patch("analytics_mcp.tools.admin.info.create_admin_api_client")
+    def test_returns_data_streams(self, mock_create_client):
+        """Tests that data streams are listed and converted to dicts."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        web_stream = admin_v1beta.DataStream(
+            name="properties/12345/dataStreams/111",
+            type_=admin_v1beta.DataStream.DataStreamType.WEB_DATA_STREAM,
+            display_name="Web stream",
+            web_stream_data=admin_v1beta.DataStream.WebStreamData(
+                measurement_id="G-ABC123",
+                default_uri="https://www.example.com",
+            ),
+        )
+        mock_client.list_data_streams.return_value = [web_stream]
+
+        result = asyncio.run(list_data_streams(12345))
+
+        request = mock_client.list_data_streams.call_args.kwargs["request"]
+        self.assertEqual(request.parent, "properties/12345")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["display_name"], "Web stream")
+        self.assertEqual(
+            result[0]["web_stream_data"]["measurement_id"], "G-ABC123"
+        )
+
+    def test_invalid_property_id_raises(self):
+        """Tests that an invalid property ID raises a ValueError."""
+        with self.assertRaises(ValueError):
+            asyncio.run(list_data_streams("bogus"))
 
 
 if __name__ == "__main__":

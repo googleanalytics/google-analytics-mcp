@@ -32,6 +32,7 @@ from google.adk.tools.mcp_tool.conversion_utils import adk_to_mcp_tool_type
 from analytics_mcp.tools.admin.access import run_access_report
 from analytics_mcp.tools.admin.info import (
     get_account_summaries,
+    get_data_retention_settings,
     list_google_ads_links,
     get_property_details,
     list_custom_dimensions,
@@ -82,6 +83,7 @@ tools = [
     FunctionTool(get_account_summaries),
     FunctionTool(list_google_ads_links),
     FunctionTool(get_property_details),
+    FunctionTool(get_data_retention_settings),
     FunctionTool(list_custom_dimensions),
     FunctionTool(list_custom_metrics),
     FunctionTool(list_data_streams),

@@ -21,6 +21,7 @@ from unittest.mock import MagicMock, patch
 from google.analytics import admin_v1beta
 
 from analytics_mcp.tools.admin.info import (
+    get_data_retention_settings,
     list_custom_dimensions,
     list_custom_metrics,
     list_data_streams,
@@ -213,6 +214,38 @@ class TestListCustomMetrics(unittest.TestCase):
         """Tests that an invalid property ID raises a ValueError."""
         with self.assertRaises(ValueError):
             asyncio.run(list_custom_metrics("bogus"))
+
+
+class TestGetDataRetentionSettings(unittest.TestCase):
+    """Test cases for get_data_retention_settings."""
+
+    @patch("analytics_mcp.tools.admin.info.create_admin_api_client")
+    def test_returns_settings(self, mock_create_client):
+        """Tests that retention settings are fetched and converted."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        settings = admin_v1beta.DataRetentionSettings(
+            name="properties/12345/dataRetentionSettings",
+            event_data_retention=(
+                admin_v1beta.DataRetentionSettings.RetentionDuration.FOURTEEN_MONTHS
+            ),
+            reset_user_data_on_new_activity=True,
+        )
+        mock_client.get_data_retention_settings.return_value = settings
+
+        result = asyncio.run(get_data_retention_settings(12345))
+
+        request = mock_client.get_data_retention_settings.call_args.kwargs[
+            "request"
+        ]
+        self.assertEqual(request.name, "properties/12345/dataRetentionSettings")
+        self.assertEqual(result["event_data_retention"], "FOURTEEN_MONTHS")
+        self.assertTrue(result["reset_user_data_on_new_activity"])
+
+    def test_invalid_property_id_raises(self):
+        """Tests that an invalid property ID raises a ValueError."""
+        with self.assertRaises(ValueError):
+            asyncio.run(get_data_retention_settings("bogus"))
 
 
 if __name__ == "__main__":

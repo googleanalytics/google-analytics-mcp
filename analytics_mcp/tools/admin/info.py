@@ -162,6 +162,34 @@ async def list_data_streams(property_id: int | str) -> List[Dict[str, Any]]:
     return await asyncio.to_thread(_sync_call)
 
 
+async def get_data_retention_settings(
+    property_id: int | str,
+) -> Dict[str, Any]:
+    """Returns the data retention settings for a property.
+
+    Shows how long event-level and user-level data is kept before being
+    automatically deleted. Useful for compliance questions and for
+    knowing how far back reports can reliably look: if retention is set
+    to TWO_MONTHS, event-scoped data older than that is unavailable in
+    explorations and some reports.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1beta.GetDataRetentionSettingsRequest(
+        name=f"{construct_property_rn(property_id)}/dataRetentionSettings"
+    )
+
+    def _sync_call():
+        client = create_admin_api_client()
+        return client.get_data_retention_settings(request=request)
+
+    response = await asyncio.to_thread(_sync_call)
+    return proto_to_dict(response)
+
+
 async def list_custom_dimensions(
     property_id: int | str,
 ) -> List[Dict[str, Any]]:

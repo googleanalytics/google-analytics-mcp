@@ -47,6 +47,7 @@ from analytics_mcp.tools.reporting.realtime import (
 )
 from analytics_mcp.tools.reporting.metadata import (
     get_custom_dimensions_and_metrics,
+    get_metadata,
 )
 from analytics_mcp.tools.reporting.funnel import (
     run_funnel_report,
@@ -81,6 +82,7 @@ tools = [
     FunctionTool(list_key_events),
     FunctionTool(list_property_annotations),
     FunctionTool(get_custom_dimensions_and_metrics),
+    FunctionTool(get_metadata),
     run_report_with_description,
     run_realtime_report_with_description,
     run_funnel_report_with_description,

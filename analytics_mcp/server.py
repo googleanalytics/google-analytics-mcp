@@ -17,6 +17,7 @@
 """Entry point for the Google Analytics MCP server."""
 
 import asyncio
+from importlib import metadata
 import sys
 import analytics_mcp.coordinator as coordinator
 from mcp.server.lowlevel import NotificationOptions
@@ -24,6 +25,14 @@ from mcp.server.models import InitializationOptions
 import mcp.server.stdio
 import mcp.server
 import traceback
+
+
+def _server_version() -> str:
+    """Returns the installed package version with a safe fallback."""
+    try:
+        return metadata.version("analytics-mcp")
+    except metadata.PackageNotFoundError:
+        return "unknown"
 
 
 async def run_server_async():
@@ -35,7 +44,7 @@ async def run_server_async():
             write_stream,
             InitializationOptions(
                 server_name=coordinator.app.name,  # Use the server name defined above
-                server_version="1.0.0",
+                server_version=_server_version(),
                 capabilities=coordinator.app.get_capabilities(
                     # Define server capabilities - consult MCP docs for options
                     notification_options=NotificationOptions(),

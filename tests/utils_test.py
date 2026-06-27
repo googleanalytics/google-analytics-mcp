@@ -44,6 +44,66 @@ class TestUtils(unittest.TestCase):
             "properties/12345",
             "Full resource name should be considered valid",
         )
+        self.assertEqual(
+            utils.construct_account_rn("accounts/32636632"),
+            "accounts/32636632",
+        )
+        self.assertEqual(
+            utils.construct_account_rn("32636632"),
+            "accounts/32636632",
+        )
+        self.assertEqual(
+            utils.construct_data_stream_rn(252198517, "4268733166"),
+            "properties/252198517/dataStreams/4268733166",
+        )
+        self.assertEqual(
+            utils.construct_key_event_rn(252198517, "purchase"),
+            "properties/252198517/keyEvents/purchase",
+        )
+        self.assertEqual(
+            utils.construct_data_retention_settings_rn(252198517),
+            "properties/252198517/dataRetentionSettings",
+        )
+        self.assertEqual(
+            utils.construct_conversion_event_rn(252198517, "2564717350"),
+            "properties/252198517/conversionEvents/2564717350",
+        )
+        self.assertEqual(
+            utils.construct_custom_dimension_rn(252198517, "5688242159"),
+            "properties/252198517/customDimensions/5688242159",
+        )
+        self.assertEqual(
+            utils.construct_custom_metric_rn(252198517, "987654321"),
+            "properties/252198517/customMetrics/987654321",
+        )
+        self.assertEqual(
+            utils.construct_data_sharing_settings_rn(32636632),
+            "accounts/32636632/dataSharingSettings",
+        )
+        self.assertEqual(
+            utils.construct_property_quotas_snapshot_rn(252198517),
+            "properties/252198517/propertyQuotasSnapshot",
+        )
+        self.assertEqual(
+            utils.construct_audience_export_rn(
+                252198517, "properties/252198517/audienceExports/test-export"
+            ),
+            "properties/252198517/audienceExports/test-export",
+        )
+        self.assertEqual(
+            utils.construct_audience_list_rn(252198517, "test-list"),
+            "properties/252198517/audienceLists/test-list",
+        )
+        self.assertEqual(
+            utils.construct_recurring_audience_list_rn(
+                252198517, "test-recurring"
+            ),
+            "properties/252198517/recurringAudienceLists/test-recurring",
+        )
+        self.assertEqual(
+            utils.construct_report_task_rn(252198517, "test-task"),
+            "properties/252198517/reportTasks/test-task",
+        )
 
     def test_construct_property_rn_invalid_input(self):
         """Tests that construct_property_rn raises a ValueError for invalid input."""
@@ -68,3 +128,17 @@ class TestUtils(unittest.TestCase):
             msg="Resource name with more than 2 components should fail",
         ):
             utils.construct_property_rn("properties/123/abc")
+        with self.assertRaises(ValueError):
+            utils.construct_account_rn("accounts/abc")
+        with self.assertRaises(ValueError):
+            utils.construct_data_stream_rn(252198517, "")
+        with self.assertRaises(ValueError):
+            utils.construct_key_event_rn(252198517, "")
+        with self.assertRaises(ValueError):
+            utils.construct_conversion_event_rn(252198517, "")
+        with self.assertRaises(ValueError):
+            utils.construct_custom_dimension_rn(252198517, "")
+        with self.assertRaises(ValueError):
+            utils.construct_custom_metric_rn(252198517, "")
+        with self.assertRaises(ValueError):
+            utils.construct_audience_export_rn(252198517, "")

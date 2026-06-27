@@ -45,6 +45,45 @@ to provide several
 - `run_realtime_report`: Runs a Google Analytics realtime report using the
   Data API.
 
+### Additional read-only tools currently exposed by the server
+
+Admin/account discovery:
+
+- `list_accounts`: Returns accessible Google Analytics accounts.
+- `get_account`: Returns details for one account.
+- `list_properties`: Returns accessible properties, optionally filtered to one account.
+- `list_data_streams`: Returns data streams for a property.
+- `get_data_stream`: Returns one data stream for a property.
+- `get_data_retention_settings`: Returns the data retention settings for a property.
+- `get_data_sharing_settings`: Returns the data sharing settings for an account.
+- `list_firebase_links`: Returns Firebase links for a property.
+- `list_key_events`: Returns key events for a property.
+- `get_key_event`: Returns one key event for a property.
+- `list_conversion_events`: Returns conversion events for a property.
+- `get_conversion_event`: Returns one conversion event for a property.
+- `list_custom_dimensions`: Returns custom dimensions for a property.
+- `get_custom_dimension`: Returns one custom dimension for a property.
+- `list_custom_metrics`: Returns custom metrics for a property.
+- `get_custom_metric`: Returns one custom metric for a property.
+- `run_access_report`: Runs an access report for a property. This can require administrator access.
+- `list_property_annotations`: Returns property annotations via the Admin Alpha API.
+
+Reporting/metadata:
+
+- `get_property_metadata`: Returns the full GA4 metadata catalog for a property.
+- `run_pivot_report`: Runs a GA4 pivot report.
+- `check_report_compatibility`: Checks whether a dimension/metric combination is valid.
+- `run_conversions_report`: Runs a conversions-focused report via the Data Alpha API.
+- `get_property_quotas_snapshot`: Returns the property's current quota snapshot.
+- `list_audience_exports`: Returns audience exports for a property.
+- `get_audience_export`: Returns one audience export for a property.
+- `list_audience_lists`: Returns audience lists for a property.
+- `get_audience_list`: Returns one audience list for a property.
+- `list_recurring_audience_lists`: Returns recurring audience lists for a property.
+- `get_recurring_audience_list`: Returns one recurring audience list for a property.
+- `list_report_tasks`: Returns report tasks for a property.
+- `get_report_task`: Returns one report task for a property.
+
 ## Setup instructions 🔧
 
 ✨ Watch the [Google Analytics MCP Setup
@@ -205,3 +244,48 @@ Here are some sample prompts to get you started:
 ## Contributing ✨
 
 Contributions welcome! See the [Contributing Guide](CONTRIBUTING.md).
+
+## Codex notes
+
+This server works with Codex over stdio. A project-local launch command that
+works in `B:\\source\\ads` is:
+
+```json
+{
+  "mcpServers": {
+    "analytics-mcp-local": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "B:\\source\\ads\\external\\google-analytics-mcp",
+        "python",
+        "-m",
+        "analytics_mcp.server"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "B:\\source\\ads\\i-meble-eu-api-analityk-59fbaa22ca49.json",
+        "GOOGLE_PROJECT_ID": "i-meble-eu-api-analityk"
+      }
+    }
+  }
+}
+```
+
+For live read-only validation against a property, run:
+
+```powershell
+uv run --project B:\source\ads\external\google-analytics-mcp python scripts\validate_live_read_tools.py --property-id 252198517 --output-json B:\source\ads\outputs\ga4_mcp_validation_2026_06_27\live_validation.json
+```
+
+The validator is read-only. By default it uses the last 7 completed days ending
+yesterday, but you can override that with `--start-date YYYY-MM-DD` and
+`--end-date YYYY-MM-DD`. When you run it outside the Codex MCP server config,
+make sure `GOOGLE_APPLICATION_CREDENTIALS` and `GOOGLE_PROJECT_ID` are set in
+the shell environment first.
+
+For an SDK-vs-MCP read-surface audit, run:
+
+```powershell
+uv run --project B:\source\ads\external\google-analytics-mcp python scripts\audit_read_surface.py --output-json B:\source\ads\outputs\ga4_mcp_validation_2026_06_27\read_surface_audit.json
+```

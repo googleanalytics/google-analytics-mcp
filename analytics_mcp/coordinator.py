@@ -54,6 +54,10 @@ from analytics_mcp.tools.reporting.conversions import (
     run_conversions_report,
     _run_conversions_report_description,
 )
+from analytics_mcp.tools.reporting.batch import (
+    batch_run_reports,
+    _batch_run_reports_description,
+)
 
 run_report_with_description = FunctionTool(run_report)
 run_report_with_description.description = _run_report_description()
@@ -69,6 +73,10 @@ run_conversions_report_with_description = FunctionTool(run_conversions_report)
 run_conversions_report_with_description.description = (
     _run_conversions_report_description()
 )
+batch_run_reports_with_description = FunctionTool(batch_run_reports)
+batch_run_reports_with_description.description = (
+    _batch_run_reports_description()
+)
 
 # Instantiate the ADK tools
 tools = [
@@ -81,6 +89,7 @@ tools = [
     run_realtime_report_with_description,
     run_funnel_report_with_description,
     run_conversions_report_with_description,
+    batch_run_reports_with_description,
 ]
 
 tool_map = {t.name: t for t in tools}
@@ -149,6 +158,11 @@ for tool in mcp_tools:
             "dimensions",
             "metrics",
             "conversion_spec",
+        ]
+    elif tool.name == "batch_run_reports":
+        tool.inputSchema["required"] = [
+            "property_id",
+            "requests",
         ]
 
 

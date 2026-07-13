@@ -44,9 +44,12 @@ issues = "https://github.com/googleanalytics/google-analytics-mcp/issues"
 analytics-mcp = "analytics_mcp.server:run_server"
 # The previous name of the script. Kept for backwards compatibility.
 google-analytics-mcp = "analytics_mcp.server:run_server"
+# Deployable server with streamable-http support
+analytics-mcp-deploy = "analytics_mcp.server_deploy:run_server"
 
 [project.optional-dependencies]
 dev = ["black", "nox >=2026.2.9, <2027"]
+deploy = ["fastmcp>=3.2.0"]
 
 [build-system]
 requires = ["setuptools>=82.0.0", "wheel"]

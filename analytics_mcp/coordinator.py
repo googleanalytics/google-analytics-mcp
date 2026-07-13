@@ -178,7 +178,7 @@ async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
             )
             # Return an error message in MCP format
             error_text = json.dumps(
-                {"error": f"Failed to execute tool '{name}': {str(e)}"}
+                {"error": f"Failed to execute tool '{name}'. Check server logs for details."}
             )
             return [mcp_types.TextContent(type="text", text=error_text)]
 

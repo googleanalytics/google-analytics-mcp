@@ -1,0 +1,30 @@
+services:
+  analytics-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: analytics-mcp-server
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      # --- Required ---
+      GOOGLE_SA_KEY_JSON: ${GOOGLE_SA_KEY_JSON}
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      # --- OAuth (enables streamable-http) ---
+      ANALYTICS_MCP_OAUTH_CLIENT_ID: ${ANALYTICS_MCP_OAUTH_CLIENT_ID}
+      ANALYTICS_MCP_OAUTH_CLIENT_SECRET: ${ANALYTICS_MCP_OAUTH_CLIENT_SECRET}
+      ANALYTICS_MCP_BASE_URL: ${ANALYTICS_MCP_BASE_URL:-http://localhost:8080}
+
+      PORT: "8080"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"

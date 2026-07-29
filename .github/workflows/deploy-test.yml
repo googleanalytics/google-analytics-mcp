@@ -1,0 +1,17 @@
+name: Deploy To Testing
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-service-test:
+    name: Deploy Service To Testing
+    uses: phaeth-com/phaeth-cicd/.github/workflows/deploy-to-screen.yml@main
+    with:
+      screen: google-analytics-mcp-test
+      test: false
+      cmd: 'git checkout main && git -c core.sshCommand="ssh -i ~/.ssh/github-phaeth -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" pull && pip install -e . && python analytics_mcp/server.py --http --host 127.0.0.1 --port 8880 --path /mcp'
+      healthcheck_endpoint: 'http://localhost:8880'
+    secrets: inherit

@@ -21,13 +21,24 @@ server.
 # MCP Server Imports
 import json
 import sys
-from json import tool
+
 from mcp import types as mcp_types  # Use alias to avoid conflict
+from mcp.server.context import (
+    CallNext,
+    HandlerResult,
+    ServerRequestContext,
+)
 from mcp.server.lowlevel import Server
 
 # ADK Tool Imports
 from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.mcp_tool.conversion_utils import adk_to_mcp_tool_type
+
+from analytics_mcp.tools.client import (
+    REFRESH_TOKEN_HEADER,
+    clear_refresh_token,
+    set_refresh_token,
+)
 
 from analytics_mcp.tools.admin.info import (
     get_account_summaries,
@@ -85,9 +96,6 @@ tools = [
 
 tool_map = {t.name: t for t in tools}
 
-app = Server(
-    name="Google Analytics MCP Server",
-)
 
 mcp_tools = [adk_to_mcp_tool_type(tool) for tool in tools]
 
@@ -117,33 +125,36 @@ def sanitize_mcp_schema_properties(node: dict) -> None:
                     sanitize_mcp_schema_properties(element)
 
 
-# Update the inputSchema for tools that do not have parameters.
+# Update the input_schema for tools that do not have parameters.
+# NOTE: The Pydantic field on mcp_types.Tool is `input_schema` (Python
+# attribute) with wire alias `inputSchema`. Programmatically we always use
+# the Python attribute name.
 # TODO: This is a bug in the ADK and can be removed once it is fixed.
 # https://github.com/google/adk-python/issues/948
 for tool in mcp_tools:
-    # Check if inputSchema is empty
-    if tool.inputSchema == {}:
-        tool.inputSchema = {"type": "object", "properties": {}}
+    # Check if input_schema is empty
+    if tool.input_schema == {}:
+        tool.input_schema = {"type": "object", "properties": {}}
     # Fix union type hints generating spurious "type": "null"
-    for prop in tool.inputSchema.get("properties", {}).values():
+    for prop in tool.input_schema.get("properties", {}).values():
         if "anyOf" in prop and prop.get("type") == "null":
             del prop["type"]
 
     # Ensure additionalProperties is compatible with all MCP clients
-    sanitize_mcp_schema_properties(tool.inputSchema)
+    sanitize_mcp_schema_properties(tool.input_schema)
 
     # Explicitly mark required fields for reporting tools to guide the LLM
     if tool.name == "run_report":
-        tool.inputSchema["required"] = [
+        tool.input_schema["required"] = [
             "property_id",
             "date_ranges",
             "dimensions",
             "metrics",
         ]
     elif tool.name == "run_realtime_report":
-        tool.inputSchema["required"] = ["property_id", "dimensions", "metrics"]
+        tool.input_schema["required"] = ["property_id", "dimensions", "metrics"]
     elif tool.name == "run_conversions_report":
-        tool.inputSchema["required"] = [
+        tool.input_schema["required"] = [
             "property_id",
             "date_ranges",
             "dimensions",
@@ -152,13 +163,25 @@ for tool in mcp_tools:
         ]
 
 
-@app.list_tools()
-async def list_tools() -> list[mcp_types.Tool]:
-    return mcp_tools
+# ---- MCP request handlers -------------------------------------------------
 
 
-@app.call_tool()
-async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
+async def _handle_list_tools(
+    ctx: ServerRequestContext,
+    params: mcp_types.PaginatedRequestParams | None,
+) -> mcp_types.ListToolsResult:
+    """Handler for the MCP tools/list request."""
+    return mcp_types.ListToolsResult(tools=mcp_tools)
+
+
+async def _handle_call_tool(
+    ctx: ServerRequestContext,
+    params: mcp_types.CallToolRequestParams,
+) -> mcp_types.CallToolResult:
+    """Handler for the MCP tools/call request."""
+    name = params.name
+    arguments = params.arguments or {}
+
     if name in tool_map:
         tool = tool_map[name]
         try:
@@ -166,23 +189,73 @@ async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
                 args=arguments,
                 tool_context=None,
             )
-            # Serialize the ADK tool response to JSON for MCP response
             response_text = json.dumps(adk_tool_response, indent=2)
-            # MCP expects a list of mcp_types.Content parts
-            return [mcp_types.TextContent(type="text", text=response_text)]
+            return mcp_types.CallToolResult(
+                content=[mcp_types.TextContent(type="text", text=response_text)]
+            )
 
         except Exception as e:
             print(
                 f"MCP Server: Error executing ADK tool '{name}': {e}",
                 file=sys.stderr,
             )
-            # Return an error message in MCP format
             error_text = json.dumps(
                 {"error": f"Failed to execute tool '{name}': {str(e)}"}
             )
-            return [mcp_types.TextContent(type="text", text=error_text)]
+            return mcp_types.CallToolResult(
+                content=[mcp_types.TextContent(type="text", text=error_text)],
+                is_error=True,
+            )
 
     error_text = json.dumps(
         {"error": f"Tool '{name}' not implemented by this server."}
     )
-    return [mcp_types.TextContent(type="text", text=error_text)]
+    return mcp_types.CallToolResult(
+        content=[mcp_types.TextContent(type="text", text=error_text)],
+        is_error=True,
+    )
+
+
+# ---- Middleware -----------------------------------------------------------
+
+
+async def refresh_token_middleware(
+    ctx: ServerRequestContext,
+    call_next: CallNext,
+) -> HandlerResult:
+    """Server middleware that extracts a Google OAuth refresh token from the
+    inbound HTTP request header (x-ga-refresh-token) and places it into the
+    request-scoped ContextVar.
+
+    The ContextVar is read by the Google client factory functions in
+    :mod:`analytics_mcp.tools.client` when building credentials.
+
+    No-op when running over STDIO or when the header is absent.
+    """
+    request = ctx.request
+    refresh_token = None
+    if request is not None and hasattr(request, "headers"):
+        refresh_token = request.headers.get(REFRESH_TOKEN_HEADER)
+
+    if refresh_token:
+        token = set_refresh_token(refresh_token)
+        try:
+            return await call_next(ctx)
+        finally:
+            clear_refresh_token(token)
+    else:
+        return await call_next(ctx)
+
+
+# ---- Server construction --------------------------------------------------
+
+app = Server(
+    name="Google Analytics MCP Server",
+    on_list_tools=_handle_list_tools,
+    on_call_tool=_handle_call_tool,
+)
+
+# Register as the outermost user middleware. SDK's built-ins run inside it so
+# the refresh token context is available for all user handlers including
+# list_tools and call_tool.
+app.middleware.append(refresh_token_middleware)

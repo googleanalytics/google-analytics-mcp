@@ -42,11 +42,14 @@ issues = "https://github.com/googleanalytics/google-analytics-mcp/issues"
 
 [project.scripts]
 analytics-mcp = "analytics_mcp.server:run_server"
+# Streamable HTTP variant entry point.
+analytics-mcp-http = "analytics_mcp.server:run_http_server"
 # The previous name of the script. Kept for backwards compatibility.
 google-analytics-mcp = "analytics_mcp.server:run_server"
 
 [project.optional-dependencies]
 dev = ["black", "nox >=2026.2.9, <2027"]
+http = ["uvicorn>=0.30.0", "starlette>=0.40.0"]
 
 [build-system]
 requires = ["setuptools>=82.0.0", "wheel"]

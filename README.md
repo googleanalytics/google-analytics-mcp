@@ -8,9 +8,21 @@
 [![GitHub forks](https://img.shields.io/github/forks/googleanalytics/google-analytics-mcp?style=social)](https://github.com/googleanalytics/google-analytics-mcp/network/members)
 [![YouTube Video Views](https://img.shields.io/youtube/views/PT4wGPxWiRQ)](https://www.youtube.com/watch?v=PT4wGPxWiRQ)
 
-This repo contains the source code for running a local
+This repo contains the source code for a
 [MCP](https://modelcontextprotocol.io) server that interacts with APIs for
 [Google Analytics](https://support.google.com/analytics).
+
+The server supports two deployment modes:
+
+- **Local (stdio)** — run as a subprocess by Gemini CLI, Claude Desktop,
+  Claude Code, or any MCP client. Uses Application Default Credentials. No
+  extra infrastructure needed.
+- **Remote (HTTP + OAuth)** — deploy to
+  [Google Cloud Run](https://cloud.google.com/run) and connect from web-based
+  clients such as [claude.ai](https://claude.ai). Users authenticate with
+  their own Google account via OAuth 2.0; no credentials are shared with the
+  server operator. See
+  [Remote deployment](#remote-deployment-cloud-run--oauth).
 
 Join the discussion and ask questions in the
 [🤖-analytics-mcp channel](https://discord.com/channels/971845904002871346/1398002598665257060)
@@ -164,6 +176,103 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
       -e "GOOGLE_PROJECT_ID=YOUR_PROJECT_ID" \
       -- pipx run analytics-mcp
     ```
+
+### Remote deployment (Cloud Run + OAuth) ☁️
+
+Deploy the server to Cloud Run so web-based MCP clients such as
+[claude.ai](https://claude.ai) can connect to it. Each user authenticates with
+their own Google account via OAuth 2.0 — no Analytics credentials are
+configured on the server, and requests without a valid per-user token are
+rejected.
+
+#### 1. Enable APIs ✅
+
+In addition to the
+[Google Analytics Admin API](https://console.cloud.google.com/apis/library/analyticsadmin.googleapis.com)
+and
+[Google Analytics Data API](https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com),
+enable:
+
+- [Cloud Run Admin API](https://console.cloud.google.com/apis/library/run.googleapis.com)
+- [Cloud Build API](https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com)
+- [Artifact Registry API](https://console.cloud.google.com/apis/library/artifactregistry.googleapis.com)
+- [Secret Manager API](https://console.cloud.google.com/apis/library/secretmanager.googleapis.com)
+
+#### 2. Create an OAuth 2.0 client 🔑
+
+1.  Open [APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
+    in the Google Cloud Console.
+1.  Click **Create credentials → OAuth client ID**.
+1.  Choose **Web application** as the application type.
+1.  Under **Authorized redirect URIs**, add a placeholder for now — you will
+    replace it with the real service URL after deploying:
+
+    ```text
+    https://example.com/auth/callback
+    ```
+
+1.  Click **Create** and note the **Client ID** and **Client secret**.
+
+#### 3. Store the client secret in Secret Manager 🤫
+
+Never pass the OAuth client secret as a plaintext `--set-env-vars` value — it
+would be visible to anyone who can describe the Cloud Run service.
+
+```shell
+printf '%s' 'YOUR_OAUTH_CLIENT_SECRET' | gcloud secrets create \
+  analytics-mcp-oauth-client-secret --data-file=-
+```
+
+#### 4. Deploy 🚀
+
+Run the deploy script, which builds the image with Cloud Build and performs
+the two-phase Cloud Run deployment (deploy → discover service URL → redeploy
+with `ANALYTICS_MCP_BASE_URL` set):
+
+```shell
+PROJECT_ID=YOUR_PROJECT_ID \
+REGION=YOUR_REGION \
+OAUTH_CLIENT_ID=YOUR_OAUTH_CLIENT_ID \
+  ./deploy/cloud-run.sh
+```
+
+The script prints the service URL when it finishes. Then return to your OAuth
+client in the
+[Google Cloud Console](https://console.cloud.google.com/apis/credentials) and
+replace the placeholder redirect URI with:
+
+```text
+https://YOUR_SERVICE_URL/auth/callback
+```
+
+The service is deployed with `--allow-unauthenticated` because
+authentication happens at the application layer: FastMCP's Google OAuth
+provider rejects any request to `/mcp` that doesn't carry a valid per-user
+token.
+
+#### 5. Connect from claude.ai 🤖
+
+1.  Open [claude.ai](https://claude.ai) and go to **Settings → Connectors**.
+1.  Add a custom connector with the URL:
+
+    ```text
+    https://YOUR_SERVICE_URL/mcp
+    ```
+
+1.  Authorize with your Google account when prompted.
+
+#### Environment variable reference
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `ANALYTICS_MCP_OAUTH_CLIENT_ID` | Yes (HTTP mode) | OAuth 2.0 client ID |
+| `ANALYTICS_MCP_OAUTH_CLIENT_SECRET` | Yes (HTTP mode) | OAuth 2.0 client secret. Set from Secret Manager via `--set-secrets`, never `--set-env-vars`. |
+| `ANALYTICS_MCP_BASE_URL` | Yes (HTTP mode) | Public URL of the deployed service |
+| `PORT` | Cloud Run | Port to listen on (default: `8080`, auto-set by Cloud Run) |
+
+When `ANALYTICS_MCP_OAUTH_CLIENT_ID` and `ANALYTICS_MCP_OAUTH_CLIENT_SECRET`
+are both set, the server starts in HTTP mode with OAuth and serves `/mcp`.
+Otherwise it runs on stdio exactly as before — local setups are unaffected.
 
 ## Try it out 🥼
 

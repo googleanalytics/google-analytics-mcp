@@ -1,0 +1,30 @@
+# VCS and CI metadata
+.git
+.gitignore
+.github
+
+# Local secrets — never bake these into an image
+.env
+.env.*
+*credentials*.json
+*token*.json
+*.pem
+*.key
+
+# Python build/test artifacts
+__pycache__
+*.pyc
+*.egg-info
+build
+dist
+.venv
+venv
+.nox
+.pytest_cache
+tests
+
+# Tooling
+.claude
+.dockerignore
+Dockerfile
+deploy

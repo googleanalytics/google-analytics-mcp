@@ -15,12 +15,14 @@
 """Client initialization for the Google Analytics APIs."""
 
 import contextlib
+import os
 import subprocess
 import threading
 from importlib import metadata
 from unittest.mock import patch
 
 import google.auth
+from google.oauth2.credentials import Credentials as OAuthCredentials
 from google.analytics import (
     admin_v1beta,
     data_v1beta,
@@ -75,9 +77,34 @@ def prevent_stdio_inheritance():
         yield
 
 
+def _is_oauth_mode() -> bool:
+    """Returns True when the server is running in HTTP/OAuth mode."""
+    return bool(
+        os.environ.get("ANALYTICS_MCP_OAUTH_CLIENT_ID")
+        and os.environ.get("ANALYTICS_MCP_OAUTH_CLIENT_SECRET")
+    )
+
+
 def _get_credentials():
+    # Expected to be called under _client_lock.
+    #
+    # In HTTP/OAuth mode every request must carry the calling user's own
+    # OAuth token. Failing closed here (instead of falling back to
+    # Application Default Credentials) ensures one user's request can never
+    # be served with the server operator's credentials.
+    if _is_oauth_mode():
+        from fastmcp.server.dependencies import get_access_token
+
+        token = get_access_token()
+        if token is None or not token.token:
+            raise RuntimeError(
+                "No OAuth access token found for this request. The server is "
+                "running in HTTP/OAuth mode, which requires each request to "
+                "be authenticated with a per-user token."
+            )
+        return OAuthCredentials(token=token.token)
+
     global _CREDENTIALS
-    # Expected to be called under _client_lock
     if _CREDENTIALS is None:
         with prevent_stdio_inheritance():
             _CREDENTIALS, _ = google.auth.default(

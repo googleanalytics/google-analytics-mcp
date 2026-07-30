@@ -85,9 +85,9 @@ def _run_funnel_report_description() -> str:
 async def run_funnel_report(
     property_id: int | str,
     funnel_steps: List[Dict[str, Any]],
-    date_ranges: List[Dict[str, str]] = None,
-    funnel_breakdown: Dict[str, str] = None,
-    funnel_next_action: Dict[str, str] = None,
+    date_ranges: List[Dict[str, Any]] = None,
+    funnel_breakdown: Dict[str, Any] = None,
+    funnel_next_action: Dict[str, Any] = None,
     segments: List[Dict[str, Any]] = None,
     return_property_quota: bool = False,
 ) -> Dict[str, Any]:

@@ -119,3 +119,22 @@ See [`DEPLOY.md`](DEPLOY.md). Key operational gotchas already encoded there:
 - No new runtime dependency unless necessary; prefer stdlib and what `mcp` /
   `google-auth` / `httpx` already provide.
 - Document operational caveats in `DEPLOY.md`, architecture/maintenance here.
+
+## Issue tracking
+
+GitHub issues are the authoritative tracker for individual work items. Work with them
+continuously, without being asked.
+
+- **One issue per deferred item**, assigned to a milestone where the repo uses them. If
+  it isn't an issue, it isn't tracked — never keep a parallel list in a doc or in memory.
+- **Write issues to stand alone**: the evidence, the ground truth you verified, and the
+  concrete fix. A future reader won't have the conversation.
+- **Never defer silently.** If work is dropped, narrowed, or postponed, open an issue in
+  the same turn and say so.
+- **Close issues in the PR that resolves them** (`Closes #N`), not afterwards.
+- **Check for staleness proactively**, especially issues predating recent decisions.
+  Prefer a **dated update comment** over rewriting the body — the original framing plus
+  an update is more useful than a silently edited issue.
+- **Docs ship with the work.** Any doc whose claims a PR changes is updated in that PR,
+  not a follow-up. Verify doc claims against ground truth (code, data, computed output) —
+  never against another doc, since both can be stale.

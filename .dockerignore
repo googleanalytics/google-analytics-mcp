@@ -1,5 +1,6 @@
 .git
 .github
+.env*
 tests
 noxfile.py
 skills-lock.json

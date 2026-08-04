@@ -27,6 +27,7 @@ import os
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.google import GoogleProvider
 
+from analytics_mcp.usage_log import UsageLogMiddleware
 from analytics_mcp.tools.admin.info import (
     get_account_summaries,
     list_google_ads_links,
@@ -77,7 +78,9 @@ def _build_mcp() -> FastMCP:
             base_url=_BASE_URL,
             required_scopes=_REQUIRED_SCOPES,
         )
-        return FastMCP("Google Analytics MCP Server", auth=auth)
+        mcp = FastMCP("Google Analytics MCP Server", auth=auth)
+        mcp.add_middleware(UsageLogMiddleware.from_env(server="google-analytics"))
+        return mcp
     return FastMCP("Google Analytics MCP Server")
 
 

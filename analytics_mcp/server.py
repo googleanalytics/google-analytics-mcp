@@ -20,13 +20,19 @@ Runs over streamable HTTP when OAuth client credentials are configured (the
 per-user login flow); otherwise falls back to stdio for local development.
 """
 
+import logging
 import os
 
 from analytics_mcp.coordinator import app
 
+_LOGGERS_THAT_PRINT_ACCESS_TOKENS = ("httpx", "httpx2")
+
 
 def run_server() -> None:
     """Runs the MCP server, choosing transport based on OAuth configuration."""
+    for logger_name in _LOGGERS_THAT_PRINT_ACCESS_TOKENS:
+        logging.getLogger(logger_name).setLevel(logging.WARNING)
+
     client_id = os.environ.get("ANALYTICS_MCP_OAUTH_CLIENT_ID")
     client_secret = os.environ.get("ANALYTICS_MCP_OAUTH_CLIENT_SECRET")
 

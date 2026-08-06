@@ -141,7 +141,7 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
           "args": ["run", "analytics-mcp"],
           "env": {
             "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_CREDENTIALS_JSON",
-            "GOOGLE_PROJECT_ID": "YOUR_PROJECT_ID"
+            "GOOGLE_CLOUD_PROJECT": "YOUR_PROJECT_ID"
           }
         }
       }
@@ -161,7 +161,7 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
     claude mcp add analytics-mcp \
       --scope user \
       -e "GOOGLE_APPLICATION_CREDENTIALS=PATH_TO_CREDENTIALS_JSON" \
-      -e "GOOGLE_PROJECT_ID=YOUR_PROJECT_ID" \
+      -e "GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID" \
       -- pipx run analytics-mcp
     ```
 

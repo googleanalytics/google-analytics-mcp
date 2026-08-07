@@ -29,10 +29,18 @@ from mcp.server.lowlevel import Server
 from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.mcp_tool.conversion_utils import adk_to_mcp_tool_type
 
+from analytics_mcp.tools.admin.access import run_access_report
 from analytics_mcp.tools.admin.info import (
     get_account_summaries,
+    get_data_retention_settings,
     list_google_ads_links,
     get_property_details,
+    list_audiences,
+    list_custom_dimensions,
+    list_custom_metrics,
+    list_data_streams,
+    list_key_events,
+    list_properties,
     list_property_annotations,
 )
 from analytics_mcp.tools.reporting.core import (
@@ -45,7 +53,9 @@ from analytics_mcp.tools.reporting.realtime import (
 )
 from analytics_mcp.tools.reporting.metadata import (
     get_custom_dimensions_and_metrics,
+    get_metadata,
 )
+from analytics_mcp.tools.reporting.quotas import get_property_quotas
 from analytics_mcp.tools.reporting.funnel import (
     run_funnel_report,
     _run_funnel_report_description,
@@ -75,8 +85,18 @@ tools = [
     FunctionTool(get_account_summaries),
     FunctionTool(list_google_ads_links),
     FunctionTool(get_property_details),
+    FunctionTool(get_data_retention_settings),
+    FunctionTool(list_audiences),
+    FunctionTool(list_custom_dimensions),
+    FunctionTool(list_custom_metrics),
+    FunctionTool(list_data_streams),
+    FunctionTool(list_key_events),
+    FunctionTool(list_properties),
     FunctionTool(list_property_annotations),
+    FunctionTool(run_access_report),
     FunctionTool(get_custom_dimensions_and_metrics),
+    FunctionTool(get_metadata),
+    FunctionTool(get_property_quotas),
     run_report_with_description,
     run_realtime_report_with_description,
     run_funnel_report_with_description,
@@ -142,6 +162,13 @@ for tool in mcp_tools:
         ]
     elif tool.name == "run_realtime_report":
         tool.inputSchema["required"] = ["property_id", "dimensions", "metrics"]
+    elif tool.name == "run_access_report":
+        tool.inputSchema["required"] = [
+            "entity",
+            "date_ranges",
+            "dimensions",
+            "metrics",
+        ]
     elif tool.name == "run_conversions_report":
         tool.inputSchema["required"] = [
             "property_id",

@@ -18,6 +18,7 @@ import asyncio
 from typing import Any, Dict, List
 
 from analytics_mcp.tools.utils import (
+    construct_account_rn,
     construct_property_rn,
     proto_to_dict,
 )
@@ -76,6 +77,202 @@ async def get_property_details(property_id: int | str) -> Dict[str, Any]:
 
     response = await asyncio.to_thread(_sync_call)
     return proto_to_dict(response)
+
+
+async def list_properties(
+    account_id: int | str, show_deleted: bool = False
+) -> List[Dict[str, Any]]:
+    """Returns the properties under a Google Analytics account.
+
+    Returns full property objects, including display name, industry
+    category, time zone, currency code, service level, and create time.
+    Use this for deeper property discovery than `get_account_summaries`,
+    which only returns summary information.
+
+    Args:
+        account_id: The Google Analytics account ID. Accepted formats are:
+          - A number
+          - A string consisting of 'accounts/' followed by a number
+        show_deleted: Whether to include soft-deleted (i.e. "trashed")
+          properties in the results. Defaults to False.
+    """
+    request = admin_v1beta.ListPropertiesRequest(
+        filter=f"parent:{construct_account_rn(account_id)}",
+        show_deleted=show_deleted,
+    )
+
+    def _sync_call():
+        properties_pager = create_admin_api_client().list_properties(
+            request=request
+        )
+        return [proto_to_dict(prop) for prop in properties_pager]
+
+    return await asyncio.to_thread(_sync_call)
+
+
+async def list_key_events(property_id: int | str) -> List[Dict[str, Any]]:
+    """Returns the key events configured for a property.
+
+    Key events (formerly known as conversion events) are the events that a
+    property has marked as most important, such as purchases or sign-ups.
+    Reports use key events to calculate conversion-related metrics.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1beta.ListKeyEventsRequest(
+        parent=construct_property_rn(property_id)
+    )
+
+    def _sync_call():
+        key_events_pager = create_admin_api_client().list_key_events(
+            request=request
+        )
+        return [proto_to_dict(key_event) for key_event in key_events_pager]
+
+    return await asyncio.to_thread(_sync_call)
+
+
+async def list_data_streams(property_id: int | str) -> List[Dict[str, Any]]:
+    """Returns the data streams configured for a property.
+
+    Data streams are the sources that send data to a property, such as a
+    web site, an Android app, or an iOS app. Each stream includes its
+    platform-specific details, e.g. the measurement ID for a web stream.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1beta.ListDataStreamsRequest(
+        parent=construct_property_rn(property_id)
+    )
+
+    def _sync_call():
+        data_streams_pager = create_admin_api_client().list_data_streams(
+            request=request
+        )
+        return [
+            proto_to_dict(data_stream) for data_stream in data_streams_pager
+        ]
+
+    return await asyncio.to_thread(_sync_call)
+
+
+async def list_audiences(property_id: int | str) -> List[Dict[str, Any]]:
+    """Returns the audiences defined on a property.
+
+    Audiences are segments of users, e.g. "Purchasers" or "Users who
+    visited the pricing page". Knowing what audiences exist helps when
+    interpreting audience-scoped dimensions in reports or suggesting
+    targeting strategies.
+
+    Note: this uses the alpha channel of the Admin API, which may
+    change without notice.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1alpha.ListAudiencesRequest(
+        parent=construct_property_rn(property_id)
+    )
+
+    def _sync_call():
+        audiences_pager = create_admin_alpha_api_client().list_audiences(
+            request=request
+        )
+        return [proto_to_dict(audience) for audience in audiences_pager]
+
+    return await asyncio.to_thread(_sync_call)
+
+
+async def get_data_retention_settings(
+    property_id: int | str,
+) -> Dict[str, Any]:
+    """Returns the data retention settings for a property.
+
+    Shows how long event-level and user-level data is kept before being
+    automatically deleted. Useful for compliance questions and for
+    knowing how far back reports can reliably look: if retention is set
+    to TWO_MONTHS, event-scoped data older than that is unavailable in
+    explorations and some reports.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1beta.GetDataRetentionSettingsRequest(
+        name=f"{construct_property_rn(property_id)}/dataRetentionSettings"
+    )
+
+    def _sync_call():
+        client = create_admin_api_client()
+        return client.get_data_retention_settings(request=request)
+
+    response = await asyncio.to_thread(_sync_call)
+    return proto_to_dict(response)
+
+
+async def list_custom_dimensions(
+    property_id: int | str,
+) -> List[Dict[str, Any]]:
+    """Returns the custom dimensions defined on a property (Admin API).
+
+    Includes details that the Data API metadata endpoint doesn't return:
+    the dimension's scope (EVENT or USER), parameter name, description,
+    and whether it's excluded from ads personalization. Use the
+    `get_custom_dimensions_and_metrics` tool instead if you only need
+    the API names for building reports.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1beta.ListCustomDimensionsRequest(
+        parent=construct_property_rn(property_id)
+    )
+
+    def _sync_call():
+        dimensions_pager = create_admin_api_client().list_custom_dimensions(
+            request=request
+        )
+        return [proto_to_dict(dimension) for dimension in dimensions_pager]
+
+    return await asyncio.to_thread(_sync_call)
+
+
+async def list_custom_metrics(property_id: int | str) -> List[Dict[str, Any]]:
+    """Returns the custom metrics defined on a property (Admin API).
+
+    Includes details that the Data API metadata endpoint doesn't return:
+    the metric's scope, parameter name, description, measurement unit,
+    and restricted metric type. Use the
+    `get_custom_dimensions_and_metrics` tool instead if you only need
+    the API names for building reports.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+    request = admin_v1beta.ListCustomMetricsRequest(
+        parent=construct_property_rn(property_id)
+    )
+
+    def _sync_call():
+        metrics_pager = create_admin_api_client().list_custom_metrics(
+            request=request
+        )
+        return [proto_to_dict(metric) for metric in metrics_pager]
+
+    return await asyncio.to_thread(_sync_call)
 
 
 async def list_property_annotations(

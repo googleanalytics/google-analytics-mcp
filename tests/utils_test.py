@@ -68,3 +68,45 @@ class TestUtils(unittest.TestCase):
             msg="Resource name with more than 2 components should fail",
         ):
             utils.construct_property_rn("properties/123/abc")
+
+    def test_construct_account_rn(self):
+        """Tests construct_account_rn using valid input."""
+        self.assertEqual(
+            utils.construct_account_rn(12345),
+            "accounts/12345",
+            "Numeric account ID should be considered valid",
+        )
+        self.assertEqual(
+            utils.construct_account_rn("12345"),
+            "accounts/12345",
+            "Numeric account ID as string should be considered valid",
+        )
+        self.assertEqual(
+            utils.construct_account_rn(" 12345  "),
+            "accounts/12345",
+            "Whitespace around account ID should be considered valid",
+        )
+        self.assertEqual(
+            utils.construct_account_rn("accounts/12345"),
+            "accounts/12345",
+            "Full resource name should be considered valid",
+        )
+
+    def test_construct_account_rn_invalid_input(self):
+        """Tests that construct_account_rn raises a ValueError for invalid input."""
+        with self.assertRaises(ValueError, msg="None should fail"):
+            utils.construct_account_rn(None)
+        with self.assertRaises(ValueError, msg="Empty string should fail"):
+            utils.construct_account_rn("")
+        with self.assertRaises(
+            ValueError, msg="Non-numeric string should fail"
+        ):
+            utils.construct_account_rn("abc")
+        with self.assertRaises(
+            ValueError, msg="Resource name without ID should fail"
+        ):
+            utils.construct_account_rn("accounts/")
+        with self.assertRaises(
+            ValueError, msg="Property resource name should fail"
+        ):
+            utils.construct_account_rn("properties/123")

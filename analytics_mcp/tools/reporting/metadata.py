@@ -474,6 +474,33 @@ def get_order_bys_hints():
     """
 
 
+async def get_metadata(property_id: int | str) -> Dict[str, Any]:
+    """Returns the full dimension and metric catalog for a property.
+
+    Includes every dimension and metric available in reports for the
+    property — both standard and custom — with API names, display names,
+    descriptions, category groupings, and deprecation status. Use this
+    to discover what fields are available before building a report.
+
+    If you only need the property's custom definitions, use the
+    `get_custom_dimensions_and_metrics` tool instead, since its response
+    is much smaller.
+
+    Args:
+        property_id: The Google Analytics property ID. Accepted formats are:
+          - A number
+          - A string consisting of 'properties/' followed by a number
+    """
+
+    def _sync_call():
+        return create_data_api_client().get_metadata(
+            name=f"{construct_property_rn(property_id)}/metadata"
+        )
+
+    metadata = await asyncio.to_thread(_sync_call)
+    return proto_to_dict(metadata)
+
+
 async def get_custom_dimensions_and_metrics(
     property_id: int | str,
 ) -> Dict[str, List[Dict[str, Any]]]:

@@ -118,7 +118,7 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
 ### Configure Gemini
 
 1.  Install [Gemini
-    CLI](https://github.com/google-gemini/gemini-cli/blob/main/docs/get-started/installation.md)
+    CLI](https://geminicli.com/docs/get-started/installation/)
     or [Gemini Code
     Assist](https://marketplace.visualstudio.com/items?itemName=Google.geminicodeassist).
 

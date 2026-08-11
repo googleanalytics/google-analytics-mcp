@@ -1,5 +1,7 @@
 # Google Analytics MCP Server (Experimental)
 
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2Fgoogleanalytics%2Fgoogle-analytics-mcp.svg)](https://mcptoplist.com/server/glama%2Fgoogleanalytics%2Fgoogle-analytics-mcp)
+
 [![PyPI version](https://img.shields.io/pypi/v/analytics-mcp.svg)](https://pypi.org/project/analytics-mcp/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![GitHub branch check runs](https://img.shields.io/github/check-runs/googleanalytics/google-analytics-mcp/main)](https://github.com/googleanalytics/google-analytics-mcp/actions?query=branch%3Amain++)

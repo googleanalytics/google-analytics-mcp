@@ -47,6 +47,10 @@ to provide several
 
 ## Setup instructions 🔧
 
+For a zero-install Windows/WSL deployment using rootless Podman and a shared
+Streamable HTTP endpoint for Codex, Antigravity, and other MCP clients, see
+[Podman and Streamable HTTP interoperability](docs/podman-http-interoperability.md).
+
 ✨ Watch the [Google Analytics MCP Setup
 Tutorial](https://youtu.be/nS8HLdwmVlY) on YouTube for a step-by-step
 walkthrough of these instructions.

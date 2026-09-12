@@ -1,0 +1,22 @@
+[Unit]
+Description=Google Analytics MCP over Streamable HTTP
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+ContainerName=google-analytics-mcp
+Image=localhost/google-analytics-mcp:local
+PublishPort=127.0.0.1:8081:8080
+Volume=/mnt/c/Users/YOUR_WINDOWS_USER/.config/google-analytics/credentials.json:/run/secrets/google-analytics/credentials.json:ro
+Environment=GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/google-analytics/credentials.json
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=all
+Tmpfs=/tmp:rw,nosuid,nodev,noexec,size=64m
+
+[Service]
+Restart=on-failure
+TimeoutStopSec=15
+
+[Install]
+WantedBy=default.target

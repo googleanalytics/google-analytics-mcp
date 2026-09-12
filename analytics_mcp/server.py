@@ -16,49 +16,67 @@
 
 """Entry point for the Google Analytics MCP server."""
 
-import asyncio
+import os
 import sys
-import analytics_mcp.coordinator as coordinator
-from mcp.server.lowlevel import NotificationOptions
-from mcp.server.models import InitializationOptions
-import mcp.server.stdio
-import mcp.server
 import traceback
 
+from analytics_mcp.coordinator import mcp
 
-async def run_server_async():
-    """Runs the MCP server over standard I/O."""
-    print("Starting MCP Stdio Server:", coordinator.app.name, file=sys.stderr)
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await coordinator.app.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name=coordinator.app.name,  # Use the server name defined above
-                server_version="1.0.0",
-                capabilities=coordinator.app.get_capabilities(
-                    # Define server capabilities - consult MCP docs for options
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                ),
-            ),
+STDIO_TRANSPORT = "stdio"
+HTTP_TRANSPORTS = {"http", "streamable-http"}
+SUPPORTED_TRANSPORTS = {STDIO_TRANSPORT, *HTTP_TRANSPORTS}
+
+
+def _configured_transport() -> str:
+    """Return and validate the requested transport."""
+    transport = os.getenv("ANALYTICS_MCP_TRANSPORT", STDIO_TRANSPORT)
+    transport = transport.strip().lower()
+    if transport not in SUPPORTED_TRANSPORTS:
+        choices = ", ".join(sorted(SUPPORTED_TRANSPORTS))
+        raise ValueError(
+            "Unsupported ANALYTICS_MCP_TRANSPORT "
+            f"{transport!r}; expected one of: {choices}"
         )
+    return transport
 
 
-def run_server():
-    """Synchronous wrapper to run the async MCP server."""
-    asyncio.run(run_server_async())
+def _configured_port() -> int:
+    """Return and validate the HTTP listen port."""
+    raw_port = os.getenv("PORT", "8080")
+    try:
+        port = int(raw_port)
+    except ValueError as error:
+        raise ValueError(
+            f"PORT must be an integer, got {raw_port!r}"
+        ) from error
+    if not 1 <= port <= 65535:
+        raise ValueError(f"PORT must be between 1 and 65535, got {port}")
+    return port
+
+
+def run_server() -> None:
+    """Run stdio by default, or stateful Streamable HTTP when configured."""
+    transport = _configured_transport()
+    if transport == STDIO_TRANSPORT:
+        mcp.run()
+        return
+
+    mcp.run(
+        transport="streamable-http",
+        host=os.getenv("HOST", "127.0.0.1"),
+        port=_configured_port(),
+        uvicorn_config={"access_log": False},
+    )
 
 
 if __name__ == "__main__":
     try:
         run_server()
     except KeyboardInterrupt:
-        print("\nMCP Server (stdio) stopped by user.", file=sys.stderr)
+        print("\nGoogle Analytics MCP server stopped.", file=sys.stderr)
     except Exception:
-        import traceback
-
-        print("MCP Server (stdio) encountered an error:", file=sys.stderr)
+        print(
+            "Google Analytics MCP server encountered an error:", file=sys.stderr
+        )
         traceback.print_exc()
-    finally:
-        print("MCP Server (stdio) process exiting.", file=sys.stderr)
+        raise

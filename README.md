@@ -1,180 +1,82 @@
-# Google Analytics MCP Server (Experimental)
+Google Analytics MCP Server (Personal Fork — Kesig777)
 
-[![PyPI version](https://img.shields.io/pypi/v/analytics-mcp.svg)](https://pypi.org/project/analytics-mcp/)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![GitHub branch check runs](https://img.shields.io/github/check-runs/googleanalytics/google-analytics-mcp/main)](https://github.com/googleanalytics/google-analytics-mcp/actions?query=branch%3Amain++)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/analytics-mcp)](https://pypi.org/project/analytics-mcp/)
-[![GitHub stars](https://img.shields.io/github/stars/googleanalytics/google-analytics-mcp?style=social)](https://github.com/googleanalytics/google-analytics-mcp/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/googleanalytics/google-analytics-mcp?style=social)](https://github.com/googleanalytics/google-analytics-mcp/network/members)
-[![YouTube Video Views](https://img.shields.io/youtube/views/PT4wGPxWiRQ)](https://www.youtube.com/watch?v=PT4wGPxWiRQ)
+Personalized fork of the Model Context Protocol (MCP) server for Google Analytics, maintained and configured for Mr. Kesegan Govender.12
+👤 Account & Ownership Details
+Account Owner: Mr. Kesegan Govender12
+Primary Email: 1kesig777@gmail.com13
+Secondary / GitHub Email: kesig777@gmail.com24
+GitHub Username / Fork: Kesig7774
+🔒 POPI Act & Privacy Compliance Statement
 
-This repo contains the source code for running a local
-[MCP](https://modelcontextprotocol.io) server that interacts with APIs for
-[Google Analytics](https://support.google.com/analytics).
+In compliance with the Protection of Personal Information Act (POPIA) of South Africa:
+Scope Restriction: Authentication and API interactions utilize the read-only scope (https://www.googleapis.com/auth/analytics.readonly).3
+Local Data Integrity: Personal Identifiable Information (PII), application default credentials (ADC), and OAuth tokens are maintained strictly within local environments (~/.gemini/settings.json) and are never committed to remote repositories.
+Access Control: Account administration and API keys are strictly restricted to the authorized owner, Mr. Kesegan Govender.24
+🛠️ Linked Google Cloud Projects & Analytics PropertiesGoogle Cloud Projects
+Gemini API Project ID: gen-lang-client-017141752425
+Restore Project ID: total-now-31290056
+Google Analytics Property
+Property Name: Master System's3
+Property ID: 5388945873
+🛠️ MCP Tools Summary
 
-Join the discussion and ask questions in the
-[🤖-analytics-mcp channel](https://discord.com/channels/971845904002871346/1398002598665257060)
-on Discord.
+The server utilizes the Google Analytics Admin API and Google Analytics Data API to provide tools for LLM integration.Account & Property Information
+get_account_summaries: Retrieves account and property details for 1kesig777@gmail.com.3
+get_property_details: Returns property metadata for Property 538894587.3
+list_google_ads_links: Lists linked Google Ads accounts (e.g., 354-729-1911).3
+Reporting Tools
+run_report: Runs standard Google Analytics Data API reports.
+run_funnel_report: Generates funnel analysis reports.
+get_custom_dimensions_and_metrics: Fetches custom metrics and dimensions.
+run_realtime_report: Queries real-time traffic data.
+🔧 Recovery & Setup Instructions1. Configure Python Environment
 
-## Tools 🛠️
+Install pipx for isolated tool execution:
+pipx install analytics-mcp
+2. Enable Google Cloud APIs
 
-The server uses the
-[Google Analytics Admin API](https://developers.google.com/analytics/devguides/config/admin/v1)
-and
-[Google Analytics Data API](https://developers.google.com/analytics/devguides/reporting/data/v1)
-to provide several
-[Tools](https://modelcontextprotocol.io/docs/concepts/tools) for use with LLMs.
+Ensure the following APIs are enabled in project gen-lang-client-0171417524:25
+Google Analytics Admin API
+Google Analytics Data API
+3. Authenticate Application Default Credentials (ADC)
 
-### Retrieve account and property information 🟠
+Run gcloud to re-establish your local OAuth credentials under 1kesig777@gmail.com:23
+gcloud auth application-default login \
+  --scopes https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform
+Copy the credentials file path printed in the output (e.g., /home/user/.config/gcloud/application_default_credentials.json).4. Configure Gemini Client
 
-- `get_account_summaries`: Retrieves information about the user's Google
-  Analytics accounts and properties.
-- `get_property_details`: Returns details about a property.
-- `list_google_ads_links`: Returns a list of links to Google Ads accounts for
-  a property.
-
-### Run core reports 📙
-
-- `run_report`: Runs a Google Analytics report using the Data API.
-- `run_funnel_report`: Runs a Google Analytics funnel report using the Data API.
-- `get_custom_dimensions_and_metrics`: Retrieves the custom dimensions and
-  metrics for a specific property.
-
-### Run realtime reports ⏳
-
-- `run_realtime_report`: Runs a Google Analytics realtime report using the
-  Data API.
-
-## Setup instructions 🔧
-
-✨ Watch the [Google Analytics MCP Setup
-Tutorial](https://youtu.be/nS8HLdwmVlY) on YouTube for a step-by-step
-walkthrough of these instructions.
-
-[![Watch the video](https://img.youtube.com/vi/nS8HLdwmVlY/mqdefault.jpg)](https://www.youtube.com/watch?v=nS8HLdwmVlY)
-
-Setup involves the following steps:
-
-1.  Configure Python.
-1.  Configure credentials for Google Analytics.
-1.  Configure Gemini.
-
-### Configure Python 🐍
-
-[Install pipx](https://pipx.pypa.io/stable/#install-pipx).
-
-### Enable APIs in your project ✅
-
-[Follow the instructions](https://support.google.com/googleapi/answer/6158841)
-to enable the following APIs in your Google Cloud project:
-
-- [Google Analytics Admin API](https://console.cloud.google.com/apis/library/analyticsadmin.googleapis.com)
-- [Google Analytics Data API](https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com)
-
-### Configure credentials 🔑
-
-Configure your [Application Default Credentials
-(ADC)](https://cloud.google.com/docs/authentication/provide-credentials-adc).
-Make sure the credentials are for a user with access to your Google Analytics
-accounts or properties.
-
-Credentials must include the Google Analytics read-only scope:
-
-```
-https://www.googleapis.com/auth/analytics.readonly
-```
-
-Check out
-[Manage OAuth Clients](https://support.google.com/cloud/answer/15549257)
-for how to create an OAuth client.
-
-Here are some sample `gcloud` commands you might find useful:
-
-- Set up ADC using user credentials and an OAuth desktop or web client after
-  downloading the client JSON to `YOUR_CLIENT_JSON_FILE`.
-
-  ```shell
-  gcloud auth application-default login \
-    --scopes https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform \
-    --client-id-file=YOUR_CLIENT_JSON_FILE
-  ```
-
-- Set up ADC using service account impersonation.
-
-  ```shell
-  gcloud auth application-default login \
-    --impersonate-service-account=SERVICE_ACCOUNT_EMAIL \
-    --scopes=https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform
-  ```
-
-When the `gcloud auth application-default` command completes, copy the
-`PATH_TO_CREDENTIALS_JSON` file location printed to the console in the
-following message. You'll need this for the next step!
-
-```
-Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
-```
-
-### Configure Gemini
-
-1.  Install [Gemini
-    CLI](https://github.com/google-gemini/gemini-cli/blob/main/docs/get-started/installation.md)
-    or [Gemini Code
-    Assist](https://marketplace.visualstudio.com/items?itemName=Google.geminicodeassist).
-
-1.  Create or edit the file at `~/.gemini/settings.json`, adding your server
-    to the `mcpServers` list.
-
-    Replace `PATH_TO_CREDENTIALS_JSON` with the path you copied in the previous
-    step.
-
-    We also recommend that you add a `GOOGLE_CLOUD_PROJECT` attribute to the
-    `env` object. Replace `YOUR_PROJECT_ID` in the following example with the
-    [project ID](https://support.google.com/googleapi/answer/7014113) of your
-    Google Cloud project.
-
-    ```json
-    {
-      "mcpServers": {
-        "analytics-mcp": {
-          "command": "pipx",
-          "args": ["run", "analytics-mcp"],
-          "env": {
-            "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_CREDENTIALS_JSON",
-            "GOOGLE_PROJECT_ID": "YOUR_PROJECT_ID"
-          }
-        }
+Update or create your ~/.gemini/settings.json file:
+{
+  "mcpServers": {
+    "analytics-mcp": {
+      "command": "pipx",
+      "args": ["run", "analytics-mcp"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "/PATH/TO/YOUR/application_default_credentials.json",
+        "GOOGLE_PROJECT_ID": "gen-lang-client-0171417524"
       }
     }
-    ```
+  }
+}
+5. Configure Claude Code
 
-### Configure Claude Code
+To link the MCP server with Claude Code:
+claude mcp add analytics-mcp \
+  --scope user \
+  -e "GOOGLE_APPLICATION_CREDENTIALS=/PATH/TO/YOUR/application_default_credentials.json" \
+  -e "GOOGLE_PROJECT_ID=gen-lang-client-0171417524" \
+  -- pipx run analytics-mcp
+🥼 Verification & Testing
 
-1.  Add the MCP server with the following command:
+Launch Gemini CLI or Gemini Code Assist and verify tool connectivity using /mcp.
 
-    Replace `PATH_TO_CREDENTIALS_JSON` with the path you copied in the previous
-    step, and replace `YOUR_PROJECT_ID` with the
-    [project ID](https://support.google.com/googleapi/answer/7014113) of your
-    Google Cloud project.
-
-    ```shell
-    claude mcp add analytics-mcp \
-      --scope user \
-      -e "GOOGLE_APPLICATION_CREDENTIALS=PATH_TO_CREDENTIALS_JSON" \
-      -e "GOOGLE_PROJECT_ID=YOUR_PROJECT_ID" \
-      -- pipx run analytics-mcp
-    ```
-
-## Try it out 🥼
-
-Launch Gemini Code Assist or Gemini CLI and type `/mcp`. You should see
-`analytics-mcp` listed in the results.
-
-Here are some sample prompts to get you started:
-
-- Ask what the server can do:
-
-  ```
+Sample Prompts:
+"Show details for my Google Analytics Property 538894587."
+"What are the top events recorded in my property over the last 30 days?"
+"Check realtime active users on Master System's."
+Next Steps & Recommendations
+Verify Client File Path: Replace /PATH/TO/YOUR/application_default_credentials.json with the exact path on your machine where gcloud saved your ADC file.
+Review Access: Confirm that 1kesig777@gmail.com has active read/edit access in the Google Analytics Console for Property ID 538894587.3
   what can the analytics-mcp server do?
   ```
 

@@ -91,6 +91,32 @@ app = Server(
 
 mcp_tools = [adk_to_mcp_tool_type(tool) for tool in tools]
 
+# Annotations applied to every tool in this server.
+#
+# readOnlyHint is True because every tool calls only read methods on the Data
+# and Admin API clients: get_property, get_metadata, the list_* methods, and
+# the run_*_report query methods. The code is the guarantee.
+#
+# The analytics.readonly scope in analytics_mcp/tools/client.py is defense in
+# depth rather than the guarantee. google.auth.default applies scopes through
+# with_scopes_if_required, which skips credentials whose requires_scopes is
+# False. That covers the user credentials from 'gcloud auth
+# application-default login', so the scope binds for service accounts only.
+#
+# openWorldHint is True because the tools send requests to the Google
+# Analytics APIs.
+#
+# destructiveHint and idempotentHint are omitted. mcp.types.ToolAnnotations
+# documents both as "meaningful only when readOnlyHint == false", matching
+# https://modelcontextprotocol.io/specification/2025-11-25/schema#toolannotations
+for tool in mcp_tools:
+    # A separate instance per tool: ToolAnnotations is not frozen, so a shared
+    # instance would let a change to one tool's annotations affect all of them.
+    tool.annotations = mcp_types.ToolAnnotations(
+        readOnlyHint=True,
+        openWorldHint=True,
+    )
+
 
 def sanitize_mcp_schema_properties(node: dict) -> None:
     """Ensure additionalProperties is a boolean value to satisfy certain MCP clients.

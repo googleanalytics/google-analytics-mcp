@@ -51,6 +51,10 @@ to provide several
 Tutorial](https://youtu.be/nS8HLdwmVlY) on YouTube for a step-by-step
 walkthrough of these instructions.
 
+📖 For a detailed written guide covering macOS + Claude Desktop setup,
+quota project configuration, and troubleshooting common errors, see
+[docs/installation-macos-claude-desktop.md](docs/installation-macos-claude-desktop.md).
+
 [![Watch the video](https://img.youtube.com/vi/nS8HLdwmVlY/mqdefault.jpg)](https://www.youtube.com/watch?v=nS8HLdwmVlY)
 
 Setup involves the following steps:

@@ -35,6 +35,12 @@ from analytics_mcp.tools.admin.info import (
     get_property_details,
     list_property_annotations,
 )
+from analytics_mcp.tools.admin.config import (
+    create_custom_dimension,
+    create_key_event,
+    list_key_events,
+)
+from analytics_mcp.tools.client import writes_enabled
 from analytics_mcp.tools.reporting.core import (
     run_report,
     _run_report_description,
@@ -76,12 +82,21 @@ tools = [
     FunctionTool(list_google_ads_links),
     FunctionTool(get_property_details),
     FunctionTool(list_property_annotations),
+    FunctionTool(list_key_events),
     FunctionTool(get_custom_dimensions_and_metrics),
     run_report_with_description,
     run_realtime_report_with_description,
     run_funnel_report_with_description,
     run_conversions_report_with_description,
 ]
+
+# Write tools are hidden unless the user opted in, so a read-only setup never
+# exposes them to the LLM.
+if writes_enabled():
+    tools += [
+        FunctionTool(create_custom_dimension),
+        FunctionTool(create_key_event),
+    ]
 
 tool_map = {t.name: t for t in tools}
 
@@ -150,6 +165,11 @@ for tool in mcp_tools:
             "metrics",
             "conversion_spec",
         ]
+    # confirm is deliberately not required: omitting it yields a safe preview.
+    elif tool.name == "create_custom_dimension":
+        tool.inputSchema["required"] = ["property_id", "parameter_name"]
+    elif tool.name == "create_key_event":
+        tool.inputSchema["required"] = ["property_id", "event_name"]
 
 
 @app.list_tools()

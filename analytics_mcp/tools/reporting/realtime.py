@@ -26,6 +26,7 @@ from analytics_mcp.tools.reporting.metadata import (
     get_date_ranges_hints,
     get_dimension_filter_hints,
     get_metric_filter_hints,
+    get_minute_ranges_hints,
     get_order_bys_hints,
 )
 from google.analytics import data_v1beta
@@ -64,6 +65,9 @@ def _run_realtime_report_description() -> str:
 
           ### Hints for `date_ranges`:
           {get_date_ranges_hints()}
+
+          ### Hints for `minute_ranges`:
+          {get_minute_ranges_hints()}
 
           ### Hints for `dimension_filter`:
           {get_dimension_filter_hints()}

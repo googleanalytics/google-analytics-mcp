@@ -68,6 +68,12 @@ class TestRunRealtimeReport(unittest.TestCase):
         self.assertEqual(len(request.minute_ranges), 0)
         self.assertEqual(request.property, "properties/12345")
 
+    def test_description_includes_minute_ranges_hints(self):
+        """Tests that the tool description documents minute_ranges."""
+        description = realtime._run_realtime_report_description()
+        self.assertIn("Hints for `minute_ranges`", description)
+        self.assertIn('"start_minutes_ago": 4', description)
+
 
 if __name__ == "__main__":
     unittest.main()

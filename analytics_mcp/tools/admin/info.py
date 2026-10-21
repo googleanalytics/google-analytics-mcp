@@ -163,7 +163,7 @@ async def create_property_annotation(
           - A string consisting of 'properties/' followed by a number
         title: Human-readable title for the annotation (maximum 60 characters).
         start_date: The date (or start date of a range) in YYYY-MM-DD format
-          (e.g. '2026-10-21').
+          (inclusive, e.g. '2026-10-21').
         color: Color used for displaying the annotation. Valid values are:
           'PURPLE', 'BROWN', 'BLUE', 'GREEN', 'RED', 'CYAN' ('ORANGE' is
           reserved by Google Analytics for system-generated annotations).

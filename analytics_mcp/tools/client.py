@@ -15,6 +15,7 @@
 """Client initialization for the Google Analytics APIs."""
 
 import contextlib
+import os
 import subprocess
 import threading
 from importlib import metadata
@@ -50,6 +51,10 @@ _CLIENT_INFO = ClientInfo(
 _READ_ONLY_ANALYTICS_SCOPE = (
     "https://www.googleapis.com/auth/analytics.readonly"
 )
+# Needed by Admin API create/update/archive/delete methods. Only requested when
+# writes are enabled (the Data API does not accept it, so it is added to the
+# read-only scope, never substituted for it).
+_EDIT_ANALYTICS_SCOPE = "https://www.googleapis.com/auth/analytics.edit"
 
 # Lock to ensure client and credential creation is thread-safe
 _client_lock = threading.Lock()
@@ -75,14 +80,24 @@ def prevent_stdio_inheritance():
         yield
 
 
+def writes_enabled() -> bool:
+    """Returns True when the user opted in to the Admin API write tools."""
+    return os.environ.get("ANALYTICS_MCP_ENABLE_WRITES", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
+
 def _get_credentials():
     global _CREDENTIALS
     # Expected to be called under _client_lock
     if _CREDENTIALS is None:
+        scopes = [_READ_ONLY_ANALYTICS_SCOPE]
+        if writes_enabled():
+            scopes.append(_EDIT_ANALYTICS_SCOPE)
         with prevent_stdio_inheritance():
-            _CREDENTIALS, _ = google.auth.default(
-                scopes=[_READ_ONLY_ANALYTICS_SCOPE]
-            )
+            _CREDENTIALS, _ = google.auth.default(scopes=scopes)
     return _CREDENTIALS
 
 

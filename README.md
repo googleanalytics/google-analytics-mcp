@@ -33,6 +33,19 @@ to provide several
 - `list_google_ads_links`: Returns a list of links to Google Ads accounts for
   a property.
 
+### Manage property configuration (opt-in writes) ✏️
+
+- `list_key_events`: Returns the key events (formerly conversions) defined on a
+  property. Always available.
+- `create_custom_dimension`: Creates a custom dimension on a property.
+- `create_key_event`: Marks an event as a key event on a property.
+
+The two `create_*` tools are only registered when
+`ANALYTICS_MCP_ENABLE_WRITES=true` is set (see
+[Optional: enable write tools](#optional-enable-write-tools)). They only return
+a preview of the change unless called with `confirm=true`, and they require the
+Editor role on the property.
+
 ### Run core reports 📙
 
 - `run_report`: Runs a Google Analytics report using the Data API.
@@ -115,6 +128,30 @@ following message. You'll need this for the next step!
 Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
 ```
 
+#### Optional: enable write tools
+
+The `create_custom_dimension` and `create_key_event` tools are hidden by
+default. To enable them, set `ANALYTICS_MCP_ENABLE_WRITES=true` in the server's
+environment and make sure your credentials also include the Google Analytics
+edit scope:
+
+```
+https://www.googleapis.com/auth/analytics.edit
+```
+
+Setting the environment variable alone is not enough for user credentials:
+regenerate your ADC file by re-running the login with both scopes, for example:
+
+```shell
+gcloud auth application-default login \
+  --scopes https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/analytics.edit,https://www.googleapis.com/auth/cloud-platform \
+  --client-id-file=YOUR_CLIENT_JSON_FILE
+```
+
+For service account impersonation, use the same `--scopes` value with
+`--impersonate-service-account=SERVICE_ACCOUNT_EMAIL`. The identity also needs
+the Editor role on the property.
+
 ### Configure Gemini
 
 1.  Install [Gemini
@@ -132,6 +169,9 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
     `env` object. Replace `YOUR_PROJECT_ID` in the following example with the
     [project ID](https://support.google.com/googleapi/answer/7014113) of your
     Google Cloud project.
+
+    To enable the optional write tools, also add
+    `"ANALYTICS_MCP_ENABLE_WRITES": "true"` to the `env` object.
 
     ```json
     {
@@ -164,6 +204,9 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
       -e "GOOGLE_PROJECT_ID=YOUR_PROJECT_ID" \
       -- pipx run analytics-mcp
     ```
+
+    To enable the optional write tools, add
+    `-e "ANALYTICS_MCP_ENABLE_WRITES=true"` to the command.
 
 ## Try it out 🥼
 
@@ -200,6 +243,13 @@ Here are some sample prompts to get you started:
 
   ```
   what are the custom dimensions and custom metrics in my property?
+  ```
+
+- Create a custom dimension (the server previews the change first, then applies
+  it after you confirm; requires write tools to be enabled):
+
+  ```
+  Create an event-scoped custom dimension for the plan_tier parameter in property 12345
   ```
 
 ## Contributing ✨

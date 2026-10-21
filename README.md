@@ -32,6 +32,9 @@ to provide several
 - `get_property_details`: Returns details about a property.
 - `list_google_ads_links`: Returns a list of links to Google Ads accounts for
   a property.
+- `list_property_annotations`: Returns annotations for a property.
+- `create_property_annotation`: Creates an annotation for a property (requires
+  passing the `--allow-write` flag and the `analytics.edit` scope).
 
 ### Run core reports 📙
 
@@ -82,6 +85,13 @@ Credentials must include the Google Analytics read-only scope:
 
 ```
 https://www.googleapis.com/auth/analytics.readonly
+```
+
+If you plan to enable write tools (such as `create_property_annotation`) using
+the `--allow-write` flag, your credentials must also include the edit scope:
+
+```
+https://www.googleapis.com/auth/analytics.edit
 ```
 
 Check out
@@ -147,6 +157,9 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
       }
     }
     ```
+
+    To enable write tools (e.g. `create_property_annotation`), append
+    `"--allow-write"` to `"args"`: `["run", "analytics-mcp", "--allow-write"]`.
 
 ### Configure Claude Code
 

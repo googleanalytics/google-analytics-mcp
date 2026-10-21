@@ -10,9 +10,9 @@ readme = "README.md"
 dependencies = [
     "google-analytics-data==0.23.3",
     "google-analytics-admin==0.30.2",
-    "google-auth~=2.40",
-    "mcp>=1.24.0,<2",
-    "google-adk>=1.29.0",
+    "google-auth~=2.62",
+    "mcp>=2.3.0,<3",
+    "google-adk>=2.11.0",
     "httpx>=0.28.1",
 ]
 keywords = ["google analytics", "analytics", "mcp", "ga4"]

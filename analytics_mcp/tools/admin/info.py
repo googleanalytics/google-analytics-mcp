@@ -32,13 +32,11 @@ from google.type import date_pb2
 # Note: ReportingDataAnnotation.Color.ORANGE (7) is reserved by Google Analytics
 # exclusively for system-generated annotations and cannot be used when creating
 # annotations via the API.
-_VALID_ANNOTATION_COLORS = (
-    "PURPLE",
-    "BROWN",
-    "BLUE",
-    "GREEN",
-    "RED",
-    "CYAN",
+_AnnotationColor = admin_v1alpha.ReportingDataAnnotation.Color
+_VALID_ANNOTATION_COLORS = tuple(
+    c.name
+    for c in _AnnotationColor
+    if c not in (_AnnotationColor.COLOR_UNSPECIFIED, _AnnotationColor.ORANGE)
 )
 _MAX_ANNOTATION_TITLE_LENGTH = 60
 _MAX_ANNOTATION_DESCRIPTION_LENGTH = 150

@@ -29,6 +29,9 @@ from mcp import types as mcp_types
 class TestCreatePropertyAnnotation(unittest.IsolatedAsyncioTestCase):
     """Test cases for create_property_annotation."""
 
+    def tearDown(self):
+        client.set_allow_write(False)
+
     @patch("analytics_mcp.tools.admin.info.create_admin_alpha_api_client")
     async def test_create_single_date_annotation(self, mock_create_client):
         """Tests creating a single-date annotation."""
@@ -251,6 +254,9 @@ class TestCreatePropertyAnnotation(unittest.IsolatedAsyncioTestCase):
 
 class TestAllowWriteConfiguration(unittest.IsolatedAsyncioTestCase):
     """Tests for --allow-write CLI flag, tool registration, and OAuth scopes."""
+
+    def tearDown(self):
+        client.set_allow_write(False)
 
     def test_parse_args(self):
         """Tests CLI argument parsing for --allow-write."""

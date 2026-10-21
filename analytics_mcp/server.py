@@ -44,17 +44,18 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-async def run_server_async():
+async def run_server_async(allow_write: bool = False):
     """Runs the MCP server over standard I/O."""
-    print("Starting MCP Stdio Server:", coordinator.app.name, file=sys.stderr)
+    app = coordinator.create_server(allow_write=allow_write)
+    print("Starting MCP Stdio Server:", app.name, file=sys.stderr)
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await coordinator.app.run(
+        await app.run(
             read_stream,
             write_stream,
             InitializationOptions(
-                server_name=coordinator.app.name,  # Use the server name defined above
+                server_name=app.name,  # Use the server name defined above
                 server_version="1.0.0",
-                capabilities=coordinator.app.get_capabilities(
+                capabilities=app.get_capabilities(
                     # Define server capabilities - consult MCP docs for options
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},
@@ -66,8 +67,7 @@ async def run_server_async():
 def run_server(argv: Sequence[str] | None = None):
     """Synchronous wrapper to run the async MCP server."""
     args = parse_args(argv)
-    coordinator.configure_server(allow_write=args.allow_write)
-    asyncio.run(run_server_async())
+    asyncio.run(run_server_async(allow_write=args.allow_write))
 
 
 if __name__ == "__main__":

@@ -186,8 +186,9 @@ class TestCreatePropertyAnnotation(unittest.IsolatedAsyncioTestCase):
         )
 
         # In read-only mode, calling create_property_annotation should fail
-        coordinator.configure_server(allow_write=False)
-        ro_call_res = await coordinator.call_mcp_tool(
+        ro_server = coordinator.create_server(allow_write=False)
+        ro_call_handler = ro_server.get_request_handler("tools/call").handler
+        ro_call_res = await ro_call_handler(
             None,
             mcp_types.CallToolRequestParams(
                 name="create_property_annotation",
@@ -202,12 +203,14 @@ class TestCreatePropertyAnnotation(unittest.IsolatedAsyncioTestCase):
         self.assertIn("--allow-write", ro_call_res.content[0].text)
 
         # Enable write mode and verify list_tools and call_mcp_tool
-        coordinator.configure_server(allow_write=True)
-        list_res = await coordinator.list_tools(None, None)
+        rw_server = coordinator.create_server(allow_write=True)
+        rw_list_handler = rw_server.get_request_handler("tools/list").handler
+        rw_call_handler = rw_server.get_request_handler("tools/call").handler
+        list_res = await rw_list_handler(None, None)
         tool_names = [t.name for t in list_res.tools]
         self.assertIn("create_property_annotation", tool_names)
 
-        rw_call_res = await coordinator.call_mcp_tool(
+        rw_call_res = await rw_call_handler(
             None,
             mcp_types.CallToolRequestParams(
                 name="create_property_annotation",
@@ -227,7 +230,7 @@ class TestCreatePropertyAnnotation(unittest.IsolatedAsyncioTestCase):
                 "Request had insufficient authentication scopes."
             )
         )
-        err_call_res = await coordinator.call_mcp_tool(
+        err_call_res = await rw_call_handler(
             None,
             mcp_types.CallToolRequestParams(
                 name="create_property_annotation",
@@ -244,14 +247,10 @@ class TestCreatePropertyAnnotation(unittest.IsolatedAsyncioTestCase):
             "gcloud auth application-default login",
             err_call_res.content[0].text,
         )
-        coordinator.configure_server(allow_write=False)
 
 
-class TestAllowWriteConfiguration(unittest.TestCase):
+class TestAllowWriteConfiguration(unittest.IsolatedAsyncioTestCase):
     """Tests for --allow-write CLI flag, tool registration, and OAuth scopes."""
-
-    def tearDown(self):
-        coordinator.configure_server(allow_write=False)
 
     def test_parse_args(self):
         """Tests CLI argument parsing for --allow-write."""
@@ -261,27 +260,34 @@ class TestAllowWriteConfiguration(unittest.TestCase):
         args_write = server.parse_args(["--allow-write"])
         self.assertTrue(args_write.allow_write)
 
-    def test_configure_server_toggles_write_tools(self):
+    async def test_create_server_toggles_write_tools(self):
         """Tests that write tools are only registered when allow_write=True."""
-        coordinator.configure_server(allow_write=False)
-        self.assertNotIn("create_property_annotation", coordinator.tool_map)
-        mcp_names_ro = [t.name for t in coordinator.mcp_tools]
+        ro_server = coordinator.create_server(allow_write=False)
+        ro_list = await ro_server.get_request_handler("tools/list").handler(
+            None, None
+        )
+        mcp_names_ro = [t.name for t in ro_list.tools]
         self.assertNotIn("create_property_annotation", mcp_names_ro)
 
-        coordinator.configure_server(allow_write=True)
-        self.assertIn("create_property_annotation", coordinator.tool_map)
-        mcp_names_rw = [t.name for t in coordinator.mcp_tools]
+        rw_server = coordinator.create_server(allow_write=True)
+        rw_list = await rw_server.get_request_handler("tools/list").handler(
+            None, None
+        )
+        mcp_names_rw = [t.name for t in rw_list.tools]
         self.assertIn("create_property_annotation", mcp_names_rw)
 
-    def test_mcp_tool_annotations(self):
+    async def test_mcp_tool_annotations(self):
         """Tests that MCP tools carry appropriate ToolAnnotations."""
-        coordinator.configure_server(allow_write=True)
+        rw_server = coordinator.create_server(allow_write=True)
+        rw_list = await rw_server.get_request_handler("tools/list").handler(
+            None, None
+        )
         self.assertEqual(
-            len({id(t.annotations) for t in coordinator.mcp_tools}),
-            len(coordinator.mcp_tools),
+            len({id(t.annotations) for t in rw_list.tools}),
+            len(rw_list.tools),
             "Each tool should have its own ToolAnnotations instance",
         )
-        for mcp_tool in coordinator.mcp_tools:
+        for mcp_tool in rw_list.tools:
             self.assertIsNotNone(mcp_tool.annotations)
             dumped = mcp_tool.annotations.model_dump(
                 by_alias=True, exclude_none=True
@@ -310,16 +316,16 @@ class TestAllowWriteConfiguration(unittest.TestCase):
     def test_credentials_scopes_respect_allow_write(self, mock_auth_default):
         """Tests that google.auth.default requests edit scope only when enabled."""
         mock_auth_default.return_value = (MagicMock(), "test-project")
+        manager = client._ClientManager()
 
-        client.set_allow_write(False)
-        client._CREDENTIALS = None
-        client._get_credentials()
+        manager.set_allow_write(False)
+        manager._get_credentials()
         mock_auth_default.assert_called_with(
             scopes=["https://www.googleapis.com/auth/analytics.readonly"]
         )
 
-        client.set_allow_write(True)
-        client._get_credentials()
+        manager.set_allow_write(True)
+        manager._get_credentials()
         mock_auth_default.assert_called_with(
             scopes=[
                 "https://www.googleapis.com/auth/analytics.readonly",

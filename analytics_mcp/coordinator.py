@@ -105,10 +105,6 @@ _WRITE_PERMISSION_DENIED_HINT = (
     " --client-id-file=YOUR_CLIENT_JSON_FILE"
 )
 
-tools: list[FunctionTool] = []
-tool_map: dict[str, FunctionTool] = {}
-mcp_tools: list[mcp_types.Tool] = []
-
 
 def sanitize_mcp_schema_properties(node: dict) -> None:
     """Ensure additionalProperties is a boolean value to satisfy certain MCP clients.
@@ -203,88 +199,88 @@ def _prepare_mcp_tools(
     return converted_tools
 
 
-def configure_server(allow_write: bool = False) -> None:
-    """Configures the MCP server tools and credentials based on write mode."""
-    global tools, tool_map, mcp_tools
+_READ_ONLY_MCP_TOOLS = _prepare_mcp_tools(read_only_tools)
+_WRITE_MCP_TOOLS = _prepare_mcp_tools(write_tools)
+
+
+def create_server(allow_write: bool = False) -> Server:
+    """Creates and configures an MCP Server instance."""
     set_allow_write(allow_write)
     active_tools = list(read_only_tools)
+    active_mcp_tools = list(_READ_ONLY_MCP_TOOLS)
     if allow_write:
         active_tools.extend(write_tools)
-    tools = active_tools
-    tool_map = {t.name: t for t in tools}
-    mcp_tools = _prepare_mcp_tools(tools)
+        active_mcp_tools.extend(_WRITE_MCP_TOOLS)
+    active_tool_map = {t.name: t for t in active_tools}
 
+    async def list_tools(
+        ctx=None,
+        params: mcp_types.PaginatedRequestParams | None = None,
+    ) -> mcp_types.ListToolsResult:
+        return mcp_types.ListToolsResult(tools=active_mcp_tools)
 
-# Initialize in read-only mode by default
-configure_server(allow_write=False)
-
-
-async def list_tools(
-    ctx=None,
-    params: mcp_types.PaginatedRequestParams | None = None,
-) -> mcp_types.ListToolsResult:
-    return mcp_types.ListToolsResult(tools=mcp_tools)
-
-
-async def call_mcp_tool(
-    ctx,
-    params: mcp_types.CallToolRequestParams,
-) -> mcp_types.CallToolResult:
-    name = params.name
-    arguments = params.arguments or {}
-    if name in tool_map:
-        tool = tool_map[name]
-        try:
-            adk_tool_response = await tool.run_async(
-                args=arguments,
-                tool_context=None,
-            )
-            # Serialize the ADK tool response to JSON for MCP response
-            response_text = json.dumps(adk_tool_response, indent=2)
-            # MCP expects a CallToolResult with mcp_types.Content parts
-            return mcp_types.CallToolResult(
-                content=[mcp_types.TextContent(type="text", text=response_text)]
-            )
-
-        except Exception as e:
-            print(
-                f"MCP Server: Error executing ADK tool '{name}': {e}",
-                file=sys.stderr,
-            )
-            error_msg = f"Failed to execute tool '{name}': {str(e)}"
-            if name in _WRITE_TOOL_NAMES and isinstance(
-                e, google_exceptions.Forbidden
-            ):
-                error_msg += _WRITE_PERMISSION_DENIED_HINT
-            # Return an error message in MCP format
-            error_text = json.dumps({"error": error_msg})
-            return mcp_types.CallToolResult(
-                content=[mcp_types.TextContent(type="text", text=error_text)],
-                is_error=True,
-            )
-
-    if name in _WRITE_TOOL_NAMES:
-        error_text = json.dumps(
-            {
-                "error": (
-                    f"Tool '{name}' is a write tool and is disabled by default."
-                    " Start the server with the --allow-write flag to enable"
-                    " write tools."
+    async def call_mcp_tool(
+        ctx,
+        params: mcp_types.CallToolRequestParams,
+    ) -> mcp_types.CallToolResult:
+        name = params.name
+        arguments = params.arguments or {}
+        if name in active_tool_map:
+            adk_tool = active_tool_map[name]
+            try:
+                adk_tool_response = await adk_tool.run_async(
+                    args=arguments,
+                    tool_context=None,
                 )
-            }
+                # Serialize the ADK tool response to JSON for MCP response
+                response_text = json.dumps(adk_tool_response, indent=2)
+                # MCP expects a CallToolResult with mcp_types.Content parts
+                return mcp_types.CallToolResult(
+                    content=[
+                        mcp_types.TextContent(type="text", text=response_text)
+                    ]
+                )
+
+            except Exception as e:
+                print(
+                    f"MCP Server: Error executing ADK tool '{name}': {e}",
+                    file=sys.stderr,
+                )
+                error_msg = f"Failed to execute tool '{name}': {str(e)}"
+                if name in _WRITE_TOOL_NAMES and isinstance(
+                    e, google_exceptions.Forbidden
+                ):
+                    error_msg += _WRITE_PERMISSION_DENIED_HINT
+                # Return an error message in MCP format
+                error_text = json.dumps({"error": error_msg})
+                return mcp_types.CallToolResult(
+                    content=[
+                        mcp_types.TextContent(type="text", text=error_text)
+                    ],
+                    is_error=True,
+                )
+
+        if name in _WRITE_TOOL_NAMES:
+            error_text = json.dumps(
+                {
+                    "error": (
+                        f"Tool '{name}' is a write tool and is disabled by"
+                        " default. Start the server with the --allow-write flag"
+                        " to enable write tools."
+                    )
+                }
+            )
+        else:
+            error_text = json.dumps(
+                {"error": f"Tool '{name}' not implemented by this server."}
+            )
+        return mcp_types.CallToolResult(
+            content=[mcp_types.TextContent(type="text", text=error_text)],
+            is_error=True,
         )
-    else:
-        error_text = json.dumps(
-            {"error": f"Tool '{name}' not implemented by this server."}
-        )
-    return mcp_types.CallToolResult(
-        content=[mcp_types.TextContent(type="text", text=error_text)],
-        is_error=True,
+
+    return Server(
+        name="Google Analytics MCP Server",
+        on_list_tools=list_tools,
+        on_call_tool=call_mcp_tool,
     )
-
-
-app = Server(
-    name="Google Analytics MCP Server",
-    on_list_tools=list_tools,
-    on_call_tool=call_mcp_tool,
-)

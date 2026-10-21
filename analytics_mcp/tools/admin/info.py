@@ -116,7 +116,7 @@ async def list_property_annotations(
 ) -> List[Dict[str, Any]]:
     """Returns annotations for a property.
 
-    Annotations are a feature that allows you to leave notes on GA4 for specific dates or periods.
+    Annotations are a feature that allows you to leave notes on Google Analytics for specific dates or periods.
     They are typically used to record service releases, marketing campaign launches or changes,
     and rapid traffic increases or decreases due to external factors.
 
@@ -153,9 +153,9 @@ async def create_property_annotation(
 ) -> Dict[str, Any]:
     """Creates a reporting data annotation for a property.
 
-    Annotations allow you to leave notes on GA4 for specific dates or date
-    ranges to record service releases, GTM container publishes, marketing
-    campaign launches, or traffic anomalies.
+    Annotations allow you to leave notes on Google Analytics for specific dates
+    or date ranges to record service releases, GTM container publishes,
+    marketing campaign launches, or traffic anomalies.
 
     Args:
         property_id: The Google Analytics property ID. Accepted formats are:
@@ -166,7 +166,8 @@ async def create_property_annotation(
           (e.g. '2026-10-21').
         color: Color used for displaying the annotation. Valid values are:
           'PURPLE', 'BROWN', 'BLUE', 'GREEN', 'RED', 'CYAN' ('ORANGE' is
-          reserved by GA4 for system-generated annotations). Defaults to 'BLUE'.
+          reserved by Google Analytics for system-generated annotations).
+          Defaults to 'BLUE'.
         description: Optional description or notes for the annotation (maximum
           150 characters).
         end_date: Optional end date in YYYY-MM-DD format (inclusive) when

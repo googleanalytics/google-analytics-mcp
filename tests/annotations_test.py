@@ -21,6 +21,7 @@ from analytics_mcp import coordinator, server
 from analytics_mcp.tools import client
 from analytics_mcp.tools.admin import info
 from google.analytics import admin_v1alpha
+from google.api_core import exceptions as google_exceptions
 from google.type import date_pb2
 from mcp import types as mcp_types
 
@@ -198,6 +199,7 @@ class TestCreatePropertyAnnotation(unittest.IsolatedAsyncioTestCase):
             ),
         )
         self.assertTrue(ro_call_res.is_error)
+        self.assertIn("--allow-write", ro_call_res.content[0].text)
 
         # Enable write mode and verify list_tools and call_mcp_tool
         coordinator.configure_server(allow_write=True)
@@ -218,6 +220,30 @@ class TestCreatePropertyAnnotation(unittest.IsolatedAsyncioTestCase):
         )
         self.assertFalse(rw_call_res.is_error)
         self.assertIn("GTM Release", rw_call_res.content[0].text)
+
+        # Verify 403 PermissionDenied on a write tool includes actionable scope hint
+        mock_client.create_reporting_data_annotation.side_effect = (
+            google_exceptions.PermissionDenied(
+                "Request had insufficient authentication scopes."
+            )
+        )
+        err_call_res = await coordinator.call_mcp_tool(
+            None,
+            mcp_types.CallToolRequestParams(
+                name="create_property_annotation",
+                arguments={
+                    "property_id": 12345,
+                    "title": "GTM Release",
+                    "start_date": "2026-10-21",
+                },
+            ),
+        )
+        self.assertTrue(err_call_res.is_error)
+        self.assertIn("analytics.edit", err_call_res.content[0].text)
+        self.assertIn(
+            "gcloud auth application-default login",
+            err_call_res.content[0].text,
+        )
         coordinator.configure_server(allow_write=False)
 
 

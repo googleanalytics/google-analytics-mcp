@@ -28,6 +28,7 @@ from mcp.server.lowlevel import Server
 # ADK Tool Imports
 from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.mcp_tool.conversion_utils import adk_to_mcp_tool_type
+from google.api_core import exceptions as google_exceptions
 
 from analytics_mcp.tools.admin.info import (
     get_account_summaries,
@@ -91,6 +92,17 @@ write_tools = [
 ]
 
 _READ_ONLY_TOOL_NAMES = {t.name for t in read_only_tools}
+_WRITE_TOOL_NAMES = {t.name for t in write_tools}
+_WRITE_PERMISSION_DENIED_HINT = (
+    " Hint: Write tools require the"
+    " 'https://www.googleapis.com/auth/analytics.edit' OAuth scope and at least"
+    " the Marketer or Editor role on the Google Analytics property. If using"
+    " Application Default Credentials (ADC), re-authenticate with: gcloud auth"
+    " application-default login --scopes="
+    "https://www.googleapis.com/auth/analytics.readonly,"
+    "https://www.googleapis.com/auth/analytics.edit,"
+    "https://www.googleapis.com/auth/cloud-platform"
+)
 
 tools: list[FunctionTool] = []
 tool_map: dict[str, FunctionTool] = {}
@@ -238,18 +250,32 @@ async def call_mcp_tool(
                 f"MCP Server: Error executing ADK tool '{name}': {e}",
                 file=sys.stderr,
             )
+            error_msg = f"Failed to execute tool '{name}': {str(e)}"
+            if name in _WRITE_TOOL_NAMES and isinstance(
+                e, google_exceptions.Forbidden
+            ):
+                error_msg += _WRITE_PERMISSION_DENIED_HINT
             # Return an error message in MCP format
-            error_text = json.dumps(
-                {"error": f"Failed to execute tool '{name}': {str(e)}"}
-            )
+            error_text = json.dumps({"error": error_msg})
             return mcp_types.CallToolResult(
                 content=[mcp_types.TextContent(type="text", text=error_text)],
                 is_error=True,
             )
 
-    error_text = json.dumps(
-        {"error": f"Tool '{name}' not implemented by this server."}
-    )
+    if name in _WRITE_TOOL_NAMES:
+        error_text = json.dumps(
+            {
+                "error": (
+                    f"Tool '{name}' is a write tool and is disabled by default."
+                    " Start the server with the --allow-write flag to enable"
+                    " write tools."
+                )
+            }
+        )
+    else:
+        error_text = json.dumps(
+            {"error": f"Tool '{name}' not implemented by this server."}
+        )
     return mcp_types.CallToolResult(
         content=[mcp_types.TextContent(type="text", text=error_text)],
         is_error=True,

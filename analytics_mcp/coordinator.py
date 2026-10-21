@@ -102,6 +102,7 @@ _WRITE_PERMISSION_DENIED_HINT = (
     "https://www.googleapis.com/auth/analytics.readonly,"
     "https://www.googleapis.com/auth/analytics.edit,"
     "https://www.googleapis.com/auth/cloud-platform"
+    " --client-id-file=YOUR_CLIENT_JSON_FILE"
 )
 
 tools: list[FunctionTool] = []

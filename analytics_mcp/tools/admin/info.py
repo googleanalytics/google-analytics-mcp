@@ -29,6 +29,9 @@ from analytics_mcp.tools.client import (
 from google.analytics import admin_v1beta, admin_v1alpha
 from google.type import date_pb2
 
+# Note: ReportingDataAnnotation.Color.ORANGE (7) is reserved by Google Analytics
+# exclusively for system-generated annotations and cannot be used when creating
+# annotations via the API.
 _VALID_ANNOTATION_COLORS = (
     "PURPLE",
     "BROWN",
@@ -37,6 +40,8 @@ _VALID_ANNOTATION_COLORS = (
     "RED",
     "CYAN",
 )
+_MAX_ANNOTATION_TITLE_LENGTH = 60
+_MAX_ANNOTATION_DESCRIPTION_LENGTH = 150
 
 
 def _parse_annotation_date(
@@ -158,12 +163,14 @@ async def create_property_annotation(
         property_id: The Google Analytics property ID. Accepted formats are:
           - A number
           - A string consisting of 'properties/' followed by a number
-        title: Human-readable title for the annotation.
+        title: Human-readable title for the annotation (maximum 60 characters).
         start_date: The date (or start date of a range) in YYYY-MM-DD format
           (e.g. '2026-10-21').
         color: Color used for displaying the annotation. Valid values are:
-          'PURPLE', 'BROWN', 'BLUE', 'GREEN', 'RED', 'CYAN'. Defaults to 'BLUE'.
-        description: Optional description or notes for the annotation.
+          'PURPLE', 'BROWN', 'BLUE', 'GREEN', 'RED', 'CYAN' ('ORANGE' is
+          reserved by GA4 for system-generated annotations). Defaults to 'BLUE'.
+        description: Optional description or notes for the annotation (maximum
+          150 characters).
         end_date: Optional end date in YYYY-MM-DD format (inclusive) when
           creating a date-range annotation. Must be greater than or equal to
           start_date. If omitted, a single-date annotation is created on
@@ -171,6 +178,21 @@ async def create_property_annotation(
     """
     if not title or not title.strip():
         raise ValueError("title must be a non-empty string.")
+    stripped_title = title.strip()
+    if len(stripped_title) > _MAX_ANNOTATION_TITLE_LENGTH:
+        raise ValueError(
+            f"title must be at most {_MAX_ANNOTATION_TITLE_LENGTH} characters "
+            f"(got {len(stripped_title)})."
+        )
+
+    if (
+        description is not None
+        and len(description) > _MAX_ANNOTATION_DESCRIPTION_LENGTH
+    ):
+        raise ValueError(
+            f"description must be at most {_MAX_ANNOTATION_DESCRIPTION_LENGTH} "
+            f"characters (got {len(description)})."
+        )
 
     normalized_color = (color or "").strip().upper()
     if normalized_color not in _VALID_ANNOTATION_COLORS:
@@ -182,7 +204,7 @@ async def create_property_annotation(
     parsed_start, proto_start = _parse_annotation_date(start_date)
 
     annotation = admin_v1alpha.ReportingDataAnnotation(
-        title=title.strip(),
+        title=stripped_title,
         color=getattr(
             admin_v1alpha.ReportingDataAnnotation.Color, normalized_color
         ),

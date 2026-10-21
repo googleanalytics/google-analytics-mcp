@@ -126,6 +126,25 @@ class TestCreatePropertyAnnotation(unittest.IsolatedAsyncioTestCase):
                 start_date="2026-10-21",
             )
 
+        with self.assertRaisesRegex(
+            ValueError, "title must be at most 60 characters"
+        ):
+            await info.create_property_annotation(
+                property_id=12345,
+                title="a" * 61,
+                start_date="2026-10-21",
+            )
+
+        with self.assertRaisesRegex(
+            ValueError, "description must be at most 150 characters"
+        ):
+            await info.create_property_annotation(
+                property_id=12345,
+                title="Release",
+                start_date="2026-10-21",
+                description="a" * 151,
+            )
+
         with self.assertRaisesRegex(ValueError, "Invalid color"):
             await info.create_property_annotation(
                 property_id=12345,

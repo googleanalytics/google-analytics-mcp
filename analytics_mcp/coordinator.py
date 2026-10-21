@@ -34,7 +34,9 @@ from analytics_mcp.tools.admin.info import (
     list_google_ads_links,
     get_property_details,
     list_property_annotations,
+    create_property_annotation,
 )
+from analytics_mcp.tools.client import set_allow_write
 from analytics_mcp.tools.reporting.core import (
     run_report,
     _run_report_description,
@@ -70,8 +72,8 @@ run_conversions_report_with_description.description = (
     _run_conversions_report_description()
 )
 
-# Instantiate the ADK tools
-tools = [
+# Instantiate the read-only ADK tools
+read_only_tools = [
     FunctionTool(get_account_summaries),
     FunctionTool(list_google_ads_links),
     FunctionTool(get_property_details),
@@ -83,13 +85,16 @@ tools = [
     run_conversions_report_with_description,
 ]
 
-tool_map = {t.name: t for t in tools}
+# Instantiate the write ADK tools (only enabled when --allow-write is set)
+write_tools = [
+    FunctionTool(create_property_annotation),
+]
 
-app = Server(
-    name="Google Analytics MCP Server",
-)
+_READ_ONLY_TOOL_NAMES = {t.name for t in read_only_tools}
 
-mcp_tools = [adk_to_mcp_tool_type(tool) for tool in tools]
+tools: list[FunctionTool] = []
+tool_map: dict[str, FunctionTool] = {}
+mcp_tools: list[mcp_types.Tool] = []
 
 
 def sanitize_mcp_schema_properties(node: dict) -> None:
@@ -117,48 +122,103 @@ def sanitize_mcp_schema_properties(node: dict) -> None:
                     sanitize_mcp_schema_properties(element)
 
 
-# Update the inputSchema for tools that do not have parameters.
-# TODO: This is a bug in the ADK and can be removed once it is fixed.
-# https://github.com/google/adk-python/issues/948
-for tool in mcp_tools:
-    # Check if inputSchema is empty
-    if tool.inputSchema == {}:
-        tool.inputSchema = {"type": "object", "properties": {}}
-    # Fix union type hints generating spurious "type": "null"
-    for prop in tool.inputSchema.get("properties", {}).values():
-        if "anyOf" in prop and prop.get("type") == "null":
-            del prop["type"]
+def _prepare_mcp_tools(
+    adk_tools: list[FunctionTool],
+) -> list[mcp_types.Tool]:
+    """Converts ADK tools to MCP tools and sanitizes their schemas."""
+    converted_tools = [adk_to_mcp_tool_type(t) for t in adk_tools]
 
-    # Ensure additionalProperties is compatible with all MCP clients
-    sanitize_mcp_schema_properties(tool.inputSchema)
+    # Update the input_schema for tools that do not have parameters.
+    # TODO: This is a bug in the ADK and can be removed once it is fixed.
+    # https://github.com/google/adk-python/issues/948
+    for mcp_tool in converted_tools:
+        # Check if input_schema is empty
+        if mcp_tool.input_schema == {}:
+            mcp_tool.input_schema = {"type": "object", "properties": {}}
+        # Fix union type hints generating spurious "type": "null"
+        for prop in mcp_tool.input_schema.get("properties", {}).values():
+            if "anyOf" in prop and prop.get("type") == "null":
+                del prop["type"]
 
-    # Explicitly mark required fields for reporting tools to guide the LLM
-    if tool.name == "run_report":
-        tool.inputSchema["required"] = [
-            "property_id",
-            "date_ranges",
-            "dimensions",
-            "metrics",
-        ]
-    elif tool.name == "run_realtime_report":
-        tool.inputSchema["required"] = ["property_id", "dimensions", "metrics"]
-    elif tool.name == "run_conversions_report":
-        tool.inputSchema["required"] = [
-            "property_id",
-            "date_ranges",
-            "dimensions",
-            "metrics",
-            "conversion_spec",
-        ]
+        # Ensure additionalProperties is compatible with all MCP clients
+        sanitize_mcp_schema_properties(mcp_tool.input_schema)
+
+        # Attach MCP ToolAnnotations so hosts know which tools are read-only
+        if mcp_tool.name in _READ_ONLY_TOOL_NAMES:
+            mcp_tool.annotations = mcp_types.ToolAnnotations(
+                read_only_hint=True,
+                destructive_hint=False,
+                open_world_hint=True,
+            )
+        else:
+            mcp_tool.annotations = mcp_types.ToolAnnotations(
+                read_only_hint=False,
+                destructive_hint=False,
+                idempotent_hint=False,
+                open_world_hint=True,
+            )
+
+        # Explicitly mark required fields for reporting tools to guide the LLM
+        if mcp_tool.name == "run_report":
+            mcp_tool.input_schema["required"] = [
+                "property_id",
+                "date_ranges",
+                "dimensions",
+                "metrics",
+            ]
+        elif mcp_tool.name == "run_realtime_report":
+            mcp_tool.input_schema["required"] = [
+                "property_id",
+                "dimensions",
+                "metrics",
+            ]
+        elif mcp_tool.name == "run_conversions_report":
+            mcp_tool.input_schema["required"] = [
+                "property_id",
+                "date_ranges",
+                "dimensions",
+                "metrics",
+                "conversion_spec",
+            ]
+        elif mcp_tool.name == "create_property_annotation":
+            mcp_tool.input_schema["required"] = [
+                "property_id",
+                "title",
+                "start_date",
+            ]
+
+    return converted_tools
 
 
-@app.list_tools()
-async def list_tools() -> list[mcp_types.Tool]:
-    return mcp_tools
+def configure_server(allow_write: bool = False) -> None:
+    """Configures the MCP server tools and credentials based on write mode."""
+    global tools, tool_map, mcp_tools
+    set_allow_write(allow_write)
+    active_tools = list(read_only_tools)
+    if allow_write:
+        active_tools.extend(write_tools)
+    tools = active_tools
+    tool_map = {t.name: t for t in tools}
+    mcp_tools = _prepare_mcp_tools(tools)
 
 
-@app.call_tool()
-async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
+# Initialize in read-only mode by default
+configure_server(allow_write=False)
+
+
+async def list_tools(
+    ctx=None,
+    params: mcp_types.PaginatedRequestParams | None = None,
+) -> mcp_types.ListToolsResult:
+    return mcp_types.ListToolsResult(tools=mcp_tools)
+
+
+async def call_mcp_tool(
+    ctx,
+    params: mcp_types.CallToolRequestParams,
+) -> mcp_types.CallToolResult:
+    name = params.name
+    arguments = params.arguments or {}
     if name in tool_map:
         tool = tool_map[name]
         try:
@@ -168,8 +228,10 @@ async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
             )
             # Serialize the ADK tool response to JSON for MCP response
             response_text = json.dumps(adk_tool_response, indent=2)
-            # MCP expects a list of mcp_types.Content parts
-            return [mcp_types.TextContent(type="text", text=response_text)]
+            # MCP expects a CallToolResult with mcp_types.Content parts
+            return mcp_types.CallToolResult(
+                content=[mcp_types.TextContent(type="text", text=response_text)]
+            )
 
         except Exception as e:
             print(
@@ -180,9 +242,22 @@ async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
             error_text = json.dumps(
                 {"error": f"Failed to execute tool '{name}': {str(e)}"}
             )
-            return [mcp_types.TextContent(type="text", text=error_text)]
+            return mcp_types.CallToolResult(
+                content=[mcp_types.TextContent(type="text", text=error_text)],
+                is_error=True,
+            )
 
     error_text = json.dumps(
         {"error": f"Tool '{name}' not implemented by this server."}
     )
-    return [mcp_types.TextContent(type="text", text=error_text)]
+    return mcp_types.CallToolResult(
+        content=[mcp_types.TextContent(type="text", text=error_text)],
+        is_error=True,
+    )
+
+
+app = Server(
+    name="Google Analytics MCP Server",
+    on_list_tools=list_tools,
+    on_call_tool=call_mcp_tool,
+)

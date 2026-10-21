@@ -51,9 +51,22 @@ _READ_ONLY_ANALYTICS_SCOPE = (
     "https://www.googleapis.com/auth/analytics.readonly"
 )
 
+# Edit scope for Analytics Admin API write operations.
+_EDIT_ANALYTICS_SCOPE = "https://www.googleapis.com/auth/analytics.edit"
+
 # Lock to ensure client and credential creation is thread-safe
 _client_lock = threading.Lock()
 _CREDENTIALS = None
+_ALLOW_WRITE = False
+
+
+def set_allow_write(allow_write: bool) -> None:
+    """Configures whether write scopes should be requested for credentials."""
+    global _ALLOW_WRITE, _CREDENTIALS
+    with _client_lock:
+        if _ALLOW_WRITE != allow_write:
+            _ALLOW_WRITE = allow_write
+            _CREDENTIALS = None
 
 
 @contextlib.contextmanager
@@ -79,10 +92,11 @@ def _get_credentials():
     global _CREDENTIALS
     # Expected to be called under _client_lock
     if _CREDENTIALS is None:
+        scopes = [_READ_ONLY_ANALYTICS_SCOPE]
+        if _ALLOW_WRITE:
+            scopes.append(_EDIT_ANALYTICS_SCOPE)
         with prevent_stdio_inheritance():
-            _CREDENTIALS, _ = google.auth.default(
-                scopes=[_READ_ONLY_ANALYTICS_SCOPE]
-            )
+            _CREDENTIALS, _ = google.auth.default(scopes=scopes)
     return _CREDENTIALS
 
 

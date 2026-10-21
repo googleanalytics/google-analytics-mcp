@@ -16,14 +16,32 @@
 
 """Entry point for the Google Analytics MCP server."""
 
+import argparse
 import asyncio
 import sys
+from typing import Sequence
 import analytics_mcp.coordinator as coordinator
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.models import InitializationOptions
 import mcp.server.stdio
 import mcp.server
 import traceback
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parses command-line arguments for the MCP server."""
+    parser = argparse.ArgumentParser(
+        description="Google Analytics MCP Server",
+    )
+    parser.add_argument(
+        "--allow-write",
+        action="store_true",
+        help=(
+            "Enable tools that create or modify Google Analytics resources "
+            "(requires https://www.googleapis.com/auth/analytics.edit scope)."
+        ),
+    )
+    return parser.parse_args(argv)
 
 
 async def run_server_async():
@@ -45,8 +63,10 @@ async def run_server_async():
         )
 
 
-def run_server():
+def run_server(argv: Sequence[str] | None = None):
     """Synchronous wrapper to run the async MCP server."""
+    args = parse_args(argv)
+    coordinator.configure_server(allow_write=args.allow_write)
     asyncio.run(run_server_async())
 
 

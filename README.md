@@ -40,6 +40,8 @@ to provide several
 
 - `run_report`: Runs a Google Analytics report using the Data API.
 - `run_funnel_report`: Runs a Google Analytics funnel report using the Data API.
+- - `run_conversions_report`: Runs a Google Analytics conversions report
+  (ad costs, conversions, ROAS and attribution models) using the Data API.
 - `get_custom_dimensions_and_metrics`: Retrieves the custom dimensions and
   metrics for a specific property.
 

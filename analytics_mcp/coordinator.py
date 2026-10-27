@@ -19,10 +19,12 @@ server.
 """
 
 # MCP Server Imports
+import contextlib
 import json
 import sys
 from json import tool
 from mcp import types as mcp_types  # Use alias to avoid conflict
+from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.lowlevel import Server
 
 # ADK Tool Imports
@@ -37,7 +39,11 @@ from analytics_mcp.tools.admin.info import (
     list_property_annotations,
     create_property_annotation,
 )
-from analytics_mcp.tools.client import set_allow_write
+from analytics_mcp.tools.client import (
+    set_allow_write,
+    set_require_request_credentials,
+    use_request_access_token,
+)
 from analytics_mcp.tools.reporting.core import (
     run_report,
     _run_report_description,
@@ -203,9 +209,34 @@ _READ_ONLY_MCP_TOOLS = _prepare_mcp_tools(read_only_tools)
 _WRITE_MCP_TOOLS = _prepare_mcp_tools(write_tools)
 
 
-def create_server(allow_write: bool = False) -> Server:
+def _extract_bearer_token(ctx) -> str | None:
+    """Extracts an OAuth2 Bearer token from the MCP request context if present."""
+    auth_token = get_access_token()
+    if auth_token and auth_token.token:
+        return auth_token.token
+
+    request = getattr(ctx, "request", None)
+    headers = getattr(request, "headers", None)
+    if headers is None:
+        return None
+
+    auth_header = headers.get("authorization") or headers.get("Authorization")
+    if not isinstance(auth_header, str):
+        return None
+
+    parts = auth_header.strip().split(None, 1)
+    if len(parts) == 2 and parts[0].lower() == "bearer" and parts[1].strip():
+        return parts[1].strip()
+    return None
+
+
+def create_server(
+    allow_write: bool = False,
+    require_request_credentials: bool = False,
+) -> Server:
     """Creates and configures an MCP Server instance."""
     set_allow_write(allow_write)
+    set_require_request_credentials(require_request_credentials)
     active_tools = list(read_only_tools)
     active_mcp_tools = list(_READ_ONLY_MCP_TOOLS)
     if allow_write:
@@ -227,11 +258,35 @@ def create_server(allow_write: bool = False) -> Server:
         arguments = params.arguments or {}
         if name in active_tool_map:
             adk_tool = active_tool_map[name]
-            try:
-                adk_tool_response = await adk_tool.run_async(
-                    args=arguments,
-                    tool_context=None,
+            bearer_token = _extract_bearer_token(ctx)
+            if require_request_credentials and not bearer_token:
+                error_text = json.dumps(
+                    {
+                        "error": (
+                            f"Failed to execute tool '{name}': Missing OAuth "
+                            "access token. Provide an 'Authorization: Bearer "
+                            "<token>' header or enable OAuth on the server."
+                        )
+                    }
                 )
+                return mcp_types.CallToolResult(
+                    content=[
+                        mcp_types.TextContent(type="text", text=error_text)
+                    ],
+                    is_error=True,
+                )
+
+            cred_ctx = use_request_access_token(
+                bearer_token,
+                allow_write=allow_write,
+                require_request_credentials=require_request_credentials,
+            )
+            try:
+                with cred_ctx:
+                    adk_tool_response = await adk_tool.run_async(
+                        args=arguments,
+                        tool_context=None,
+                    )
                 # Serialize the ADK tool response to JSON for MCP response
                 response_text = json.dumps(adk_tool_response, indent=2)
                 # MCP expects a CallToolResult with mcp_types.Content parts

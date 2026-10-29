@@ -247,10 +247,18 @@ class GoogleOAuthProvider(
             return RedirectResponse(url=redirect_url, status_code=302)
 
         mcp_code = secrets.token_urlsafe(32)
-        expires_in = int(
-            token_data.get("expires_in", _DEFAULT_TOKEN_TTL_SECONDS)
-        )
-        scopes = list(pending.params.scopes or self.google_scopes)
+        try:
+            expires_in = int(
+                token_data.get("expires_in", _DEFAULT_TOKEN_TTL_SECONDS)
+            )
+        except (TypeError, ValueError):
+            expires_in = _DEFAULT_TOKEN_TTL_SECONDS
+
+        granted_scope_str = token_data.get("scope")
+        if isinstance(granted_scope_str, str) and granted_scope_str.strip():
+            scopes = granted_scope_str.split()
+        else:
+            scopes = list(pending.params.scopes or self.google_scopes)
         _bounded_set(
             self._auth_codes,
             mcp_code,
@@ -375,6 +383,13 @@ class GoogleOAuthProvider(
         scopes: List[str],
     ) -> OAuthToken:
         """Exchanges a Google refresh token for a fresh Google access token."""
+        if scopes and not set(scopes).issubset(set(refresh_token.scopes)):
+            raise TokenError(
+                error="invalid_scope",
+                error_description=(
+                    "Requested scopes exceed those granted to the refresh token."
+                ),
+            )
         try:
             async with httpx.AsyncClient() as http_client:
                 response = await http_client.post(
@@ -403,9 +418,12 @@ class GoogleOAuthProvider(
             )
 
         access_token_str = token_data["access_token"]
-        expires_in = int(
-            token_data.get("expires_in", _DEFAULT_TOKEN_TTL_SECONDS)
-        )
+        try:
+            expires_in = int(
+                token_data.get("expires_in", _DEFAULT_TOKEN_TTL_SECONDS)
+            )
+        except (TypeError, ValueError):
+            expires_in = _DEFAULT_TOKEN_TTL_SECONDS
         effective_scopes = scopes or refresh_token.scopes
 
         _bounded_set(
@@ -441,17 +459,22 @@ class GoogleOAuthProvider(
                 if response.status_code != 200:
                     return None
                 data = response.json()
-        except (httpx.HTTPError, ValueError):
+                expires_in = int(data.get("expires_in", 0))
+        except (httpx.HTTPError, TypeError, ValueError):
             return None
 
-        expires_in = int(data.get("expires_in", 0))
         if expires_in <= 0:
+            return None
+
+        # Prevent confused-deputy attacks by ensuring the token was issued for
+        # this server's configured Google OAuth Client ID.
+        if self.google_client_id not in (data.get("aud"), data.get("azp")):
             return None
 
         token_scopes = str(data.get("scope", "")).split()
         access_token = AccessToken(
             token=token,
-            client_id=data.get("aud") or self.google_client_id,
+            client_id=self.google_client_id,
             scopes=token_scopes,
             expires_at=int(time.time()) + expires_in,
             resource=self.resource_server_url,

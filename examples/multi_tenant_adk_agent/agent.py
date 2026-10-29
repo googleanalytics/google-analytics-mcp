@@ -35,8 +35,11 @@ from google.adk.auth.auth_credential import (
 from google.adk.tools.mcp_tool import McpToolset, StreamableHTTPConnectionParams
 
 ANALYTICS_MCP_URL = os.environ.get(
-    "ANALYTICS_MCP_URL", "http://127.0.0.1:8000/mcp"
+    "ANALYTICS_MCP_URL", "http://127.0.0.1:8080/mcp"
 )
+ANALYTICS_MCP_ALLOW_WRITE = os.environ.get(
+    "ANALYTICS_MCP_ALLOW_WRITE", ""
+).lower() in ("1", "true", "yes")
 GOOGLE_OAUTH_CLIENT_ID = os.environ.get(
     "GOOGLE_OAUTH_CLIENT_ID", "YOUR_GOOGLE_OAUTH_CLIENT_ID"
 )
@@ -86,7 +89,9 @@ def create_google_analytics_toolset(
     )
 
 
-ga_mcp_toolset = create_google_analytics_toolset()
+ga_mcp_toolset = create_google_analytics_toolset(
+    allow_write=ANALYTICS_MCP_ALLOW_WRITE
+)
 
 # Note: You can combine multiple MCP servers from different providers (e.g.,
 # Google Analytics MCP + Meta Ads MCP) in the same agent. Each McpToolset

@@ -316,6 +316,22 @@ class TestGoogleOAuthProvider(unittest.IsolatedAsyncioTestCase):
                 params={"access_token": "ya29.stateless-token"},
             )
 
+        # Verify tokens issued to a different Google OAuth client_id are rejected
+        wrong_aud_response = MagicMock()
+        wrong_aud_response.status_code = 200
+        wrong_aud_response.json.return_value = {
+            "aud": "other-unrelated-client-id",
+            "scope": "https://www.googleapis.com/auth/analytics.readonly",
+            "expires_in": "1800",
+        }
+        mock_http_client.get.return_value = wrong_aud_response
+        with patch(
+            "analytics_mcp.oauth.httpx.AsyncClient",
+            return_value=mock_client_cm,
+        ):
+            rejected = await provider.load_access_token("ya29.other-app-token")
+            self.assertIsNone(rejected)
+
     def test_server_cli_and_build_http_app(self):
         """Tests CLI argument parsing and Starlette HTTP app construction."""
         args = server.parse_args(

@@ -88,7 +88,7 @@ from examples.multi_tenant_adk_agent.agent import create_google_analytics_toolse
 # 1. Google Analytics MCP (authenticates with Google OAuth)
 ga_mcp = create_google_analytics_toolset(
     mcp_url="https://ga-mcp.example.com/mcp",
-    client_id= GOOGLE_CLIENT_ID,
+    client_id=GOOGLE_CLIENT_ID,
     client_secret=GOOGLE_CLIENT_SECRET,
 )
 
@@ -140,4 +140,6 @@ export ANALYTICS_MCP_ISSUER_URL="https://analytics-mcp.yourdomain.com"
 pipx run analytics-mcp --transport http --oauth --host 0.0.0.0 --port 8080
 ```
 
-When the MCP client connects to `http://127.0.0.1:8080/mcp`, `analytics-mcp` serves `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server`, registers the client dynamically at `/register`, and automatically opens the end user's browser to Google's OAuth consent screen.
+When the MCP client connects to `http://127.0.0.1:8080/mcp` (or `https://analytics-mcp.yourdomain.com/mcp`), `analytics-mcp` serves `/.well-known/oauth-protected-resource/mcp` and `/.well-known/oauth-authorization-server`, registers the client dynamically at `/register`, and automatically opens the end user's browser to Google's OAuth consent screen.
+
+> **Local Testing Tip**: When testing `--oauth` locally without `ANALYTICS_MCP_ISSUER_URL`, configure your MCP client URL with `http://127.0.0.1:8080/mcp` (not `http://localhost:8080/mcp`) so it matches the server's default OAuth Protected Resource metadata URL per RFC 9728.

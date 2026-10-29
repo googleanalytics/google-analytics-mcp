@@ -22,6 +22,7 @@ import os
 import sys
 import traceback
 from typing import Sequence
+from urllib.parse import urlparse
 
 import analytics_mcp.coordinator as coordinator
 from analytics_mcp.oauth import GoogleOAuthProvider, build_oauth_components
@@ -29,6 +30,7 @@ import mcp.server
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.models import InitializationOptions
 import mcp.server.stdio
+from mcp.server.transport_security import TransportSecuritySettings
 import uvicorn
 
 
@@ -63,8 +65,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--port",
         type=int,
-        default=8000,
-        help="Port to bind when --transport=http (default: 8000).",
+        default=int(os.environ.get("PORT") or "8000"),
+        help=(
+            "Port to bind when --transport=http "
+            "(default: PORT env var or 8000)."
+        ),
     )
     parser.add_argument(
         "--stateless-http",
@@ -102,6 +107,11 @@ def build_http_app(args: argparse.Namespace):
     token_verifier = None
     oauth_provider = None
     custom_routes = None
+    transport_security = None
+
+    explicit_issuer_url = (
+        args.issuer_url or os.environ.get("ANALYTICS_MCP_ISSUER_URL") or ""
+    ).strip()
 
     if args.oauth:
         client_id = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "").strip()
@@ -114,11 +124,7 @@ def build_http_app(args: argparse.Namespace):
         default_host = (
             "127.0.0.1" if args.host in ("0.0.0.0", "::") else args.host
         )
-        issuer_url = (
-            args.issuer_url
-            or os.environ.get("ANALYTICS_MCP_ISSUER_URL")
-            or f"http://{default_host}:{args.port}"
-        )
+        issuer_url = explicit_issuer_url or f"http://{default_host}:{args.port}"
         oauth_provider = GoogleOAuthProvider(
             google_client_id=client_id,
             google_client_secret=client_secret,
@@ -129,9 +135,29 @@ def build_http_app(args: argparse.Namespace):
             oauth_provider
         )
 
+    if explicit_issuer_url and args.host in ("127.0.0.1", "localhost", "::1"):
+        parsed_issuer = urlparse(explicit_issuer_url)
+        if parsed_issuer.netloc:
+            transport_security = TransportSecuritySettings(
+                enable_dns_rebinding_protection=True,
+                allowed_hosts=[
+                    "127.0.0.1:*",
+                    "localhost:*",
+                    "[::1]:*",
+                    parsed_issuer.netloc,
+                ],
+                allowed_origins=[
+                    "http://127.0.0.1:*",
+                    "http://localhost:*",
+                    "http://[::1]:*",
+                    f"{parsed_issuer.scheme}://{parsed_issuer.netloc}",
+                ],
+            )
+
     return app.streamable_http_app(
         host=args.host,
         stateless_http=args.stateless_http,
+        transport_security=transport_security,
         auth=auth_settings,
         token_verifier=token_verifier,
         auth_server_provider=oauth_provider,

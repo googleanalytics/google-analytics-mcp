@@ -17,6 +17,8 @@
 import asyncio
 from typing import Any, Dict, List
 
+from analytics_mcp.tools.reporting.pagination import validate_pagination
+
 from analytics_mcp.tools.reporting.metadata import (
     get_date_ranges_hints,
     get_dimension_filter_hints,
@@ -138,6 +140,8 @@ async def run_report(
           report uses the property's default currency.
         return_property_quota: Whether to return property quota in the response.
     """
+    validate_pagination(limit, offset)
+
     request = data_v1beta.RunReportRequest(
         property=construct_property_rn(property_id),
         dimensions=[
@@ -161,9 +165,9 @@ async def run_report(
             data_v1beta.OrderBy(order_by) for order_by in order_bys
         ]
 
-    if limit:
+    if limit is not None:
         request.limit = limit
-    if offset:
+    if offset is not None:
         request.offset = offset
     if currency_code:
         request.currency_code = currency_code

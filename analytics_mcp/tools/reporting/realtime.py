@@ -17,6 +17,8 @@
 import asyncio
 from typing import Any, Dict, List
 
+from analytics_mcp.tools.reporting.pagination import validate_pagination
+
 from analytics_mcp.tools.utils import (
     construct_property_rn,
     proto_to_dict,
@@ -131,6 +133,8 @@ async def run_realtime_report(
           https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
         return_property_quota: Whether to return realtime property quota in the response.
     """
+    validate_pagination(limit, offset)
+
     request = data_v1beta.RunRealtimeReportRequest(
         property=construct_property_rn(property_id),
         dimensions=[
@@ -153,9 +157,9 @@ async def run_realtime_report(
             data_v1beta.OrderBy(order_by) for order_by in order_bys
         ]
 
-    if limit:
+    if limit is not None:
         request.limit = limit
-    if offset:
+    if offset is not None:
         request.offset = offset
 
     def _sync_call():

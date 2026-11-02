@@ -51,3 +51,6 @@ dev = ["black", "nox >=2026.2.9, <2027"]
 [build-system]
 requires = ["setuptools>=82.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["analytics_mcp*"]

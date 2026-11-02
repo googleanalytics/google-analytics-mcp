@@ -433,11 +433,15 @@ class TestGoogleOAuthProvider(unittest.IsolatedAsyncioTestCase):
 
     def test_server_cli_and_build_http_app(self):
         """Tests CLI argument parsing, IPv6 host handling, and PORT resilience."""
-        # Non-numeric Kubernetes-style PORT env var must not crash parse_args
+        # Non-numeric Kubernetes-style PORT env var must warn and not crash
         with patch.dict("os.environ", {"PORT": "tcp://10.0.0.1:80"}):
-            stdio_args = server.parse_args([])
+            with self.assertLogs("analytics_mcp.server", level="WARNING") as cm:
+                stdio_args = server.parse_args([])
             self.assertEqual(stdio_args.transport, "stdio")
             self.assertEqual(stdio_args.port, 8000)
+            self.assertTrue(
+                any("Invalid PORT environment variable" in m for m in cm.output)
+            )
 
         args = server.parse_args(
             [

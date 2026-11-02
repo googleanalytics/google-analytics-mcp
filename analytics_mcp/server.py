@@ -18,6 +18,7 @@
 
 import argparse
 import asyncio
+import logging
 import os
 import sys
 import traceback
@@ -33,6 +34,8 @@ import mcp.server.stdio
 from mcp.server.transport_security import TransportSecuritySettings
 import uvicorn
 
+logger = logging.getLogger(__name__)
+
 
 def _default_port_from_env() -> int:
     """Resolves a valid numeric PORT env var, falling back to 8000."""
@@ -44,6 +47,11 @@ def _default_port_from_env() -> int:
                 return parsed
         except ValueError:
             pass
+        logger.warning(
+            "Invalid PORT environment variable %r; falling back to default "
+            "port 8000.",
+            raw_port,
+        )
     return 8000
 
 
@@ -85,7 +93,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--port",
         type=int,
-        default=_default_port_from_env(),
+        default=None,
         help=(
             "Port to bind when --transport=http "
             "(default: PORT env var or 8000)."
@@ -119,7 +127,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "ANALYTICS_MCP_ISSUER_URL or http://<host>:<port>)."
         ),
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.port is None:
+        args.port = _default_port_from_env()
+    return args
 
 
 def build_http_app(args: argparse.Namespace):

@@ -32,6 +32,9 @@ to provide several
 - `get_property_details`: Returns details about a property.
 - `list_google_ads_links`: Returns a list of links to Google Ads accounts for
   a property.
+- `list_property_annotations`: Returns annotations for a property.
+- `create_property_annotation`: Creates an annotation for a property (requires
+  passing the `--allow-write` flag and the `analytics.edit` scope).
 
 ### Manage property configuration (opt-in writes) ✏️
 
@@ -40,8 +43,8 @@ to provide several
 - `create_custom_dimension`: Creates a custom dimension on a property.
 - `create_key_event`: Marks an event as a key event on a property.
 
-The two `create_*` tools are only registered when
-`ANALYTICS_MCP_ENABLE_WRITES=true` is set (see
+The two `create_*` tools are only registered when the server is started with
+the `--allow-write` flag (see
 [Optional: enable write tools](#optional-enable-write-tools)). They only return
 a preview of the change unless called with `confirm=true`, and they require the
 Editor role on the property.
@@ -97,6 +100,13 @@ Credentials must include the Google Analytics read-only scope:
 https://www.googleapis.com/auth/analytics.readonly
 ```
 
+If you plan to enable write tools (such as `create_property_annotation`) using
+the `--allow-write` flag, your credentials must also include the edit scope:
+
+```
+https://www.googleapis.com/auth/analytics.edit
+```
+
 Check out
 [Manage OAuth Clients](https://support.google.com/cloud/answer/15549257)
 for how to create an OAuth client.
@@ -131,15 +141,14 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
 #### Optional: enable write tools
 
 The `create_custom_dimension` and `create_key_event` tools are hidden by
-default. To enable them, set `ANALYTICS_MCP_ENABLE_WRITES=true` in the server's
-environment and make sure your credentials also include the Google Analytics
-edit scope:
+default. To enable them, start the server with the `--allow-write` flag and
+make sure your credentials also include the Google Analytics edit scope:
 
 ```
 https://www.googleapis.com/auth/analytics.edit
 ```
 
-Setting the environment variable alone is not enough for user credentials:
+Passing the flag alone is not enough for user credentials:
 regenerate your ADC file by re-running the login with both scopes, for example:
 
 ```shell
@@ -170,9 +179,6 @@ the Editor role on the property.
     [project ID](https://support.google.com/googleapi/answer/7014113) of your
     Google Cloud project.
 
-    To enable the optional write tools, also add
-    `"ANALYTICS_MCP_ENABLE_WRITES": "true"` to the `env` object.
-
     ```json
     {
       "mcpServers": {
@@ -181,12 +187,15 @@ the Editor role on the property.
           "args": ["run", "analytics-mcp"],
           "env": {
             "GOOGLE_APPLICATION_CREDENTIALS": "PATH_TO_CREDENTIALS_JSON",
-            "GOOGLE_PROJECT_ID": "YOUR_PROJECT_ID"
+            "GOOGLE_CLOUD_PROJECT": "YOUR_PROJECT_ID"
           }
         }
       }
     }
     ```
+
+    To enable write tools (e.g. `create_property_annotation`), append
+    `"--allow-write"` to `"args"`: `["run", "analytics-mcp", "--allow-write"]`.
 
 ### Configure Claude Code
 
@@ -201,12 +210,12 @@ the Editor role on the property.
     claude mcp add analytics-mcp \
       --scope user \
       -e "GOOGLE_APPLICATION_CREDENTIALS=PATH_TO_CREDENTIALS_JSON" \
-      -e "GOOGLE_PROJECT_ID=YOUR_PROJECT_ID" \
+      -e "GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID" \
       -- pipx run analytics-mcp
     ```
 
-    To enable the optional write tools, add
-    `-e "ANALYTICS_MCP_ENABLE_WRITES=true"` to the command.
+    To enable the optional write tools, append `--allow-write` to the end of the
+    command: `-- pipx run analytics-mcp --allow-write`.
 
 ## Try it out 🥼
 

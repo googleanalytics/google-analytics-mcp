@@ -122,7 +122,7 @@ class TestCreateCustomDimension(unittest.IsolatedAsyncioTestCase):
             )
         )
         self.assertEqual(result["status"], "permission_denied")
-        self.assertIn("ANALYTICS_MCP_ENABLE_WRITES", result["hint"])
+        self.assertIn("--allow-write", result["hint"])
 
     async def test_permission_denied_role_hint(self):
         result = await self._confirmed_with_error(

@@ -15,8 +15,8 @@
 """Tools for managing Google Analytics property configuration.
 
 The create_* tools are write operations. They are only registered when the
-user opts in with ANALYTICS_MCP_ENABLE_WRITES (see coordinator.py) and they
-only preview the change unless called with confirm=True.
+user opts in with the --allow-write flag (see coordinator.py) and they only
+preview the change unless called with confirm=True.
 """
 
 import asyncio
@@ -71,8 +71,8 @@ async def _run_write(
     except gexc.PermissionDenied as e:
         if "scope" in e.message.lower():
             hint = (
-                "Credentials lack the analytics.edit scope. Set "
-                "ANALYTICS_MCP_ENABLE_WRITES=true and re-run "
+                "Credentials lack the analytics.edit scope. Start the "
+                "server with --allow-write and re-run "
                 "`gcloud auth application-default login` with the edit "
                 "scope (see README)."
             )

@@ -99,7 +99,7 @@ ga_mcp_toolset = create_google_analytics_toolset(
 # prompts the end user to sign in to each provider separately and sends each
 # token only to its corresponding MCP server.
 root_agent = LlmAgent(
-    model="gemini-2.5-flash",
+    model="gemini-3.8-flash",
     name="google_analytics_assistant",
     instruction=(
         "You are a helpful data analyst assistant that can access the user's "

@@ -173,7 +173,7 @@ meta_mcp = McpToolset(
 # ADK prompts the user to sign into Google for GA tools and Meta for Meta tools,
 # and routes each user token exclusively to its respective MCP server.
 marketing_agent = LlmAgent(
-    model="gemini-2.5-flash",
+    model="gemini-3.8-flash",
     name="cross_channel_marketing_analyst",
     instruction="Analyze performance across Google Analytics and Meta Ads.",
     tools=[ga_mcp, meta_mcp],

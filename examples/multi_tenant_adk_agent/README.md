@@ -5,9 +5,8 @@ This example shows how a third-party developer can host `analytics-mcp` in
 their own Google account in the browser**—never touching bearer tokens,
 `gcloud`, or JSON keyfiles.
 
-It also shows how to combine **Google Analytics MCP** alongside other
-third-party MCP servers (such as **Meta Ads MCP**, HubSpot, or Shopify) in a
-single cross-channel agent.
+It also shows how to combine **Google Analytics MCP** alongside other MCP
+servers (such as a CRM or e-commerce server) in a single agent.
 
 ---
 
@@ -115,7 +114,7 @@ adk web
 
 ---
 
-## Combining Google Analytics MCP with Other MCP Servers (e.g., Meta Ads)
+## Combining Google Analytics MCP with Other MCP Servers
 
 Because OAuth is configured on each `McpToolset` instance independently, a
 third-party developer can combine multiple MCP servers from different providers
@@ -146,37 +145,37 @@ ga_mcp = create_google_analytics_toolset(
     client_secret=GOOGLE_CLIENT_SECRET,
 )
 
-# 2. Meta Ads MCP (authenticates with Meta OAuth)
-meta_mcp = McpToolset(
+# 2. Another MCP server (authenticates with its own OAuth provider)
+crm_mcp = McpToolset(
     connection_params=StreamableHTTPConnectionParams(
-        url="https://meta-mcp.example.com/mcp"
+        url="https://crm-mcp.example.com/mcp"
     ),
     auth_scheme=OAuth2(
         flows=OAuthFlows(
             authorizationCode=OAuthFlowAuthorizationCode(
-                authorizationUrl="https://www.facebook.com/v19.0/dialog/oauth",
-                tokenUrl="https://graph.facebook.com/v19.0/oauth/access_token",
-                scopes={"ads_read": "Read your Meta Ads performance data"},
+                authorizationUrl="https://auth.example.com/oauth/authorize",
+                tokenUrl="https://auth.example.com/oauth/token",
+                scopes={"crm.read": "Read your CRM data"},
             )
         )
     ),
     auth_credential=AuthCredential(
         auth_type=AuthCredentialTypes.OAUTH2,
         oauth2=OAuth2Auth(
-            client_id=META_APP_ID,
-            client_secret=META_APP_SECRET,
+            client_id=CRM_CLIENT_ID,
+            client_secret=CRM_CLIENT_SECRET,
         ),
     ),
 )
 
 # Single agent with both MCP toolsets:
-# ADK prompts the user to sign into Google for GA tools and Meta for Meta tools,
-# and routes each user token exclusively to its respective MCP server.
-marketing_agent = LlmAgent(
+# ADK prompts the user to sign in to each provider separately and routes each
+# user token exclusively to its respective MCP server.
+analyst_agent = LlmAgent(
     model="gemini-3.8-flash",
-    name="cross_channel_marketing_analyst",
-    instruction="Analyze performance across Google Analytics and Meta Ads.",
-    tools=[ga_mcp, meta_mcp],
+    name="cross_platform_analyst",
+    instruction="Analyze performance across Google Analytics and CRM data.",
+    tools=[ga_mcp, crm_mcp],
 )
 ```
 

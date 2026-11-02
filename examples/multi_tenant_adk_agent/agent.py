@@ -93,11 +93,10 @@ ga_mcp_toolset = create_google_analytics_toolset(
     allow_write=ANALYTICS_MCP_ALLOW_WRITE
 )
 
-# Note: You can combine multiple MCP servers from different providers (e.g.,
-# Google Analytics MCP + Meta Ads MCP) in the same agent. Each McpToolset
-# carries its own independent `auth_scheme` and `auth_credential`, so ADK
-# prompts the end user to sign in to each provider separately and sends each
-# token only to its corresponding MCP server.
+# Note: You can combine multiple MCP servers from different OAuth providers in
+# the same agent. Each McpToolset carries its own independent `auth_scheme` and
+# `auth_credential`, so ADK prompts the end user to sign in to each provider
+# separately and sends each token only to its corresponding MCP server.
 root_agent = LlmAgent(
     model="gemini-3.8-flash",
     name="google_analytics_assistant",

@@ -193,9 +193,9 @@ pipx run analytics-mcp \
 - **Agent Framework OAuth (e.g. Google ADK)**: Configure per-user Google OAuth
   on `McpToolset` so end users are automatically prompted with a **Sign in**
   button in the chat UI, and can even combine Google Analytics MCP alongside
-  other third-party MCP servers (such as Meta Ads) in the same agent. Paired
-  with `--stateless-http`, this mode is completely stateless and horizontally
-  scalable across multiple replicas.
+  other MCP servers in the same agent. Paired with `--stateless-http`, this
+  mode is completely stateless and horizontally scalable across multiple
+  replicas.
 - **Native MCP OAuth 2.1 Server (`--oauth`)**: Pass `--oauth` (with
   `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and optional
   `ANALYTICS_MCP_ISSUER_URL` set) to enable the built-in MCP OAuth 2.1

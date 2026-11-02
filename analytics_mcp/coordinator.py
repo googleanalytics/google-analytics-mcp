@@ -210,15 +210,24 @@ _WRITE_MCP_TOOLS = _prepare_mcp_tools(write_tools)
 
 def _extract_bearer_token(ctx) -> str | None:
     """Extracts an OAuth2 Bearer token from the MCP request context if present."""
+    # Path 1: When built-in MCP OAuth (--oauth) is enabled, the MCP SDK's
+    # AuthContextMiddleware validates the token and stores it in a ContextVar
+    # accessible via get_access_token().
     auth_token = get_access_token()
     if auth_token and auth_token.token:
         return auth_token.token
 
+    # Path 2: In pass-through HTTP mode (--transport=http without --oauth),
+    # an upstream agent framework (e.g. Google ADK) handles OAuth and forwards
+    # the user's token in the raw HTTP Authorization header. In stdio mode,
+    # ctx.request is None, so this returns None cleanly.
     request = getattr(ctx, "request", None)
     headers = getattr(request, "headers", None)
     if headers is None:
         return None
 
+    # Check both lowercase (ASGI/Starlette Headers) and capitalized (plain dict
+    # test doubles) header keys, then parse RFC 6750 "Bearer <token>" syntax.
     auth_header = headers.get("authorization") or headers.get("Authorization")
     if not isinstance(auth_header, str):
         return None

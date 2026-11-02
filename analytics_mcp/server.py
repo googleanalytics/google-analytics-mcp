@@ -94,7 +94,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--stateless-http",
         action="store_true",
-        help="Enable stateless Streamable HTTP mode when --transport=http.",
+        help=(
+            "Handle each HTTP request independently without tracking in-memory "
+            "MCP sessions across requests (when --transport=http). Enable this "
+            "for multi-tenant, load-balanced, or serverless deployments (such "
+            "as Cloud Run) where requests may scale to zero or route across "
+            "multiple instances."
+        ),
     )
     parser.add_argument(
         "--oauth",

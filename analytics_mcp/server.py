@@ -34,6 +34,26 @@ from mcp.server.transport_security import TransportSecuritySettings
 import uvicorn
 
 
+def _default_port_from_env() -> int:
+    """Resolves a valid numeric PORT env var, falling back to 8000."""
+    raw_port = (os.environ.get("PORT") or "").strip()
+    if raw_port:
+        try:
+            parsed = int(raw_port)
+            if 1 <= parsed <= 65535:
+                return parsed
+        except ValueError:
+            pass
+    return 8000
+
+
+def _format_url_host(host: str) -> str:
+    """Wraps bare IPv6 host literals in brackets for URL construction."""
+    if ":" in host and not host.startswith("["):
+        return f"[{host}]"
+    return host
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parses command-line arguments for the MCP server."""
     parser = argparse.ArgumentParser(
@@ -65,7 +85,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--port",
         type=int,
-        default=int(os.environ.get("PORT") or "8000"),
+        default=_default_port_from_env(),
         help=(
             "Port to bind when --transport=http "
             "(default: PORT env var or 8000)."
@@ -124,7 +144,8 @@ def build_http_app(args: argparse.Namespace):
         default_host = (
             "127.0.0.1" if args.host in ("0.0.0.0", "::") else args.host
         )
-        issuer_url = explicit_issuer_url or f"http://{default_host}:{args.port}"
+        url_host = _format_url_host(default_host)
+        issuer_url = explicit_issuer_url or f"http://{url_host}:{args.port}"
         oauth_provider = GoogleOAuthProvider(
             google_client_id=client_id,
             google_client_secret=client_secret,
@@ -190,8 +211,10 @@ def run_server(argv: Sequence[str] | None = None):
     args = parse_args(argv)
     if args.transport == "http":
         http_app = build_http_app(args)
+        url_host = _format_url_host(args.host)
         print(
-            f"Starting MCP Streamable HTTP Server on http://{args.host}:{args.port}/mcp",
+            f"Starting MCP Streamable HTTP Server on "
+            f"http://{url_host}:{args.port}/mcp",
             file=sys.stderr,
         )
         uvicorn.run(http_app, host=args.host, port=args.port)
@@ -203,11 +226,9 @@ if __name__ == "__main__":
     try:
         run_server()
     except KeyboardInterrupt:
-        print("\nMCP Server (stdio) stopped by user.", file=sys.stderr)
+        print("\nMCP Server stopped by user.", file=sys.stderr)
     except Exception:
-        import traceback
-
-        print("MCP Server (stdio) encountered an error:", file=sys.stderr)
+        print("MCP Server encountered an error:", file=sys.stderr)
         traceback.print_exc()
     finally:
-        print("MCP Server (stdio) process exiting.", file=sys.stderr)
+        print("MCP Server process exiting.", file=sys.stderr)

@@ -85,20 +85,19 @@ def use_request_access_token(
 ):
     """Binds per-request OAuth2 credentials and policy to the current context."""
     req_token = _request_require_credentials.set(require_request_credentials)
-    cred_token = None
+    creds = (
+        oauth2_credentials.Credentials(
+            token=access_token,
+            scopes=get_required_scopes(allow_write=allow_write),
+        )
+        if access_token
+        else None
+    )
+    cred_token = _request_credentials.set(creds)
     try:
-        if access_token:
-            creds = oauth2_credentials.Credentials(
-                token=access_token,
-                scopes=get_required_scopes(allow_write=allow_write),
-            )
-            cred_token = _request_credentials.set(creds)
-        else:
-            creds = None
         yield creds
     finally:
-        if cred_token is not None:
-            _request_credentials.reset(cred_token)
+        _request_credentials.reset(cred_token)
         _request_require_credentials.reset(req_token)
 
 

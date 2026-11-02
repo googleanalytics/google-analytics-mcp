@@ -186,13 +186,16 @@ server-side Application Default Credentials), start the server with
 `--transport http`:
 
 ```shell
-pipx run analytics-mcp --transport http --stateless-http --host 0.0.0.0 --port 8080
+pipx run analytics-mcp \
+  --transport http --stateless-http --host 0.0.0.0 --port 8080
 ```
 
 - **Agent Framework OAuth (e.g. Google ADK)**: Configure per-user Google OAuth
   on `McpToolset` so end users are automatically prompted with a **Sign in**
   button in the chat UI, and can even combine Google Analytics MCP alongside
-  other third-party MCP servers (such as Meta Ads) in the same agent.
+  other third-party MCP servers (such as Meta Ads) in the same agent. Paired
+  with `--stateless-http`, this mode is completely stateless and horizontally
+  scalable across multiple replicas.
 - **Native MCP OAuth 2.1 Server (`--oauth`)**: Pass `--oauth` (with
   `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and optional
   `ANALYTICS_MCP_ISSUER_URL` set) to enable the built-in MCP OAuth 2.1
@@ -203,8 +206,13 @@ pipx run analytics-mcp --transport http --stateless-http --host 0.0.0.0 --port 8
   export GOOGLE_OAUTH_CLIENT_SECRET="your-client-secret"
   export ANALYTICS_MCP_ISSUER_URL="https://analytics-mcp.yourdomain.com"
 
-  pipx run analytics-mcp --transport http --oauth --host 0.0.0.0 --port 8080
+  pipx run analytics-mcp \
+    --transport http --stateless-http --oauth --host 0.0.0.0 --port 8080
   ```
+
+  Note: The built-in `--oauth` provider stores dynamic client registrations,
+  pending authorization state, and refresh tokens in process memory (run as a
+  single instance or with sticky sessions; restarts require re-authentication).
 
 See the complete walkthrough, Dockerfile, and runnable agent code in
 [`examples/multi_tenant_adk_agent/README.md`](examples/multi_tenant_adk_agent/README.md).

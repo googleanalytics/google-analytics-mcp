@@ -16,6 +16,7 @@
 
 from collections import OrderedDict
 from dataclasses import dataclass
+import hashlib
 import secrets
 import time
 from typing import List, Optional, Tuple
@@ -63,6 +64,11 @@ def _bounded_set(store: OrderedDict, key: str, value) -> None:
     store[key] = value
     while len(store) > _MAX_STORED_ENTRIES:
         store.popitem(last=False)
+
+
+def _token_subject(token: str) -> str:
+    """Derives a deterministic, non-reversible principal subject per token."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 @dataclass
@@ -341,6 +347,7 @@ class GoogleOAuthProvider(
                 expires_at=now + expires_in,
                 resource=authorization_code.resource
                 or self.resource_server_url,
+                subject=_token_subject(access_token_str),
             ),
         )
 
@@ -390,16 +397,20 @@ class GoogleOAuthProvider(
                     "Requested scopes exceed those granted to the refresh token."
                 ),
             )
+        form_data = {
+            "client_id": self.google_client_id,
+            "client_secret": self.google_client_secret,
+            "refresh_token": refresh_token.token,
+            "grant_type": "refresh_token",
+        }
+        if scopes:
+            form_data["scope"] = " ".join(scopes)
+
         try:
             async with httpx.AsyncClient() as http_client:
                 response = await http_client.post(
                     GOOGLE_TOKEN_URL,
-                    data={
-                        "client_id": self.google_client_id,
-                        "client_secret": self.google_client_secret,
-                        "refresh_token": refresh_token.token,
-                        "grant_type": "refresh_token",
-                    },
+                    data=form_data,
                 )
                 token_data = response.json()
         except (httpx.HTTPError, ValueError) as exc:
@@ -435,15 +446,34 @@ class GoogleOAuthProvider(
                 scopes=effective_scopes,
                 expires_at=int(time.time()) + expires_in,
                 resource=refresh_token.resource or self.resource_server_url,
+                subject=_token_subject(access_token_str),
             ),
         )
+
+        returned_refresh_token = (
+            token_data.get("refresh_token") or refresh_token.token
+        )
+        if returned_refresh_token != refresh_token.token:
+            self._refresh_tokens.pop(refresh_token.token, None)
+            _bounded_set(
+                self._refresh_tokens,
+                returned_refresh_token,
+                RefreshToken(
+                    token=returned_refresh_token,
+                    client_id=client.client_id,
+                    scopes=refresh_token.scopes,
+                    resource=(
+                        refresh_token.resource or self.resource_server_url
+                    ),
+                ),
+            )
 
         return OAuthToken(
             access_token=access_token_str,
             token_type="Bearer",
             expires_in=expires_in,
             scope=" ".join(effective_scopes),
-            refresh_token=refresh_token.token,
+            refresh_token=returned_refresh_token,
         )
 
     async def _introspect_google_token(
@@ -452,9 +482,9 @@ class GoogleOAuthProvider(
         """Verifies a Google OAuth access token via Google's tokeninfo endpoint."""
         try:
             async with httpx.AsyncClient() as http_client:
-                response = await http_client.get(
+                response = await http_client.post(
                     GOOGLE_TOKENINFO_URL,
-                    params={"access_token": token},
+                    data={"access_token": token},
                 )
                 if response.status_code != 200:
                     return None
@@ -472,12 +502,14 @@ class GoogleOAuthProvider(
             return None
 
         token_scopes = str(data.get("scope", "")).split()
+        subject = data.get("sub") or _token_subject(token)
         access_token = AccessToken(
             token=token,
             client_id=self.google_client_id,
             scopes=token_scopes,
             expires_at=int(time.time()) + expires_in,
             resource=self.resource_server_url,
+            subject=subject,
         )
         _bounded_set(self._access_tokens, token, access_token)
         return access_token
@@ -505,7 +537,7 @@ class GoogleOAuthProvider(
             async with httpx.AsyncClient() as http_client:
                 await http_client.post(
                     GOOGLE_REVOKE_URL,
-                    params={"token": token.token},
+                    data={"token": token.token},
                 )
         except httpx.HTTPError:
             pass

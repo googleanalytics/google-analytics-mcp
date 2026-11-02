@@ -139,6 +139,19 @@ class TestMultiTenantCredentials(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(client.MissingCredentialsError):
             client.create_admin_api_client()
 
+        # Nested use_request_access_token(None) clears outer request credentials
+        with client.use_request_access_token("outer-token"):
+            self.assertIsNotNone(client._request_credentials.get())
+            with client.use_request_access_token(
+                None, require_request_credentials=True
+            ):
+                self.assertIsNone(client._request_credentials.get())
+                with self.assertRaises(client.MissingCredentialsError):
+                    client.create_admin_api_client()
+            self.assertEqual(
+                client._request_credentials.get().token, "outer-token"
+            )
+
     @patch("analytics_mcp.tools.client.google.auth.default")
     @patch(
         "analytics_mcp.tools.client.admin_v1beta.AnalyticsAdminServiceClient"
@@ -294,7 +307,7 @@ class TestGoogleOAuthProvider(unittest.IsolatedAsyncioTestCase):
             "expires_in": "1800",
         }
         mock_http_client = AsyncMock()
-        mock_http_client.get.return_value = fake_response
+        mock_http_client.post.return_value = fake_response
         mock_client_cm = AsyncMock()
         mock_client_cm.__aenter__.return_value = mock_http_client
 
@@ -302,18 +315,32 @@ class TestGoogleOAuthProvider(unittest.IsolatedAsyncioTestCase):
             "analytics_mcp.oauth.httpx.AsyncClient",
             return_value=mock_client_cm,
         ):
-            loaded_access = await provider.load_access_token(
-                "ya29.stateless-token"
+            loaded_a = await provider.load_access_token(
+                "ya29.stateless-token-a"
             )
-            self.assertIsNotNone(loaded_access)
-            self.assertEqual(loaded_access.token, "ya29.stateless-token")
+            loaded_b = await provider.load_access_token(
+                "ya29.stateless-token-b"
+            )
+            self.assertIsNotNone(loaded_a)
+            self.assertIsNotNone(loaded_b)
+            self.assertEqual(loaded_a.token, "ya29.stateless-token-a")
             self.assertEqual(
-                loaded_access.scopes,
+                loaded_a.scopes,
                 ["https://www.googleapis.com/auth/analytics.readonly"],
             )
-            mock_http_client.get.assert_awaited_once_with(
+            # Distinct introspected tokens must never share the same subject
+            self.assertIsNotNone(loaded_a.subject)
+            self.assertNotEqual(loaded_a.subject, loaded_b.subject)
+            mock_http_client.post.assert_any_await(
                 oauth.GOOGLE_TOKENINFO_URL,
-                params={"access_token": "ya29.stateless-token"},
+                data={"access_token": "ya29.stateless-token-a"},
+            )
+
+            # Verify revoke_token passes token in POST body (never query params)
+            await provider.revoke_token(loaded_a)
+            mock_http_client.post.assert_any_await(
+                oauth.GOOGLE_REVOKE_URL,
+                data={"token": "ya29.stateless-token-a"},
             )
 
         # Verify tokens issued to a different Google OAuth client_id are rejected
@@ -324,7 +351,7 @@ class TestGoogleOAuthProvider(unittest.IsolatedAsyncioTestCase):
             "scope": "https://www.googleapis.com/auth/analytics.readonly",
             "expires_in": "1800",
         }
-        mock_http_client.get.return_value = wrong_aud_response
+        mock_http_client.post.return_value = wrong_aud_response
         with patch(
             "analytics_mcp.oauth.httpx.AsyncClient",
             return_value=mock_client_cm,
@@ -332,8 +359,86 @@ class TestGoogleOAuthProvider(unittest.IsolatedAsyncioTestCase):
             rejected = await provider.load_access_token("ya29.other-app-token")
             self.assertIsNone(rejected)
 
+    async def test_refresh_token_rotation_and_scope_narrowing(self):
+        """Tests that exchange_refresh_token forwards scopes and rotates refresh tokens."""
+        provider = oauth.GoogleOAuthProvider(
+            google_client_id="google-client-id",
+            google_client_secret="google-client-secret",
+            issuer_url="http://127.0.0.1:8080",
+            allow_write=True,
+        )
+        mcp_client = OAuthClientInformationFull(
+            client_id="mcp-test-client",
+            redirect_uris=[AnyUrl("http://localhost:3000/callback")],
+        )
+        await provider.register_client(mcp_client)
+        old_refresh = oauth.RefreshToken(
+            token="1//old-refresh-token",
+            client_id="mcp-test-client",
+            scopes=[
+                "https://www.googleapis.com/auth/analytics.readonly",
+                "https://www.googleapis.com/auth/analytics.edit",
+            ],
+            resource="http://127.0.0.1:8080/mcp",
+        )
+        provider._refresh_tokens[old_refresh.token] = old_refresh
+
+        fake_response = MagicMock()
+        fake_response.status_code = 200
+        fake_response.json.return_value = {
+            "access_token": "ya29.refreshed-access",
+            "refresh_token": "1//rotated-refresh-token",
+            "expires_in": 3600,
+        }
+        mock_http_client = AsyncMock()
+        mock_http_client.post.return_value = fake_response
+        mock_client_cm = AsyncMock()
+        mock_client_cm.__aenter__.return_value = mock_http_client
+
+        narrowed = ["https://www.googleapis.com/auth/analytics.readonly"]
+        with patch(
+            "analytics_mcp.oauth.httpx.AsyncClient",
+            return_value=mock_client_cm,
+        ):
+            new_token = await provider.exchange_refresh_token(
+                mcp_client, old_refresh, narrowed
+            )
+
+        self.assertEqual(new_token.access_token, "ya29.refreshed-access")
+        self.assertEqual(new_token.refresh_token, "1//rotated-refresh-token")
+        self.assertEqual(
+            new_token.scope,
+            "https://www.googleapis.com/auth/analytics.readonly",
+        )
+        self.assertIsNone(
+            await provider.load_refresh_token(
+                mcp_client, "1//old-refresh-token"
+            )
+        )
+        self.assertIsNotNone(
+            await provider.load_refresh_token(
+                mcp_client, "1//rotated-refresh-token"
+            )
+        )
+        mock_http_client.post.assert_awaited_once_with(
+            oauth.GOOGLE_TOKEN_URL,
+            data={
+                "client_id": "google-client-id",
+                "client_secret": "google-client-secret",
+                "refresh_token": "1//old-refresh-token",
+                "grant_type": "refresh_token",
+                "scope": "https://www.googleapis.com/auth/analytics.readonly",
+            },
+        )
+
     def test_server_cli_and_build_http_app(self):
-        """Tests CLI argument parsing and Starlette HTTP app construction."""
+        """Tests CLI argument parsing, IPv6 host handling, and PORT resilience."""
+        # Non-numeric Kubernetes-style PORT env var must not crash parse_args
+        with patch.dict("os.environ", {"PORT": "tcp://10.0.0.1:80"}):
+            stdio_args = server.parse_args([])
+            self.assertEqual(stdio_args.transport, "stdio")
+            self.assertEqual(stdio_args.port, 8000)
+
         args = server.parse_args(
             [
                 "--transport",
@@ -370,3 +475,10 @@ class TestGoogleOAuthProvider(unittest.IsolatedAsyncioTestCase):
             self.assertIn("/authorize", route_paths)
             self.assertIn("/token", route_paths)
             self.assertIn("/register", route_paths)
+
+            # Verify IPv6 loopback (--host ::1 --oauth) wraps brackets cleanly
+            ipv6_args = server.parse_args(
+                ["--transport", "http", "--host", "::1", "--oauth"]
+            )
+            ipv6_app = server.build_http_app(ipv6_args)
+            self.assertIsNotNone(ipv6_app)

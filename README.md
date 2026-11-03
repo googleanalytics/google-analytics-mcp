@@ -1,4 +1,4 @@
-# Google Analytics MCP Server (Experimental)
+# Google Analytics MCP Server
 
 [![PyPI version](https://img.shields.io/pypi/v/analytics-mcp.svg)](https://pypi.org/project/analytics-mcp/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -177,6 +177,45 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
       -e "GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID" \
       -- pipx run analytics-mcp
     ```
+
+### Multi-tenant HTTP & End-User OAuth 🌐
+
+To host `analytics-mcp` as a shared multi-tenant HTTP service (where each end
+user signs in with their own Google account via OAuth 2.0 rather than using
+server-side Application Default Credentials), start the server with
+`--transport http`:
+
+```shell
+pipx run analytics-mcp \
+  --transport http --stateless-http --host 0.0.0.0 --port 8080
+```
+
+- **Agent Framework OAuth (e.g. Google ADK)**: Configure per-user Google OAuth
+  on `McpToolset` so end users are automatically prompted with a **Sign in**
+  button in the chat UI, and can even combine Google Analytics MCP alongside
+  other MCP servers in the same agent. Paired with `--stateless-http`, this
+  mode is completely stateless and horizontally scalable across multiple
+  replicas.
+- **Native MCP OAuth 2.1 Server (`--oauth`)**: Pass `--oauth` (with
+  `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and optional
+  `ANALYTICS_MCP_ISSUER_URL` set) to enable the built-in MCP OAuth 2.1
+  Authorization Server:
+
+  ```shell
+  export GOOGLE_OAUTH_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+  export GOOGLE_OAUTH_CLIENT_SECRET="your-client-secret"
+  export ANALYTICS_MCP_ISSUER_URL="https://analytics-mcp.yourdomain.com"
+
+  pipx run analytics-mcp \
+    --transport http --stateless-http --oauth --host 0.0.0.0 --port 8080
+  ```
+
+  Note: The built-in `--oauth` provider stores dynamic client registrations,
+  pending authorization state, and refresh tokens in process memory (run as a
+  single instance or with sticky sessions; restarts require re-authentication).
+
+See the complete walkthrough, Dockerfile, and runnable agent code in
+[`examples/multi_tenant_adk_agent/README.md`](examples/multi_tenant_adk_agent/README.md).
 
 ## Try it out 🥼
 

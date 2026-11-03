@@ -257,3 +257,7 @@ Here are some sample prompts to get you started:
 ## Contributing ✨
 
 Contributions welcome! See the [Contributing Guide](CONTRIBUTING.md).
+
+## Troubleshooting
+
+See the [Troubleshooting Guide](TROUBLESHOOTING.md) for common issues and workarounds.

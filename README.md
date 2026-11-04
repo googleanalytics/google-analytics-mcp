@@ -8,7 +8,7 @@
 [![GitHub forks](https://img.shields.io/github/forks/googleanalytics/google-analytics-mcp?style=social)](https://github.com/googleanalytics/google-analytics-mcp/network/members)
 [![YouTube Video Views](https://img.shields.io/youtube/views/PT4wGPxWiRQ)](https://www.youtube.com/watch?v=PT4wGPxWiRQ)
 
-This repo contains the source code for running a local
+This repo contains the source code for running a local or remote multi-tenant
 [MCP](https://modelcontextprotocol.io) server that interacts with APIs for
 [Google Analytics](https://support.google.com/analytics).
 
@@ -178,7 +178,7 @@ Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
       -- pipx run analytics-mcp
     ```
 
-### Multi-tenant HTTP & End-User OAuth 🌐
+## Multi-tenant HTTP & End-User OAuth 🌐
 
 To host `analytics-mcp` as a shared multi-tenant HTTP service (where each end
 user signs in with their own Google account via OAuth 2.0 rather than using
@@ -196,10 +196,10 @@ pipx run analytics-mcp \
   other MCP servers in the same agent. Paired with `--stateless-http`, this
   mode is completely stateless and horizontally scalable across multiple
   replicas.
-- **Native MCP OAuth 2.1 Server (`--oauth`)**: Pass `--oauth` (with
-  `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and optional
-  `ANALYTICS_MCP_ISSUER_URL` set) to enable the built-in MCP OAuth 2.1
-  Authorization Server:
+- **Native MCP OAuth 2.1 Server (`--oauth`)**: Pass `--oauth` or set
+  `ANALYTICS_MCP_OAUTH=true` (with `GOOGLE_OAUTH_CLIENT_ID`,
+  `GOOGLE_OAUTH_CLIENT_SECRET`, and optional `ANALYTICS_MCP_ISSUER_URL`) to
+  enable the built-in MCP OAuth 2.1 Authorization Server:
 
   ```shell
   export GOOGLE_OAUTH_CLIENT_ID="your-client-id.apps.googleusercontent.com"
@@ -214,7 +214,74 @@ pipx run analytics-mcp \
   pending authorization state, and refresh tokens in process memory (run as a
   single instance or with sticky sessions; restarts require re-authentication).
 
-See the complete walkthrough, Dockerfile, and runnable agent code in
+### Deploy with Docker & Google Cloud Run 🐳
+
+The repository includes a root [`Dockerfile`](Dockerfile) that runs
+`analytics-mcp` in stateless HTTP mode on `$PORT` (default `8080`) as a
+non-root user. Server flags can be configured entirely through environment
+variables:
+
+| Environment Variable | Description |
+| --- | --- |
+| `ANALYTICS_MCP_STATELESS_HTTP` | Stateless HTTP mode (`true` by default in `Dockerfile`). |
+| `ANALYTICS_MCP_ALLOW_WRITE` | Set to `true` to enable write tools (equivalent to `--allow-write`). |
+| `ANALYTICS_MCP_OAUTH` | Set to `true` to enable built-in MCP OAuth 2.1 (equivalent to `--oauth`). |
+| `GOOGLE_OAUTH_CLIENT_ID` | Google OAuth 2.0 Web Client ID (required when `ANALYTICS_MCP_OAUTH=true`). |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Google OAuth 2.0 Web Client Secret (inject via Secret Manager in production). |
+| `ANALYTICS_MCP_ISSUER_URL` | Public HTTPS base URL of the service when `ANALYTICS_MCP_OAUTH=true`. |
+
+- **Stateless HTTP mode on Cloud Run** (for upstream agents like Google ADK that
+  forward per-user Bearer tokens):
+
+  ```shell
+  gcloud run deploy analytics-mcp \
+    --source . \
+    --region us-central1 \
+    --allow-unauthenticated
+  ```
+
+  *(`--allow-unauthenticated` exposes the public HTTPS endpoint at the Cloud Run
+  layer while `analytics-mcp` itself strictly requires a Google OAuth Bearer
+  token on every tool request.)*
+
+- **Native MCP OAuth 2.1 mode on Cloud Run** (storing the client secret in
+  Google Cloud Secret Manager so it is injected as an environment variable at
+  runtime rather than stored in files or source control):
+
+  ```shell
+  # 1. Store your Google OAuth Client Secret in Secret Manager once
+  printf "%s" "YOUR_CLIENT_SECRET" | \
+    gcloud secrets create analytics-mcp-oauth-secret --data-file=-
+
+  # 2. Deploy to Cloud Run (--max-instances=1 keeps in-memory OAuth state consistent)
+  gcloud run deploy analytics-mcp \
+    --source . \
+    --region us-central1 \
+    --allow-unauthenticated \
+    --max-instances 1 \
+    --set-env-vars "ANALYTICS_MCP_OAUTH=true,GOOGLE_OAUTH_CLIENT_ID=YOUR_CLIENT_ID.apps.googleusercontent.com" \
+    --set-secrets "GOOGLE_OAUTH_CLIENT_SECRET=analytics-mcp-oauth-secret:latest"
+
+  # 3. Set ANALYTICS_MCP_ISSUER_URL to the deployed Cloud Run URL and add
+  #    <SERVICE_URL>/oauth/callback to Authorized redirect URIs in Cloud Console
+  SERVICE_URL=$(gcloud run services describe analytics-mcp --region us-central1 --format="value(status.url)")
+  gcloud run services update analytics-mcp \
+    --region us-central1 \
+    --update-env-vars "ANALYTICS_MCP_ISSUER_URL=${SERVICE_URL}"
+  ```
+
+- **Local Docker**:
+
+  ```shell
+  docker build -t analytics-mcp .
+  docker run --rm -p 8080:8080 \
+    -e ANALYTICS_MCP_OAUTH=true \
+    -e GOOGLE_OAUTH_CLIENT_ID="your-client-id.apps.googleusercontent.com" \
+    -e GOOGLE_OAUTH_CLIENT_SECRET="your-client-secret" \
+    analytics-mcp
+  ```
+
+See the complete multi-tenant walkthrough and runnable ADK agent code in
 [`examples/multi_tenant_adk_agent/README.md`](examples/multi_tenant_adk_agent/README.md).
 
 ## Try it out 🥼

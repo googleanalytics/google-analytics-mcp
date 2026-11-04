@@ -36,6 +36,28 @@ import uvicorn
 
 logger = logging.getLogger(__name__)
 
+_TRUTHY_ENV_VALUES = ("1", "true", "yes", "on")
+_FALSY_ENV_VALUES = ("0", "false", "no", "off")
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    """Resolves a boolean environment variable, falling back to default."""
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return default
+    lowered = raw.lower()
+    if lowered in _TRUTHY_ENV_VALUES:
+        return True
+    if lowered in _FALSY_ENV_VALUES:
+        return False
+    logger.warning(
+        "Invalid boolean environment variable %s=%r; falling back to %s.",
+        name,
+        raw,
+        default,
+    )
+    return default
+
 
 def _default_port_from_env() -> int:
     """Resolves a valid numeric PORT env var, falling back to 8000."""
@@ -70,9 +92,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--allow-write",
         action="store_true",
+        default=_env_flag("ANALYTICS_MCP_ALLOW_WRITE"),
         help=(
             "Enable tools that create or modify Google Analytics resources "
-            "(requires https://www.googleapis.com/auth/analytics.edit scope)."
+            "(or set ANALYTICS_MCP_ALLOW_WRITE=true; requires "
+            "https://www.googleapis.com/auth/analytics.edit scope)."
         ),
     )
     parser.add_argument(
@@ -102,21 +126,25 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--stateless-http",
         action="store_true",
+        default=_env_flag("ANALYTICS_MCP_STATELESS_HTTP"),
         help=(
             "Handle each HTTP request independently without tracking in-memory "
-            "MCP sessions across requests (when --transport=http). Enable this "
-            "for multi-tenant, load-balanced, or serverless deployments (such "
-            "as Cloud Run) where requests may scale to zero or route across "
-            "multiple instances."
+            "MCP sessions across requests when --transport=http (or set "
+            "ANALYTICS_MCP_STATELESS_HTTP=true). Enable this for multi-tenant, "
+            "load-balanced, or serverless deployments (such as Cloud Run) "
+            "where requests may scale to zero or route across multiple "
+            "instances."
         ),
     )
     parser.add_argument(
         "--oauth",
         action="store_true",
+        default=_env_flag("ANALYTICS_MCP_OAUTH"),
         help=(
             "Enable the built-in MCP OAuth 2.1 Authorization Server proxying "
-            "Google OAuth 2.0 when --transport=http (requires "
-            "GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET)."
+            "Google OAuth 2.0 when --transport=http (or set "
+            "ANALYTICS_MCP_OAUTH=true; requires GOOGLE_OAUTH_CLIENT_ID and "
+            "GOOGLE_OAUTH_CLIENT_SECRET)."
         ),
     )
     parser.add_argument(

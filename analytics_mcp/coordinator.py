@@ -38,6 +38,11 @@ from analytics_mcp.tools.admin.info import (
     list_property_annotations,
     create_property_annotation,
 )
+from analytics_mcp.tools.admin.config import (
+    create_custom_dimension,
+    create_key_event,
+    list_key_events,
+)
 from analytics_mcp.tools.client import (
     set_allow_write,
     set_require_request_credentials,
@@ -84,6 +89,7 @@ read_only_tools = [
     FunctionTool(list_google_ads_links),
     FunctionTool(get_property_details),
     FunctionTool(list_property_annotations),
+    FunctionTool(list_key_events),
     FunctionTool(get_custom_dimensions_and_metrics),
     run_report_with_description,
     run_realtime_report_with_description,
@@ -94,6 +100,8 @@ read_only_tools = [
 # Instantiate the write ADK tools (only enabled when --allow-write is set)
 write_tools = [
     FunctionTool(create_property_annotation),
+    FunctionTool(create_custom_dimension),
+    FunctionTool(create_key_event),
 ]
 
 _READ_ONLY_TOOL_NAMES = {t.name for t in read_only_tools}
@@ -200,6 +208,13 @@ def _prepare_mcp_tools(
                 "title",
                 "start_date",
             ]
+        elif mcp_tool.name == "create_custom_dimension":
+            mcp_tool.input_schema["required"] = [
+                "property_id",
+                "parameter_name",
+            ]
+        elif mcp_tool.name == "create_key_event":
+            mcp_tool.input_schema["required"] = ["property_id", "event_name"]
 
     return converted_tools
 

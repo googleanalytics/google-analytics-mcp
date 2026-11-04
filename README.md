@@ -221,14 +221,15 @@ The repository includes a root [`Dockerfile`](Dockerfile) that runs
 non-root user. Server flags can be configured entirely through environment
 variables:
 
-| Environment Variable | Description |
-| --- | --- |
-| `ANALYTICS_MCP_STATELESS_HTTP` | Stateless HTTP mode (`true` by default in `Dockerfile`). |
-| `ANALYTICS_MCP_ALLOW_WRITE` | Set to `true` to enable write tools (equivalent to `--allow-write`). |
-| `ANALYTICS_MCP_OAUTH` | Set to `true` to enable built-in MCP OAuth 2.1 (equivalent to `--oauth`). |
-| `GOOGLE_OAUTH_CLIENT_ID` | Google OAuth 2.0 Web Client ID (required when `ANALYTICS_MCP_OAUTH=true`). |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | Google OAuth 2.0 Web Client Secret (inject via Secret Manager in production). |
-| `ANALYTICS_MCP_ISSUER_URL` | Public HTTPS base URL of the service when `ANALYTICS_MCP_OAUTH=true`. |
+| Environment Variable | CLI Option | Default | Description |
+| --- | --- | --- | --- |
+| `PORT` | `--port` | `8000` (`8080` in `Dockerfile`) | Port to bind when `--transport http`. |
+| `ANALYTICS_MCP_STATELESS_HTTP` | `--stateless-http` | `false` (`true` in `Dockerfile`) | Handle each HTTP request independently without in-memory session state. |
+| `ANALYTICS_MCP_ALLOW_WRITE` | `--allow-write` | `false` | Enable tools that create or modify Google Analytics resources. |
+| `ANALYTICS_MCP_OAUTH` | `--oauth` | `false` | Enable the built-in MCP OAuth 2.1 Authorization Server. |
+| `ANALYTICS_MCP_ISSUER_URL` | `--issuer-url` | `http://<host>:<port>` | Public HTTPS base URL of the service when OAuth is enabled. |
+| `GOOGLE_OAUTH_CLIENT_ID` | — | — | Google OAuth 2.0 Web Client ID (required when OAuth is enabled). |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | — | — | Google OAuth 2.0 Web Client Secret (inject via Secret Manager in production). |
 
 - **Stateless HTTP mode on Cloud Run** (for upstream agents like Google ADK that
   forward per-user Bearer tokens):
@@ -240,9 +241,9 @@ variables:
     --allow-unauthenticated
   ```
 
-  *(`--allow-unauthenticated` exposes the public HTTPS endpoint at the Cloud Run
-  layer while `analytics-mcp` itself strictly requires a Google OAuth Bearer
-  token on every tool request.)*
+  Note that `--allow-unauthenticated` exposes the public HTTPS endpoint at the
+  Cloud Run layer, while `analytics-mcp` itself strictly requires a Google OAuth
+  Bearer token on every tool request.
 
 - **Native MCP OAuth 2.1 mode on Cloud Run** (storing the client secret in
   Google Cloud Secret Manager so it is injected as an environment variable at

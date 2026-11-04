@@ -26,6 +26,7 @@ from analytics_mcp.tools.reporting.metadata import (
     get_date_ranges_hints,
     get_dimension_filter_hints,
     get_metric_filter_hints,
+    get_minute_ranges_hints,
     get_order_bys_hints,
 )
 from google.analytics import data_v1beta
@@ -65,6 +66,9 @@ def _run_realtime_report_description() -> str:
           ### Hints for `date_ranges`:
           {get_date_ranges_hints()}
 
+          ### Hints for `minute_ranges`:
+          {get_minute_ranges_hints()}
+
           ### Hints for `dimension_filter`:
           {get_dimension_filter_hints()}
 
@@ -87,6 +91,7 @@ async def run_realtime_report(
     limit: int = None,
     offset: int = None,
     return_property_quota: bool = False,
+    minute_ranges: List[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Runs a Google Analytics Data API realtime report.
 
@@ -130,6 +135,9 @@ async def run_realtime_report(
           reports, following the guide at
           https://developers.google.com/analytics/devguides/reporting/data/v1/basics#pagination.
         return_property_quota: Whether to return realtime property quota in the response.
+        minute_ranges: Optional minute ranges (max 2), e.g.
+          [{"name": "last5", "start_minutes_ago": 4, "end_minutes_ago": 0}].
+          start_minutes_ago can be at most 29. Omit for the last 30 minutes.
     """
     request = data_v1beta.RunRealtimeReportRequest(
         property=construct_property_rn(property_id),
@@ -151,6 +159,11 @@ async def run_realtime_report(
     if order_bys:
         request.order_bys = [
             data_v1beta.OrderBy(order_by) for order_by in order_bys
+        ]
+
+    if minute_ranges:
+        request.minute_ranges = [
+            data_v1beta.MinuteRange(mr) for mr in minute_ranges
         ]
 
     if limit:

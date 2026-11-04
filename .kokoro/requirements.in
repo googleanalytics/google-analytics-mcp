@@ -1,0 +1,4 @@
+build
+twine
+keyrings.google-artifactregistry-auth
+requests >= 2.33.0

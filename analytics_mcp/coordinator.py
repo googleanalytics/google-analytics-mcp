@@ -208,8 +208,6 @@ def _prepare_mcp_tools(
                 "title",
                 "start_date",
             ]
-        # confirm is deliberately not required: omitting it yields a safe
-        # preview.
         elif mcp_tool.name == "create_custom_dimension":
             mcp_tool.input_schema["required"] = [
                 "property_id",

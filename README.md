@@ -35,19 +35,14 @@ to provide several
 - `list_property_annotations`: Returns annotations for a property.
 - `create_property_annotation`: Creates an annotation for a property (requires
   passing the `--allow-write` flag and the `analytics.edit` scope).
-
-### Manage property configuration (opt-in writes) ✏️
-
 - `list_key_events`: Returns the key events (formerly conversions) defined on a
-  property. Always available.
-- `create_custom_dimension`: Creates a custom dimension on a property.
-- `create_key_event`: Marks an event as a key event on a property.
-
-The two `create_*` tools are only registered when the server is started with
-the `--allow-write` flag (see
-[Optional: enable write tools](#optional-enable-write-tools)). They only return
-a preview of the change unless called with `confirm=true`, and they require the
-Editor role on the property.
+  property.
+- `create_custom_dimension`: Creates a custom dimension on a property (requires
+  passing the `--allow-write` flag and the `analytics.edit` scope, and the
+  Editor role on the property).
+- `create_key_event`: Marks an event as a key event on a property (requires
+  passing the `--allow-write` flag and the `analytics.edit` scope, and the
+  Marketer or Editor role on the property).
 
 ### Run core reports 📙
 
@@ -100,12 +95,16 @@ Credentials must include the Google Analytics read-only scope:
 https://www.googleapis.com/auth/analytics.readonly
 ```
 
-If you plan to enable write tools (such as `create_property_annotation`) using
-the `--allow-write` flag, your credentials must also include the edit scope:
+If you plan to enable write tools (such as `create_property_annotation`,
+`create_custom_dimension` or `create_key_event`) using the `--allow-write` flag,
+your credentials must also include the edit scope:
 
 ```
 https://www.googleapis.com/auth/analytics.edit
 ```
+
+When using Application Default Credentials, add this scope to the `--scopes`
+value of the `gcloud` commands below and re-run the login.
 
 Check out
 [Manage OAuth Clients](https://support.google.com/cloud/answer/15549257)
@@ -137,29 +136,6 @@ following message. You'll need this for the next step!
 ```
 Credentials saved to file: [PATH_TO_CREDENTIALS_JSON]
 ```
-
-#### Optional: enable write tools
-
-The `create_custom_dimension` and `create_key_event` tools are hidden by
-default. To enable them, start the server with the `--allow-write` flag and
-make sure your credentials also include the Google Analytics edit scope:
-
-```
-https://www.googleapis.com/auth/analytics.edit
-```
-
-Passing the flag alone is not enough for user credentials:
-regenerate your ADC file by re-running the login with both scopes, for example:
-
-```shell
-gcloud auth application-default login \
-  --scopes https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/analytics.edit,https://www.googleapis.com/auth/cloud-platform \
-  --client-id-file=YOUR_CLIENT_JSON_FILE
-```
-
-For service account impersonation, use the same `--scopes` value with
-`--impersonate-service-account=SERVICE_ACCOUNT_EMAIL`. The identity also needs
-the Editor role on the property.
 
 ### Configure Gemini
 
@@ -213,9 +189,6 @@ the Editor role on the property.
       -e "GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID" \
       -- pipx run analytics-mcp
     ```
-
-    To enable the optional write tools, append `--allow-write` to the end of the
-    command: `-- pipx run analytics-mcp --allow-write`.
 
 ### Multi-tenant HTTP & End-User OAuth 🌐
 
@@ -293,8 +266,7 @@ Here are some sample prompts to get you started:
   what are the custom dimensions and custom metrics in my property?
   ```
 
-- Create a custom dimension (the server previews the change first, then applies
-  it after you confirm; requires write tools to be enabled):
+- Create a custom dimension (requires the `--allow-write` flag):
 
   ```
   Create an event-scoped custom dimension for the plan_tier parameter in property 12345

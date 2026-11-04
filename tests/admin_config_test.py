@@ -1,4 +1,4 @@
-# Copyright 2025 Google LLC All Rights Reserved.
+# Copyright 2026 Google LLC All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,84 +12,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test cases for the admin config tools, using a mocked Admin API client."""
+"""Test cases for the admin config tools: custom dimensions and key events."""
 
 import unittest
-from unittest import mock
+from unittest.mock import MagicMock, patch
 
-from google.analytics import admin_v1beta
-from google.api_core import exceptions as gexc
-
+from analytics_mcp import coordinator
+from analytics_mcp.tools import client
 from analytics_mcp.tools.admin import config
+from google.analytics import admin_v1beta
+from google.api_core import exceptions as google_exceptions
 
 _FACTORY = "analytics_mcp.tools.admin.config.create_admin_api_client"
-_PROPERTY = 12345
 
 
 class TestCreateCustomDimension(unittest.IsolatedAsyncioTestCase):
     """Test cases for create_custom_dimension."""
 
-    async def test_dry_run_by_default(self):
-        with mock.patch(_FACTORY) as factory:
-            result = await config.create_custom_dimension(
-                _PROPERTY, "plan_tier"
+    @patch(_FACTORY)
+    async def test_create_with_defaults(self, mock_create_client):
+        """Tests creating an EVENT-scoped dimension with default arguments."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        mock_client.create_custom_dimension.return_value = (
+            admin_v1beta.CustomDimension(
+                name="properties/12345/customDimensions/1",
+                parameter_name="plan_tier",
+                display_name="plan_tier",
+                scope=admin_v1beta.CustomDimension.DimensionScope.EVENT,
             )
-        self.assertTrue(result["dry_run"])
-        self.assertEqual(result["parent"], "properties/12345")
-        self.assertEqual(
-            result["body"],
-            {
-                "parameter_name": "plan_tier",
-                "display_name": "plan_tier",
-                "scope": "EVENT",
-            },
         )
-        self.assertEqual(result["validation_problems"], [])
-        factory.assert_not_called()
 
-    async def test_string_confirm_is_still_dry_run(self):
-        with mock.patch(_FACTORY) as factory:
-            result = await config.create_custom_dimension(
-                _PROPERTY, "plan_tier", confirm="true"
-            )
-        self.assertTrue(result["dry_run"])
-        factory.assert_not_called()
+        result = await config.create_custom_dimension(12345, "plan_tier")
 
-    async def test_invalid_input_is_dry_run_even_when_confirmed(self):
-        cases = [
-            {"parameter_name": "1bad"},
-            {"parameter_name": "has-dash"},
-            {"parameter_name": "a" * 41},
-            {"parameter_name": "a" * 25, "scope": "USER"},
-            {"parameter_name": "ok", "scope": "BOGUS"},
-            {"parameter_name": "ok", "disallow_ads_personalization": True},
-            {"parameter_name": "ok", "description": "d" * 151},
+        self.assertEqual(result["name"], "properties/12345/customDimensions/1")
+        self.assertEqual(result["scope"], "EVENT")
+        mock_client.create_custom_dimension.assert_called_once()
+        request = mock_client.create_custom_dimension.call_args.kwargs[
+            "request"
         ]
-        for kwargs in cases:
-            with self.subTest(**kwargs), mock.patch(_FACTORY) as factory:
-                result = await config.create_custom_dimension(
-                    _PROPERTY, confirm=True, **kwargs
-                )
-                self.assertTrue(result["dry_run"])
-                self.assertTrue(result["validation_problems"])
-                factory.assert_not_called()
-
-    async def test_confirmed_create(self):
-        with mock.patch(_FACTORY) as factory:
-            client = factory.return_value
-            client.create_custom_dimension.return_value = (
-                admin_v1beta.CustomDimension(
-                    name="properties/12345/customDimensions/1",
-                    parameter_name="plan_tier",
-                    display_name="plan_tier",
-                    scope="EVENT",
-                )
-            )
-            result = await config.create_custom_dimension(
-                _PROPERTY, "plan_tier", confirm=True
-            )
-        client.create_custom_dimension.assert_called_once()
-        request = client.create_custom_dimension.call_args.kwargs["request"]
         self.assertEqual(request.parent, "properties/12345")
         self.assertEqual(request.custom_dimension.parameter_name, "plan_tier")
         self.assertEqual(request.custom_dimension.display_name, "plan_tier")
@@ -97,157 +58,240 @@ class TestCreateCustomDimension(unittest.IsolatedAsyncioTestCase):
             request.custom_dimension.scope,
             admin_v1beta.CustomDimension.DimensionScope.EVENT,
         )
-        self.assertEqual(result["status"], "created")
+
+    @patch(_FACTORY)
+    async def test_create_user_scope_with_all_fields(self, mock_create_client):
+        """Tests that scope is normalized and optional fields are sent."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        mock_client.create_custom_dimension.return_value = (
+            admin_v1beta.CustomDimension()
+        )
+
+        await config.create_custom_dimension(
+            "properties/12345",
+            "plan_tier",
+            display_name="Előfizetés",
+            scope=" user ",
+            description="Customer plan",
+            disallow_ads_personalization=True,
+        )
+
+        request = mock_client.create_custom_dimension.call_args.kwargs[
+            "request"
+        ]
+        dimension = request.custom_dimension
+        self.assertEqual(dimension.display_name, "Előfizetés")
         self.assertEqual(
-            result["custom_dimension"]["name"],
-            "properties/12345/customDimensions/1",
+            dimension.scope, admin_v1beta.CustomDimension.DimensionScope.USER
         )
-        self.assertEqual(result["custom_dimension"]["scope"], "EVENT")
+        self.assertEqual(dimension.description, "Customer plan")
+        self.assertTrue(dimension.disallow_ads_personalization)
 
-    async def _confirmed_with_error(self, error):
-        with mock.patch(_FACTORY) as factory:
-            factory.return_value.create_custom_dimension.side_effect = error
-            return await config.create_custom_dimension(
-                _PROPERTY, "plan_tier", confirm=True
-            )
+    @patch(_FACTORY)
+    async def test_invalid_input_raises_before_any_api_call(
+        self, mock_create_client
+    ):
+        """Tests that validation errors raise ValueError without a client."""
+        cases = [
+            ({"parameter_name": "1bad"}, "parameter_name must be"),
+            ({"parameter_name": "has-dash"}, "parameter_name must be"),
+            ({"parameter_name": "a" * 41}, "at most 40 characters"),
+            (
+                {"parameter_name": "a" * 25, "scope": "USER"},
+                "at most 24 characters",
+            ),
+            ({"parameter_name": "ok", "scope": "BOGUS"}, "Invalid scope"),
+            (
+                {"parameter_name": "ok", "display_name": "  "},
+                "display_name must be a non-empty",
+            ),
+            (
+                {"parameter_name": "ok", "display_name": "d" * 83},
+                "display_name must be at most 82",
+            ),
+            (
+                {"parameter_name": "ok", "description": "d" * 151},
+                "description must be at most 150",
+            ),
+            (
+                {"parameter_name": "ok", "disallow_ads_personalization": True},
+                "only valid for USER scope",
+            ),
+        ]
+        for kwargs, message in cases:
+            with self.subTest(**kwargs):
+                with self.assertRaisesRegex(ValueError, message):
+                    await config.create_custom_dimension(12345, **kwargs)
+        mock_create_client.assert_not_called()
 
-    async def test_already_exists(self):
-        result = await self._confirmed_with_error(gexc.AlreadyExists("dup"))
-        self.assertEqual(result["status"], "already_exists")
-
-    async def test_permission_denied_scope_hint(self):
-        result = await self._confirmed_with_error(
-            gexc.PermissionDenied(
-                "Request had insufficient authentication scopes."
-            )
-        )
-        self.assertEqual(result["status"], "permission_denied")
-        self.assertIn("--allow-write", result["hint"])
-
-    async def test_permission_denied_role_hint(self):
-        result = await self._confirmed_with_error(
-            gexc.PermissionDenied("User does not have sufficient permissions")
-        )
-        self.assertEqual(result["status"], "permission_denied")
-        self.assertIn("Editor", result["hint"])
-
-    async def test_rejected(self):
+    @patch(_FACTORY)
+    async def test_api_errors_propagate(self, mock_create_client):
+        """Tests that API errors reach the coordinator unchanged."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
         for error in (
-            gexc.InvalidArgument("bad"),
-            gexc.FailedPrecondition("bad"),
-            gexc.ResourceExhausted("limit"),
+            google_exceptions.AlreadyExists("dup"),
+            google_exceptions.PermissionDenied("no access"),
+            google_exceptions.InvalidArgument("bad"),
+            google_exceptions.ResourceExhausted("limit"),
         ):
             with self.subTest(error=type(error).__name__):
-                result = await self._confirmed_with_error(error)
-                self.assertEqual(result["status"], "rejected")
-
-    async def test_unexpected_error_is_raised(self):
-        with self.assertRaises(gexc.InternalServerError):
-            await self._confirmed_with_error(gexc.InternalServerError("boom"))
+                mock_client.create_custom_dimension.side_effect = error
+                with self.assertRaises(type(error)):
+                    await config.create_custom_dimension(12345, "plan_tier")
 
 
 class TestCreateKeyEvent(unittest.IsolatedAsyncioTestCase):
     """Test cases for create_key_event."""
 
-    async def test_dry_run_by_default(self):
-        with mock.patch(_FACTORY) as factory:
-            result = await config.create_key_event(_PROPERTY, "referral_click")
-        self.assertTrue(result["dry_run"])
-        self.assertEqual(
-            result["body"],
-            {
-                "event_name": "referral_click",
-                "counting_method": "ONCE_PER_EVENT",
-            },
+    @patch(_FACTORY)
+    async def test_create_with_defaults(self, mock_create_client):
+        """Tests creating a key event with default arguments."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        mock_client.create_key_event.return_value = admin_v1beta.KeyEvent(
+            name="properties/12345/keyEvents/2",
+            event_name="referral_click",
+            counting_method=admin_v1beta.KeyEvent.CountingMethod.ONCE_PER_EVENT,
         )
-        self.assertEqual(result["validation_problems"], [])
-        factory.assert_not_called()
 
-    async def test_default_value_requires_currency(self):
-        with mock.patch(_FACTORY) as factory:
-            result = await config.create_key_event(
-                _PROPERTY, "referral_click", default_value=1.5, confirm=True
-            )
-        self.assertTrue(result["dry_run"])
-        self.assertTrue(result["validation_problems"])
-        factory.assert_not_called()
+        result = await config.create_key_event(12345, "referral_click")
 
-    async def test_invalid_counting_method(self):
-        with mock.patch(_FACTORY) as factory:
-            result = await config.create_key_event(
-                _PROPERTY,
-                "referral_click",
-                counting_method="NOPE",
-                confirm=True,
-            )
-        self.assertTrue(result["dry_run"])
-        self.assertTrue(result["validation_problems"])
-        factory.assert_not_called()
-
-    async def test_confirmed_create(self):
-        with mock.patch(_FACTORY) as factory:
-            client = factory.return_value
-            client.create_key_event.return_value = admin_v1beta.KeyEvent(
-                name="properties/12345/keyEvents/2",
-                event_name="sample_submit",
-                counting_method="ONCE_PER_SESSION",
-            )
-            result = await config.create_key_event(
-                _PROPERTY,
-                "sample_submit",
-                counting_method="ONCE_PER_SESSION",
-                default_value=2.5,
-                default_currency_code="EUR",
-                confirm=True,
-            )
-        request = client.create_key_event.call_args.kwargs["request"]
+        self.assertEqual(result["name"], "properties/12345/keyEvents/2")
+        self.assertEqual(result["counting_method"], "ONCE_PER_EVENT")
+        request = mock_client.create_key_event.call_args.kwargs["request"]
         self.assertEqual(request.parent, "properties/12345")
-        self.assertEqual(request.key_event.event_name, "sample_submit")
+        self.assertEqual(request.key_event.event_name, "referral_click")
+        self.assertEqual(
+            request.key_event.counting_method,
+            admin_v1beta.KeyEvent.CountingMethod.ONCE_PER_EVENT,
+        )
+        self.assertFalse(request.key_event.default_value.currency_code)
+
+    @patch(_FACTORY)
+    async def test_create_with_default_value(self, mock_create_client):
+        """Tests that counting_method is normalized and default value sent."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        mock_client.create_key_event.return_value = admin_v1beta.KeyEvent()
+
+        await config.create_key_event(
+            12345,
+            "sample_submit",
+            counting_method=" once_per_session ",
+            default_value=2.5,
+            default_currency_code="EUR",
+        )
+
+        request = mock_client.create_key_event.call_args.kwargs["request"]
         self.assertEqual(
             request.key_event.counting_method,
             admin_v1beta.KeyEvent.CountingMethod.ONCE_PER_SESSION,
         )
         self.assertEqual(request.key_event.default_value.numeric_value, 2.5)
         self.assertEqual(request.key_event.default_value.currency_code, "EUR")
-        self.assertEqual(result["status"], "created")
-        self.assertEqual(
-            result["key_event"]["counting_method"], "ONCE_PER_SESSION"
+
+    @patch(_FACTORY)
+    async def test_invalid_input_raises_before_any_api_call(
+        self, mock_create_client
+    ):
+        """Tests that validation errors raise ValueError without a client."""
+        cases = [
+            ({"event_name": "1bad"}, "event_name must be"),
+            ({"event_name": "a" * 41}, "at most 40 characters"),
+            (
+                {"event_name": "ok", "counting_method": "NOPE"},
+                "Invalid counting_method",
+            ),
+            (
+                {"event_name": "ok", "default_value": 1.5},
+                "must be given together",
+            ),
+            (
+                {"event_name": "ok", "default_currency_code": "EUR"},
+                "must be given together",
+            ),
+        ]
+        for kwargs, message in cases:
+            with self.subTest(**kwargs):
+                with self.assertRaisesRegex(ValueError, message):
+                    await config.create_key_event(12345, **kwargs)
+        mock_create_client.assert_not_called()
+
+    @patch(_FACTORY)
+    async def test_api_errors_propagate(self, mock_create_client):
+        """Tests that API errors reach the coordinator unchanged."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        mock_client.create_key_event.side_effect = (
+            google_exceptions.AlreadyExists("dup")
         )
 
-    async def test_already_exists(self):
-        with mock.patch(_FACTORY) as factory:
-            factory.return_value.create_key_event.side_effect = (
-                gexc.AlreadyExists("dup")
-            )
-            result = await config.create_key_event(
-                _PROPERTY, "referral_click", confirm=True
-            )
-        self.assertEqual(result["status"], "already_exists")
+        with self.assertRaises(google_exceptions.AlreadyExists):
+            await config.create_key_event(12345, "referral_click")
 
 
 class TestListKeyEvents(unittest.IsolatedAsyncioTestCase):
     """Test cases for list_key_events."""
 
-    async def test_list_key_events(self):
-        with mock.patch(_FACTORY) as factory:
-            client = factory.return_value
-            client.list_key_events.return_value = iter(
-                [
-                    admin_v1beta.KeyEvent(
-                        event_name="purchase", counting_method="ONCE_PER_EVENT"
+    @patch(_FACTORY)
+    async def test_list_key_events(self, mock_create_client):
+        """Tests listing key events."""
+        mock_client = MagicMock()
+        mock_create_client.return_value = mock_client
+        mock_client.list_key_events.return_value = iter(
+            [
+                admin_v1beta.KeyEvent(
+                    event_name="purchase",
+                    counting_method=(
+                        admin_v1beta.KeyEvent.CountingMethod.ONCE_PER_EVENT
                     ),
-                    admin_v1beta.KeyEvent(
-                        event_name="sign_up", counting_method="ONCE_PER_SESSION"
+                ),
+                admin_v1beta.KeyEvent(
+                    event_name="sign_up",
+                    counting_method=(
+                        admin_v1beta.KeyEvent.CountingMethod.ONCE_PER_SESSION
                     ),
-                ]
-            )
-            result = await config.list_key_events(f"properties/{_PROPERTY}")
-        request = client.list_key_events.call_args.kwargs["request"]
+                ),
+            ]
+        )
+
+        result = await config.list_key_events("properties/12345")
+
+        request = mock_client.list_key_events.call_args.kwargs["request"]
         self.assertEqual(request.parent, "properties/12345")
         self.assertEqual(
             [(k["event_name"], k["counting_method"]) for k in result],
             [("purchase", "ONCE_PER_EVENT"), ("sign_up", "ONCE_PER_SESSION")],
         )
+
+
+class TestConfigToolRegistration(unittest.IsolatedAsyncioTestCase):
+    """Test cases for --allow-write registration of the config tools."""
+
+    def tearDown(self):
+        client.set_allow_write(False)
+
+    async def _tool_names(self, allow_write):
+        server = coordinator.create_server(allow_write=allow_write)
+        result = await server.get_request_handler("tools/list").handler(
+            None, None
+        )
+        return {t.name for t in result.tools}
+
+    async def test_write_tools_hidden_by_default(self):
+        """Tests that only the read-only list_key_events is registered."""
+        names = await self._tool_names(False)
+        self.assertIn("list_key_events", names)
+        self.assertNotIn("create_custom_dimension", names)
+        self.assertNotIn("create_key_event", names)
+
+    async def test_write_tools_registered_with_allow_write(self):
+        """Tests that the create_* tools are registered with allow_write."""
+        names = await self._tool_names(True)
+        self.assertIn("create_custom_dimension", names)
+        self.assertIn("create_key_event", names)
 
 
 if __name__ == "__main__":

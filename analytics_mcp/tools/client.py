@@ -52,6 +52,7 @@ _CLIENT_INFO = ClientInfo(
 _READ_ONLY_ANALYTICS_SCOPE = (
     "https://www.googleapis.com/auth/analytics.readonly"
 )
+
 # Edit scope for Analytics Admin API write operations.
 _EDIT_ANALYTICS_SCOPE = "https://www.googleapis.com/auth/analytics.edit"
 

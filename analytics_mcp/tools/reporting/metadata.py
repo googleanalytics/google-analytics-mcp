@@ -56,6 +56,39 @@ def get_date_ranges_hints():
     """
 
 
+def get_minute_ranges_hints():
+    """Returns hints and examples for realtime minute_ranges arguments."""
+    range_last_5 = data_v1beta.MinuteRange(
+        start_minutes_ago=4, end_minutes_ago=0, name="Last5Minutes"
+    )
+    range_last_30 = data_v1beta.MinuteRange(
+        start_minutes_ago=29, end_minutes_ago=0, name="Last30Minutes"
+    )
+    range_earlier = data_v1beta.MinuteRange(
+        start_minutes_ago=29, end_minutes_ago=15, name="Earlier15Minutes"
+    )
+
+    return f"""Example minute_ranges arguments:
+      1. The last 5 minutes:
+        [ {proto_to_json(range_last_5)} ]
+
+      2. The last 5 minutes compared with the last 30 minutes:
+        [ {proto_to_json(range_last_5)}, {proto_to_json(range_last_30)} ]
+
+      3. A window that ends before now (15 to 29 minutes ago):
+        [ {proto_to_json(range_earlier)} ]
+
+      Notes:
+        - At most 2 minute ranges are allowed.
+        - `start_minutes_ago` can be at most 29 for standard properties.
+        - Each range counts unique users within that window, so use a minute
+          range instead of summing rows of the `minutesAgo` dimension.
+        - When 2 ranges are given, the response includes a `dateRange`
+          dimension with each range's `name`.
+        - Omit `minute_ranges` to report on the last 30 minutes.
+    """
+
+
 def get_funnel_steps_hints():
     """Returns hints and examples for funnel steps configuration."""
     step_first_open = data_v1alpha.FunnelStep(

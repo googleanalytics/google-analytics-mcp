@@ -36,6 +36,27 @@ import uvicorn
 
 logger = logging.getLogger(__name__)
 
+_TRUTHY_ENV_VALUES = ("1", "true", "yes", "on")
+_FALSY_ENV_VALUES = ("0", "false", "no", "off")
+
+
+def _env_flag(name: str) -> bool:
+    """Resolves a boolean environment variable, defaulting to False."""
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return False
+    lowered = raw.lower()
+    if lowered in _TRUTHY_ENV_VALUES:
+        return True
+    if lowered in _FALSY_ENV_VALUES:
+        return False
+    logger.warning(
+        "Invalid boolean environment variable %s=%r; falling back to False.",
+        name,
+        raw,
+    )
+    return False
+
 
 def _default_port_from_env() -> int:
     """Resolves a valid numeric PORT env var, falling back to 8000."""
@@ -70,9 +91,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--allow-write",
         action="store_true",
+        default=_env_flag("ANALYTICS_MCP_ALLOW_WRITE"),
         help=(
-            "Enable tools that create or modify Google Analytics resources "
-            "(requires https://www.googleapis.com/auth/analytics.edit scope)."
+            "Enable tools that create or modify Google Analytics resources. "
+            "Requires the https://www.googleapis.com/auth/analytics.edit "
+            "scope. Defaults to ANALYTICS_MCP_ALLOW_WRITE."
         ),
     )
     parser.add_argument(
@@ -95,36 +118,39 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         type=int,
         default=None,
         help=(
-            "Port to bind when --transport=http "
-            "(default: PORT env var or 8000)."
+            "Port to bind when --transport=http. Defaults to PORT (or 8000 "
+            "if unset)."
         ),
     )
     parser.add_argument(
         "--stateless-http",
         action="store_true",
+        default=_env_flag("ANALYTICS_MCP_STATELESS_HTTP"),
         help=(
             "Handle each HTTP request independently without tracking in-memory "
-            "MCP sessions across requests (when --transport=http). Enable this "
+            "MCP sessions across requests when --transport=http. Enable this "
             "for multi-tenant, load-balanced, or serverless deployments (such "
             "as Cloud Run) where requests may scale to zero or route across "
-            "multiple instances."
+            "multiple instances. Defaults to ANALYTICS_MCP_STATELESS_HTTP."
         ),
     )
     parser.add_argument(
         "--oauth",
         action="store_true",
+        default=_env_flag("ANALYTICS_MCP_OAUTH"),
         help=(
             "Enable the built-in MCP OAuth 2.1 Authorization Server proxying "
-            "Google OAuth 2.0 when --transport=http (requires "
-            "GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET)."
+            "Google OAuth 2.0 when --transport=http. Requires "
+            "GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET. Defaults "
+            "to ANALYTICS_MCP_OAUTH."
         ),
     )
     parser.add_argument(
         "--issuer-url",
         default=None,
         help=(
-            "Public issuer base URL when --oauth is enabled (defaults to "
-            "ANALYTICS_MCP_ISSUER_URL or http://<host>:<port>)."
+            "Public issuer base URL when --oauth is enabled. Defaults to "
+            "ANALYTICS_MCP_ISSUER_URL (or http://<host>:<port> if unset)."
         ),
     )
     args = parser.parse_args(argv)

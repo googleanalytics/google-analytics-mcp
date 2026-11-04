@@ -486,3 +486,71 @@ class TestGoogleOAuthProvider(unittest.IsolatedAsyncioTestCase):
             )
             ipv6_app = server.build_http_app(ipv6_args)
             self.assertIsNotNone(ipv6_app)
+
+    def test_server_env_flag_fallbacks(self):
+        """Tests ANALYTICS_MCP_* boolean environment variable fallbacks."""
+        with patch.dict(
+            "os.environ",
+            {
+                "PORT": "8080",
+                "ANALYTICS_MCP_OAUTH": "true",
+                "ANALYTICS_MCP_ALLOW_WRITE": "1",
+                "ANALYTICS_MCP_STATELESS_HTTP": "YES",
+                "GOOGLE_OAUTH_CLIENT_ID": "env-client-id",
+                "GOOGLE_OAUTH_CLIENT_SECRET": "env-client-secret",
+                "ANALYTICS_MCP_ISSUER_URL": "https://mcp.example.run.app",
+            },
+            clear=False,
+        ):
+            container_args = server.parse_args(
+                ["--transport", "http", "--host", "0.0.0.0"]
+            )
+            self.assertEqual(container_args.port, 8080)
+            self.assertTrue(container_args.oauth)
+            self.assertTrue(container_args.allow_write)
+            self.assertTrue(container_args.stateless_http)
+
+            starlette_app = server.build_http_app(container_args)
+            route_paths = [
+                getattr(r, "path", None) for r in starlette_app.routes
+            ]
+            self.assertIn("/mcp", route_paths)
+            self.assertIn("/oauth/callback", route_paths)
+
+        # Explicit falsy values disable flags, while CLI flags still override
+        with patch.dict(
+            "os.environ",
+            {
+                "ANALYTICS_MCP_OAUTH": "false",
+                "ANALYTICS_MCP_ALLOW_WRITE": "0",
+                "ANALYTICS_MCP_STATELESS_HTTP": "off",
+            },
+            clear=False,
+        ):
+            falsy_args = server.parse_args(
+                ["--transport", "http", "--host", "0.0.0.0"]
+            )
+            self.assertFalse(falsy_args.oauth)
+            self.assertFalse(falsy_args.allow_write)
+            self.assertFalse(falsy_args.stateless_http)
+
+            cli_override = server.parse_args(["--oauth", "--allow-write"])
+            self.assertTrue(cli_override.oauth)
+            self.assertTrue(cli_override.allow_write)
+
+        # Invalid boolean env var logs a warning and falls back to False
+        with patch.dict(
+            "os.environ",
+            {"ANALYTICS_MCP_OAUTH": "not-a-bool"},
+            clear=False,
+        ):
+            with self.assertLogs("analytics_mcp.server", level="WARNING") as cm:
+                bad_env_args = server.parse_args([])
+            self.assertFalse(bad_env_args.oauth)
+            self.assertTrue(
+                any(
+                    "Invalid boolean environment variable ANALYTICS_MCP_OAUTH"
+                    in m
+                    for m in cm.output
+                )
+            )

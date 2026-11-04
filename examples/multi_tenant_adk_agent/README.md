@@ -65,21 +65,13 @@ pipx run analytics-mcp \
   --transport http --stateless-http --host 0.0.0.0 --port 8080
 ```
 
-*(Add `--allow-write` if you also want to expose write tools like
-`create_property_annotation`.)*
+*(Add `--allow-write` or `ANALYTICS_MCP_ALLOW_WRITE=true` if you also want to
+expose write tools like `create_property_annotation`.)*
 
-Or package it in a **Dockerfile** (e.g. for Google Cloud Run, AWS ECS, Fly.io,
-or Kubernetes):
-
-```dockerfile
-FROM python:3.12-slim
-RUN pip install --no-cache-dir analytics-mcp
-EXPOSE 8080
-ENTRYPOINT [ \
-  "analytics-mcp", "--transport", "http", \
-  "--stateless-http", "--host", "0.0.0.0", "--port", "8080" \
-]
-```
+Or build and deploy using the repository's root [`Dockerfile`](../../Dockerfile)
+(e.g. `gcloud run deploy analytics-mcp --source .` on Google Cloud Run—see the
+root [`README.md`](../../README.md#deploy-with-docker--google-cloud-run-) for
+full Cloud Run and Secret Manager commands).
 
 > **Note**: In `--transport http` mode, the server does **not** use
 > `GOOGLE_APPLICATION_CREDENTIALS` or host-level service accounts—it strictly

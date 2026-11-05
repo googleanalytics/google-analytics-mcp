@@ -40,14 +40,7 @@
             "matchFileNames": [
                 ".kokoro/requirements.txt"
             ],
-            "excludePackageNames": [
-                "build",
-                "twine",
-                "keyrings.google-artifactregistry-auth",
-                "keyrings-google-artifactregistry-auth",
-                "requests"
-            ],
-            "groupName": "Kokoro dependencies"
+            "groupName": "Release job dependencies"
         }
     ]
 }

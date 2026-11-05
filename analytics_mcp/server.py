@@ -239,7 +239,7 @@ async def run_server_async(allow_write: bool = False):
             write_stream,
             InitializationOptions(
                 server_name=app.name,  # Use the server name defined above
-                server_version="1.0.0",
+                server_version="1.1.0",
                 capabilities=app.get_capabilities(
                     # Define server capabilities - consult MCP docs for options
                     notification_options=NotificationOptions(),

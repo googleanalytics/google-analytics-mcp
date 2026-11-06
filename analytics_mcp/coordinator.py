@@ -67,6 +67,7 @@ from analytics_mcp.tools.reporting.conversions import (
     run_conversions_report,
     _run_conversions_report_description,
 )
+from analytics_mcp.usage_log import ToolCallRecorder
 
 run_report_with_description = FunctionTool(run_report)
 run_report_with_description.description = _run_report_description()
@@ -256,6 +257,7 @@ def _extract_bearer_token(ctx) -> str | None:
 def create_server(
     allow_write: bool = False,
     require_request_credentials: bool = False,
+    recorder: ToolCallRecorder | None = None,
 ) -> Server:
     """Creates and configures an MCP Server instance."""
     set_allow_write(allow_write)
@@ -273,7 +275,7 @@ def create_server(
     ) -> mcp_types.ListToolsResult:
         return mcp_types.ListToolsResult(tools=active_mcp_tools)
 
-    async def call_mcp_tool(
+    async def execute_tool(
         ctx,
         params: mcp_types.CallToolRequestParams,
     ) -> mcp_types.CallToolResult:
@@ -355,6 +357,19 @@ def create_server(
         return mcp_types.CallToolResult(
             content=[mcp_types.TextContent(type="text", text=error_text)],
             is_error=True,
+        )
+
+    async def call_mcp_tool(
+        ctx,
+        params: mcp_types.CallToolRequestParams,
+    ) -> mcp_types.CallToolResult:
+        if recorder is None:
+            return await execute_tool(ctx, params)
+        return await recorder.record(
+            _extract_bearer_token(ctx),
+            params.name,
+            params.arguments,
+            lambda: execute_tool(ctx, params),
         )
 
     return Server(

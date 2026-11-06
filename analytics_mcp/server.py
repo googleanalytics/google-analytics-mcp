@@ -26,7 +26,11 @@ from typing import Sequence
 from urllib.parse import urlparse
 
 import analytics_mcp.coordinator as coordinator
-from analytics_mcp.oauth import GoogleOAuthProvider, build_oauth_components
+from analytics_mcp.oauth import build_oauth_components
+from analytics_mcp.usage_log import (
+    IdentityScopedGoogleOAuthProvider,
+    ToolCallRecorder,
+)
 import mcp.server
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.models import InitializationOptions
@@ -38,6 +42,9 @@ logger = logging.getLogger(__name__)
 
 _TRUTHY_ENV_VALUES = ("1", "true", "yes", "on")
 _FALSY_ENV_VALUES = ("0", "false", "no", "off")
+# httpx logs every request URL at INFO level; keep token-bearing calls to
+# Google out of the logs.
+_LOGGERS_THAT_PRINT_ACCESS_TOKENS = ("httpx", "httpcore")
 
 
 def _env_flag(name: str) -> bool:
@@ -146,6 +153,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--usage-log",
+        action="store_true",
+        default=_env_flag("ANALYTICS_MCP_USAGE_LOG"),
+        help=(
+            "Record every tool call to the mcp_usage Postgres database "
+            "(MCP_USAGE_DSN) when --transport=http. Defaults to "
+            "ANALYTICS_MCP_USAGE_LOG."
+        ),
+    )
+    parser.add_argument(
         "--issuer-url",
         default=None,
         help=(
@@ -161,9 +178,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 def build_http_app(args: argparse.Namespace):
     """Builds the Starlette ASGI app for multi-tenant Streamable HTTP mode."""
+    recorder = (
+        ToolCallRecorder.from_env(server="google-analytics")
+        if args.usage_log
+        else None
+    )
     app = coordinator.create_server(
         allow_write=args.allow_write,
         require_request_credentials=True,
+        recorder=recorder,
     )
 
     auth_settings = None
@@ -189,7 +212,7 @@ def build_http_app(args: argparse.Namespace):
         )
         url_host = _format_url_host(default_host)
         issuer_url = explicit_issuer_url or f"http://{url_host}:{args.port}"
-        oauth_provider = GoogleOAuthProvider(
+        oauth_provider = IdentityScopedGoogleOAuthProvider(
             google_client_id=client_id,
             google_client_secret=client_secret,
             issuer_url=issuer_url,
@@ -252,6 +275,8 @@ async def run_server_async(allow_write: bool = False):
 def run_server(argv: Sequence[str] | None = None):
     """Synchronous wrapper to run the MCP server."""
     args = parse_args(argv)
+    for logger_name in _LOGGERS_THAT_PRINT_ACCESS_TOKENS:
+        logging.getLogger(logger_name).setLevel(logging.WARNING)
     if args.transport == "http":
         http_app = build_http_app(args)
         url_host = _format_url_host(args.host)

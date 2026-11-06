@@ -14,6 +14,7 @@ dependencies = [
     "mcp>=2.3.0,<3",
     "google-adk>=2.11.0",
     "httpx>=0.28.1",
+    "psycopg[binary,pool]>=3.2",
 ]
 keywords = ["google analytics", "analytics", "mcp", "ga4"]
 classifiers = [
@@ -46,7 +47,7 @@ analytics-mcp = "analytics_mcp.server:run_server"
 google-analytics-mcp = "analytics_mcp.server:run_server"
 
 [project.optional-dependencies]
-dev = ["black", "nox >=2026.2.9, <2027"]
+dev = ["black", "nox >=2026.2.9, <2027", "pytest", "pytest-asyncio"]
 
 [build-system]
 requires = ["setuptools>=82.0.0", "wheel"]
@@ -54,3 +55,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["analytics_mcp*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

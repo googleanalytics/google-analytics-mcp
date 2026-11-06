@@ -299,6 +299,29 @@ variables:
 See the complete multi-tenant walkthrough and runnable ADK agent code in
 [`examples/multi_tenant_adk_agent/README.md`](examples/multi_tenant_adk_agent/README.md).
 
+### Touchpoint deployment (Dokploy) 🚀
+
+This fork runs the upstream image with the built-in OAuth 2.1 server, so every
+user signs in with their personal Google account, and adds a usage log of every
+tool call. Configure it through environment variables:
+
+| Variable | Value |
+| --- | --- |
+| `ANALYTICS_MCP_OAUTH` | `true` |
+| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | Web OAuth client of the Google Cloud project |
+| `ANALYTICS_MCP_ISSUER_URL` | Public HTTPS URL behind Traefik, e.g. `https://ga4-mcp.touchpoint.agency` |
+| `ANALYTICS_MCP_USAGE_LOG` | `true`: records every tool call to the `tool_call` table |
+| `MCP_USAGE_DSN` | Postgres DSN of the `mcp_usage` database, with `sslmode=require` |
+| `PORT` | `8000` (the image defaults to `8080`) |
+
+Register `<ANALYTICS_MCP_ISSUER_URL>/oauth/callback` as authorized redirect URI
+of the OAuth client. Besides the Analytics scope, the consent screen asks for
+`openid` and `userinfo.email`, which the usage log needs to attribute a call to
+a user. With `--usage-log` enabled and `MCP_USAGE_DSN` missing, the server
+refuses to start.
+
+See [`.env.example`](./.env.example) for the complete set of variables.
+
 ## Try it out 🥼
 
 Launch Gemini Code Assist or Gemini CLI and type `/mcp`. You should see

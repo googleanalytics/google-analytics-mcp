@@ -1,30 +1,14 @@
-# VCS and CI metadata
-.git
-.gitignore
-.github
+# Ignore everything by default so local credentials, .env files, virtualenvs,
+# tests, and git history are never included in the Docker build context.
+*
 
-# Local secrets — never bake these into an image
-.env
-.env.*
-*credentials*.json
-*token*.json
-*.pem
-*.key
+# Allow only files required to build and install analytics-mcp.
+!pyproject.toml
+!README.md
+!LICENSE
+!analytics_mcp/
+!analytics_mcp/**
 
-# Python build/test artifacts
-__pycache__
-*.pyc
-*.egg-info
-build
-dist
-.venv
-venv
-.nox
-.pytest_cache
-tests
-
-# Tooling
-.claude
-.dockerignore
-Dockerfile
-deploy
+# Exclude Python bytecode caches.
+**/__pycache__/
+**/*.py[cod]

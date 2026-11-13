@@ -34,6 +34,13 @@
                 "google-analytics-admin"
             ],
             "groupName": "Google Analytics APIs"
+        },
+        {
+            "description": "Bundle transitive updates that only affect .kokoro/requirements.txt",
+            "matchFileNames": [
+                ".kokoro/requirements.txt"
+            ],
+            "groupName": "Release job dependencies"
         }
     ]
 }

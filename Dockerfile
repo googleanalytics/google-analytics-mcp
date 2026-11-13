@@ -1,28 +1,35 @@
-# Use a slim Python image
-FROM python:3.13-slim
+# Copyright 2026 Google LLC All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-# Install uv (pinned; avoid :latest so builds are reproducible)
-COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /uvx /bin/
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8080 \
+    ANALYTICS_MCP_STATELESS_HTTP=true
 
 WORKDIR /app
 
-# Copy the project files into the container.
-# .dockerignore keeps credentials, env files, and VCS metadata out of the
-# build context.
-COPY . .
+COPY pyproject.toml README.md LICENSE ./
+COPY analytics_mcp/ ./analytics_mcp/
 
-# Install the project and its dependencies into the system Python
-# environment in the container.
-RUN uv pip install --system --no-cache .
+RUN pip install --no-cache-dir . && \
+    useradd --create-home --uid 10001 appuser
 
-# Run as a non-root user.
-RUN useradd --create-home --uid 1001 mcp
-USER mcp
+USER appuser
 
-# Expose port 8080 (default for Cloud Run)
 EXPOSE 8080
 
-# Uses the entry point defined in pyproject.toml. The server starts in
-# HTTP/OAuth mode when ANALYTICS_MCP_OAUTH_CLIENT_ID and
-# ANALYTICS_MCP_OAUTH_CLIENT_SECRET are set.
-CMD ["analytics-mcp"]
+ENTRYPOINT ["analytics-mcp"]
+CMD ["--transport", "http", "--host", "0.0.0.0"]

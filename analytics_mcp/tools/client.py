@@ -15,14 +15,13 @@
 """Client initialization for the Google Analytics APIs."""
 
 import contextlib
-import os
+import contextvars
 import subprocess
 import threading
 from importlib import metadata
 from unittest.mock import patch
 
 import google.auth
-from google.oauth2.credentials import Credentials as OAuthCredentials
 from google.analytics import (
     admin_v1beta,
     data_v1beta,
@@ -30,6 +29,7 @@ from google.analytics import (
     data_v1alpha,
 )
 from google.api_core.gapic_v1.client_info import ClientInfo
+from google.oauth2 import credentials as oauth2_credentials
 
 
 def _get_package_version_with_fallback():
@@ -53,9 +53,52 @@ _READ_ONLY_ANALYTICS_SCOPE = (
     "https://www.googleapis.com/auth/analytics.readonly"
 )
 
-# Lock to ensure client and credential creation is thread-safe
-_client_lock = threading.Lock()
-_CREDENTIALS = None
+# Edit scope for Analytics Admin API write operations.
+_EDIT_ANALYTICS_SCOPE = "https://www.googleapis.com/auth/analytics.edit"
+
+_request_credentials: contextvars.ContextVar[
+    oauth2_credentials.Credentials | None
+] = contextvars.ContextVar("_request_credentials", default=None)
+
+_request_require_credentials: contextvars.ContextVar[bool | None] = (
+    contextvars.ContextVar("_request_require_credentials", default=None)
+)
+
+
+class MissingCredentialsError(PermissionError):
+    """Raised when per-request credentials are required but not provided."""
+
+
+def get_required_scopes(allow_write: bool = False) -> list[str]:
+    """Returns the OAuth scopes required for the given write configuration."""
+    scopes = [_READ_ONLY_ANALYTICS_SCOPE]
+    if allow_write:
+        scopes.append(_EDIT_ANALYTICS_SCOPE)
+    return scopes
+
+
+@contextlib.contextmanager
+def use_request_access_token(
+    access_token: str | None,
+    allow_write: bool = False,
+    require_request_credentials: bool | None = None,
+):
+    """Binds per-request OAuth2 credentials and policy to the current context."""
+    req_token = _request_require_credentials.set(require_request_credentials)
+    creds = (
+        oauth2_credentials.Credentials(
+            token=access_token,
+            scopes=get_required_scopes(allow_write=allow_write),
+        )
+        if access_token
+        else None
+    )
+    cred_token = _request_credentials.set(creds)
+    try:
+        yield creds
+    finally:
+        _request_credentials.reset(cred_token)
+        _request_require_credentials.reset(req_token)
 
 
 @contextlib.contextmanager
@@ -77,71 +120,108 @@ def prevent_stdio_inheritance():
         yield
 
 
-def _is_oauth_mode() -> bool:
-    """Returns True when the server is running in HTTP/OAuth mode."""
-    return bool(
-        os.environ.get("ANALYTICS_MCP_OAUTH_CLIENT_ID")
-        and os.environ.get("ANALYTICS_MCP_OAUTH_CLIENT_SECRET")
-    )
+class _ClientManager:
+    """Thread-safe manager for Google Analytics API credentials and clients."""
 
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._credentials = None
+        self._allow_write = False
+        self._require_request_credentials = False
 
-def _get_credentials():
-    # Expected to be called under _client_lock.
-    #
-    # In HTTP/OAuth mode every request must carry the calling user's own
-    # OAuth token. Failing closed here (instead of falling back to
-    # Application Default Credentials) ensures one user's request can never
-    # be served with the server operator's credentials.
-    if _is_oauth_mode():
-        from fastmcp.server.dependencies import get_access_token
+    def set_allow_write(self, allow_write: bool) -> None:
+        """Configures whether write scopes should be requested for credentials."""
+        with self._lock:
+            if self._allow_write != allow_write:
+                self._allow_write = allow_write
+                self._credentials = None
 
-        token = get_access_token()
-        if token is None or not token.token:
-            raise RuntimeError(
-                "No OAuth access token found for this request. The server is "
-                "running in HTTP/OAuth mode, which requires each request to "
-                "be authenticated with a per-user token."
+    def set_require_request_credentials(self, require: bool) -> None:
+        """Configures whether per-request credentials are required (HTTP mode)."""
+        with self._lock:
+            self._require_request_credentials = require
+
+    def _get_credentials(self):
+        """Returns cached ADC credentials, initializing them if needed."""
+        # Expected to be called under self._lock
+        if self._credentials is None:
+            scopes = get_required_scopes(allow_write=self._allow_write)
+            with prevent_stdio_inheritance():
+                self._credentials, _ = google.auth.default(scopes=scopes)
+        return self._credentials
+
+    def _create_client(self, client_cls):
+        """Creates an API client using per-request credentials or locked ADC."""
+        request_creds = _request_credentials.get()
+        if request_creds is not None:
+            return client_cls(
+                client_info=_CLIENT_INFO, credentials=request_creds
             )
-        return OAuthCredentials(token=token.token)
-
-    global _CREDENTIALS
-    if _CREDENTIALS is None:
-        with prevent_stdio_inheritance():
-            _CREDENTIALS, _ = google.auth.default(
-                scopes=[_READ_ONLY_ANALYTICS_SCOPE]
+        ctx_require = _request_require_credentials.get()
+        with self._lock:
+            require_creds = (
+                ctx_require
+                if ctx_require is not None
+                else self._require_request_credentials
             )
-    return _CREDENTIALS
+            if require_creds:
+                raise MissingCredentialsError(
+                    "An 'Authorization: Bearer <token>' header is required "
+                    "when running in multi-tenant HTTP mode."
+                )
+            return client_cls(
+                client_info=_CLIENT_INFO, credentials=self._get_credentials()
+            )
+
+    def create_admin_api_client(
+        self,
+    ) -> admin_v1beta.AnalyticsAdminServiceClient:
+        return self._create_client(admin_v1beta.AnalyticsAdminServiceClient)
+
+    def create_data_api_client(self) -> data_v1beta.BetaAnalyticsDataClient:
+        return self._create_client(data_v1beta.BetaAnalyticsDataClient)
+
+    def create_admin_alpha_api_client(
+        self,
+    ) -> admin_v1alpha.AnalyticsAdminServiceClient:
+        return self._create_client(admin_v1alpha.AnalyticsAdminServiceClient)
+
+    def create_data_api_alpha_client(
+        self,
+    ) -> data_v1alpha.AlphaAnalyticsDataClient:
+        return self._create_client(data_v1alpha.AlphaAnalyticsDataClient)
+
+
+_client_manager = _ClientManager()
+
+
+def set_allow_write(allow_write: bool) -> None:
+    """Configures whether write scopes should be requested for credentials."""
+    _client_manager.set_allow_write(allow_write)
+
+
+def set_require_request_credentials(require: bool) -> None:
+    """Configures whether per-request credentials are required (HTTP mode)."""
+    _client_manager.set_require_request_credentials(require)
 
 
 def create_admin_api_client() -> admin_v1beta.AnalyticsAdminServiceClient:
     """Returns the Google Analytics Admin API client."""
-    with _client_lock:
-        return admin_v1beta.AnalyticsAdminServiceClient(
-            client_info=_CLIENT_INFO, credentials=_get_credentials()
-        )
+    return _client_manager.create_admin_api_client()
 
 
 def create_data_api_client() -> data_v1beta.BetaAnalyticsDataClient:
     """Returns the Google Analytics Data API client."""
-    with _client_lock:
-        return data_v1beta.BetaAnalyticsDataClient(
-            client_info=_CLIENT_INFO, credentials=_get_credentials()
-        )
+    return _client_manager.create_data_api_client()
 
 
 def create_admin_alpha_api_client() -> (
     admin_v1alpha.AnalyticsAdminServiceClient
 ):
     """Returns the Google Analytics Admin API (alpha) client."""
-    with _client_lock:
-        return admin_v1alpha.AnalyticsAdminServiceClient(
-            client_info=_CLIENT_INFO, credentials=_get_credentials()
-        )
+    return _client_manager.create_admin_alpha_api_client()
 
 
 def create_data_api_alpha_client() -> data_v1alpha.AlphaAnalyticsDataClient:
     """Returns the Google Analytics Data API (Alpha) client."""
-    with _client_lock:
-        return data_v1alpha.AlphaAnalyticsDataClient(
-            client_info=_CLIENT_INFO, credentials=_get_credentials()
-        )
+    return _client_manager.create_data_api_alpha_client()

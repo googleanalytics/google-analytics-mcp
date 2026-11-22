@@ -68,3 +68,23 @@ class TestUtils(unittest.TestCase):
             msg="Resource name with more than 2 components should fail",
         ):
             utils.construct_property_rn("properties/123/abc")
+        with self.assertRaises(
+            ValueError,
+            msg="Resource name with >2 components ending in digits should fail",
+        ):
+            utils.construct_property_rn("properties/123/dataStreams/456")
+        with self.assertRaises(
+            ValueError,
+            msg="Resource name with 3 numeric components should fail",
+        ):
+            utils.construct_property_rn("properties/123/456")
+        with self.assertRaises(ValueError, msg="Boolean True should fail"):
+            utils.construct_property_rn(True)
+        with self.assertRaises(ValueError, msg="Boolean False should fail"):
+            utils.construct_property_rn(False)
+        with self.assertRaises(ValueError, msg="Negative int should fail"):
+            utils.construct_property_rn(-12345)
+        with self.assertRaises(
+            ValueError, msg="Non-ASCII superscript digit should fail cleanly"
+        ):
+            utils.construct_property_rn("²")

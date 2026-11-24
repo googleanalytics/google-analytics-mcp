@@ -22,16 +22,17 @@ import proto
 def construct_property_rn(property_value: int | str) -> str:
     """Returns a property resource name in the format required by APIs."""
     property_num = None
-    if isinstance(property_value, int):
-        property_num = property_value
+    if isinstance(property_value, int) and not isinstance(property_value, bool):
+        if property_value >= 0:
+            property_num = property_value
     elif isinstance(property_value, str):
         property_value = property_value.strip()
-        if property_value.isdigit():
+        if property_value.isascii() and property_value.isdigit():
             property_num = int(property_value)
         elif property_value.startswith("properties/"):
-            numeric_part = property_value.split("/")[-1]
-            if numeric_part.isdigit():
-                property_num = int(numeric_part)
+            parts = property_value.split("/")
+            if len(parts) == 2 and parts[1].isascii() and parts[1].isdigit():
+                property_num = int(parts[1])
     if property_num is None:
         raise ValueError(
             (

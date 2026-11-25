@@ -67,6 +67,10 @@ from analytics_mcp.tools.reporting.conversions import (
     run_conversions_report,
     _run_conversions_report_description,
 )
+from analytics_mcp.tools.reporting.report_tasks import (
+    run_report_task,
+    _run_report_task_description,
+)
 
 run_report_with_description = FunctionTool(run_report)
 run_report_with_description.description = _run_report_description()
@@ -82,6 +86,8 @@ run_conversions_report_with_description = FunctionTool(run_conversions_report)
 run_conversions_report_with_description.description = (
     _run_conversions_report_description()
 )
+run_report_task_with_description = FunctionTool(run_report_task)
+run_report_task_with_description.description = _run_report_task_description()
 
 # Instantiate the read-only ADK tools
 read_only_tools = [
@@ -92,6 +98,7 @@ read_only_tools = [
     FunctionTool(list_key_events),
     FunctionTool(get_custom_dimensions_and_metrics),
     run_report_with_description,
+    run_report_task_with_description,
     run_realtime_report_with_description,
     run_funnel_report_with_description,
     run_conversions_report_with_description,
@@ -201,6 +208,13 @@ def _prepare_mcp_tools(
                 "dimensions",
                 "metrics",
                 "conversion_spec",
+            ]
+        elif mcp_tool.name == "run_report_task":
+            mcp_tool.input_schema["required"] = [
+                "property_id",
+                "date_ranges",
+                "dimensions",
+                "metrics",
             ]
         elif mcp_tool.name == "create_property_annotation":
             mcp_tool.input_schema["required"] = [

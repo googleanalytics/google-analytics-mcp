@@ -47,6 +47,8 @@ to provide several
 ### Run core reports 📙
 
 - `run_report`: Runs a Google Analytics report using the Data API.
+- `run_report_task`: Runs a Google Analytics report task using the Data API,
+  with a configurable `sampling_level` (`LOW`, `MEDIUM` or `UNSAMPLED`).
 - `run_funnel_report`: Runs a Google Analytics funnel report using the Data API.
 - `run_conversions_report`: Runs a Google Analytics conversions report
   (ad costs, conversions, ROAS and attribution models) using the Data API.
